@@ -1,0 +1,43 @@
+{
+  "name": "photography-tutor",
+  "version": "0.0.1",
+  "description": "A chatbot for photography",
+  "main": "index.js",
+  "scripts": {
+    "build": "rimraf ./build && npx tsc",
+    "train": "node ./build/lib/training/initialize-store.js",
+    "train:interactive": "node ./build/lib/training/interactive.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:dev": "npx nodemon",
+    "start": "node ./build/index.js"
+  },
+  "keywords": [
+    "openai",
+    "langchain",
+    "llm"
+  ],
+  "author": "Seth Webster",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.1.0",
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/glob": "^8.1.0",
+    "@types/node-fetch": "^2.6.3",
+    "@types/prompt-sync": "^4.2.0",
+    "@types/rimraf": "^4.0.5",
+    "axios": "^1.4.0",
+    "glob": "^10.2.2",
+    "hnswlib-node": "^1.4.2",
+    "langchain": "^0.0.71",
+    "node-fetch": "^3.3.1",
+    "openai": "^3.2.1",
+    "pickle": "^0.2.0",
+    "prompt-sync": "^4.2.0",
+    "rimraf": "^5.0.0"
+  }
+}
