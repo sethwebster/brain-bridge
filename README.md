@@ -24,3 +24,18 @@ So let us welcome this new age,
 Where Brain Bridge can engage,
 And connect the knowledge of the few,
 To benefit the many, and help them break through.
+
+# ACTUAL README
+
+## Quick Start
+1. Clone this repo, and `npm install` to install dependencies.
+2. run `npm run build` to build the project.
+3. Create the directory `training-data` in the `src` folder.
+4. Add any markdown or json files into that folder you want included in the training data.
+5. Run `npm run train` to train the model.
+6. Edit the file `basePrompt.ts` in the `src/lib` folder.
+7. run `npm run start` to start the bot.
+
+## Interactive Training
+1. Run `npm run train:interactive` to start the interactive training.
+2. Make sure to retrain the model and restart the bot afterwards.
