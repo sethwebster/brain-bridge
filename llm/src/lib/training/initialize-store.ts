@@ -13,10 +13,15 @@ const textSplitter = new CharacterTextSplitter({
   separator: "\n"
 });
 
+const trainingDataFileTypes = ["md", "json", "txt"];
 async function loadTrainingFileNames(): Promise<string[]> {
-  const mdFiles = await glob("./src/training-data/**/*.md");
-  const jsonFiles = await glob("./src/training-data/**/*.json");
-  return [...mdFiles, ...jsonFiles];
+  const tasks = trainingDataFileTypes.map((type) => `./src/training-data/**/*.${type}`)
+  .map((pattern) => {
+    return glob(pattern);
+  });
+  const files = (await Promise.all(tasks)).flat();
+  console.log(`Training on ${files.length} files.`)
+  return files;
 }
 
 async function loadTrainingFiles() {
