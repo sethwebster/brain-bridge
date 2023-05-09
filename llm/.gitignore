@@ -1,4 +1,7 @@
 build/
 node_modules
-training-data
+/*/training-data/*.md
+/*/training-data/*.json
+/*/training-data/*.txt
+!training-data/urls.ts
 vectorStore
