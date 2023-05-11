@@ -17,11 +17,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="flex flex-col w-full h-screen">
         <AuthProvider>
           {/* @ts-expect-error RSC */}
           <Nav />
-          <div className="pt-4">{children}</div>
+          <div className="flex flex-col flex-grow">
+            <div className="flex flex-col flex-grow">{children}</div>
+          </div>
         </AuthProvider>
       </body>
     </html>
