@@ -17,18 +17,7 @@ const fakeData = {
       name: "Chat 1",
       participants: ["bot", "sethwebster@gmail.com"],
       messages: [
-        {
-          id: 1,
-          text: "Hello",
-          sender: "bot",
-          timestamp: "2021-01-01T00:00:00.000Z"
-        },
-        {
-          id: 2,
-          text: "Hi",
-          sender: "sethwebster@gmail.com",
-          timestamp: "2021-01-01T00:00:00.000Z",
-        },
+       
       ]
     }
   ]

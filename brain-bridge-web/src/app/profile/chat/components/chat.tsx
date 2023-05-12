@@ -14,12 +14,31 @@ export default function Chat({
   selectedChat: Chat;
   session: Session;
 }) {
+  const [firstLoad, setFirstLoad] = useState(true);
   const [answerPending, setAnswerPending] = useState(false);
   const [selectedChatMessages, setSelectedChatMessages] = useState(
     selectedChat.messages
   );
   const [currentMessageText, setCurrentMessageText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (firstLoad) {
+      setFirstLoad(false);
+      setAnswerPending(true);
+      setTimeout(() => {
+        setSelectedChatMessages((messages) => [
+          {
+            id: 1,
+            sender: "bot",
+            text: "Hello, I'm Seth Webster's brain on photography. How can I help you?",
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        setAnswerPending(false);
+      }, generateRandomInteger(1000, 3000));
+    }
+  }, [firstLoad]);
+
   const handleSend = useCallback(
     (newMessage: Message) => {
       const sendMessage = async () => {
