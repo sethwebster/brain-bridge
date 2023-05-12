@@ -48,14 +48,27 @@ const Data = {
     const chat = fakeData.chats.find(chat => chat.id === id);
     return chat as Chat;
   },
+
   sendMessage: async (id: number, message: Message): Promise<Message> => {
-    const chat = fakeData.chats.find(chat => chat.id === id);
-    if (!chat) {
-      throw new Error("Chat not found");
+    const url = process.env.NEXT_PUBLIC_CHAT_API_URL?.replace(":id", id.toString());
+    console.log("Chat API Url", url)
+    const response = await fetch(url as string, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: message.text, sender: message.sender }),
+    })
+    if (!response.ok) {
+      throw new Error("Failed to send message");
     }
-    message.id = chat.messages.length + 1;
-    chat.messages.push(message);
-    return message;
-  }  
+    const responseMessage = await response.json();
+    return {
+      text: responseMessage.message,
+      sender: "bot",
+      timestamp: new Date().toISOString(),
+      id: 0,
+    }
+  }
 }
 export default Data;

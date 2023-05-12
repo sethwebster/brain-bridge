@@ -54,7 +54,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       error: "Chat not found",
     }, { status: 404 })
   }
-  console.log("HI", chat)
   const message = await request.json();
   message.id = chat.messages.length + 1;
   chat.messages.push(message);
