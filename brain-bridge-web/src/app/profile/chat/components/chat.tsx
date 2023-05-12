@@ -21,48 +21,45 @@ export default function Chat({
   );
   const [currentMessageText, setCurrentMessageText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const getLLMResponse = useCallback(
+    async (message: Message) => {
+      setAnswerPending(true);
+      const llmResponse = await Data.sendMessage(selectedChat.id, message);
+      setSelectedChatMessages((messages) => [...messages, llmResponse]);
+      setAnswerPending(false);
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    },
+    [selectedChat.id]
+  );
+
   useEffect(() => {
     if (firstLoad) {
       setFirstLoad(false);
-      setAnswerPending(true);
-      setTimeout(() => {
-        setSelectedChatMessages((messages) => [
-          {
-            id: 1,
-            sender: "bot",
-            text: "Hello, I'm Seth Webster's brain on photography. How can I help you?",
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        setAnswerPending(false);
-      }, generateRandomInteger(1000, 3000));
+      getLLMResponse({
+        sender: session.user?.name || session.user?.email || "Unknown",
+        text: `Hello, I'm ${
+          session.user?.name || session.user?.email || "Unknown"
+        }.`,
+        id: -1,
+        timestamp: new Date().toISOString(),
+      });
     }
-  }, [firstLoad]);
+  }, [firstLoad, getLLMResponse, session.user?.email, session.user?.name]);
 
   const handleSend = useCallback(
     (newMessage: Message) => {
       const sendMessage = async () => {
-        setAnswerPending(true);
-        // const response = await fetch(`/api/chat/${selectedChat.id}`, {
-        //   method: "PUT",
-        //   body: JSON.stringify(newMessage),
-        // });
-        // if (!response.ok) throw new Error("Failed to send message");
-        // const { message } = await response.json();
-        // console.log(message);
         setSelectedChatMessages((messages) => [
           ...messages,
           { ...newMessage, id: selectedChatMessages.length + 1 },
         ]);
-        const llmResponse = await Data.sendMessage(selectedChat.id, newMessage);
-        console.log(llmResponse);
-        setSelectedChatMessages((messages) => [...messages, llmResponse]);
+        await getLLMResponse(newMessage);
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        setAnswerPending(false);
       };
       sendMessage();
     },
-    [selectedChat.id, selectedChatMessages.length]
+    [getLLMResponse, selectedChatMessages.length]
   );
 
   const handleKeyUp = useCallback(
@@ -70,7 +67,7 @@ export default function Chat({
       event.preventDefault();
       if (event.key === "Enter") {
         handleSend({
-          sender: "sethwebster@gmail.com",
+          sender: session.user?.name || session.user?.email || "Unknown",
           text: currentMessageText,
           id: -1,
           timestamp: new Date().toISOString(),
@@ -78,7 +75,7 @@ export default function Chat({
         setCurrentMessageText("");
       }
     },
-    [currentMessageText, handleSend]
+    [currentMessageText, handleSend, session.user?.email, session.user?.name]
   );
 
   const handleTextChanged = useCallback(
@@ -94,7 +91,7 @@ export default function Chat({
       <div className="flex-grow w-full p-2 overflow-scroll rounded">
         <Messages
           messages={selectedChatMessages}
-          userId={session?.user?.email}
+          userId={session.user?.name || session.user?.email || "Unknown"}
         />
         {answerPending && (
           <div className="ml-4">
