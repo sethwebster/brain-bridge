@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { LoginButton, LogoutButton } from "./auth-buttons";
+import Link from "next/link";
 
 const Logo = () => (
   <Image src="/logo.png" alt="Next.js Logo" width={40} height={37} priority />
@@ -17,7 +18,14 @@ async function Nav() {
       </div>
       <div className="relative flex-grow">
         <ul className="flex flex-row justify-end">
-          <li className="px-5 pt-2.5">Home</li>
+          <li className="px-5 pt-2.5">
+            <Link href="/">Home</Link>
+          </li>
+          {loggedIn && (
+            <li className="px-5 pt-2.5">
+              <Link href="/profile/chat/1"> Profile</Link>
+            </li>
+          )}
           <li className="px-5">
             {!loggedIn && <LoginButton />}
             {loggedIn && <LogoutButton />}
@@ -26,6 +34,6 @@ async function Nav() {
       </div>
     </nav>
   );
-};
+}
 
 export default Nav;
