@@ -37,6 +37,7 @@ export default function Chat({
   useEffect(() => {
     if (firstLoad) {
       setFirstLoad(false);
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       // getLLMResponse({
       //   sender: session.user?.name || session.user?.email || "Unknown",
       //   text: `Hello, I'm ${
