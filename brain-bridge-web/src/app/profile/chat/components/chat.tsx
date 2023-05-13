@@ -37,14 +37,14 @@ export default function Chat({
   useEffect(() => {
     if (firstLoad) {
       setFirstLoad(false);
-      getLLMResponse({
-        sender: session.user?.name || session.user?.email || "Unknown",
-        text: `Hello, I'm ${
-          session.user?.name || session.user?.email || "Unknown"
-        }.`,
-        id: -1,
-        timestamp: new Date().toISOString(),
-      });
+      // getLLMResponse({
+      //   sender: session.user?.name || session.user?.email || "Unknown",
+      //   text: `Hello, I'm ${
+      //     session.user?.name || session.user?.email || "Unknown"
+      //   }.`,
+      //   id: -1,
+      //   timestamp: new Date().toISOString(),
+      // });
     }
   }, [firstLoad, getLLMResponse, session.user?.email, session.user?.name]);
 
@@ -118,10 +118,13 @@ export default function Chat({
 
 function FakeTypingIndicator() {
   const [show, setShow] = useState(false);
-  console.log(generateRandomInteger(1000, 5000));
+  const bottomRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const i = setTimeout(() => {
       setShow(true);
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+
     }, generateRandomInteger(1000, 5000));
     return () => {
       clearTimeout(i);
@@ -136,6 +139,7 @@ function FakeTypingIndicator() {
         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
         <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
       </div>
+      <div ref={bottomRef} />
     </div>
   );
 }

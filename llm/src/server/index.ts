@@ -19,17 +19,18 @@ const conversations = new Map<string, Conversation>();
 let store: HNSWLib | null = null;
 
 async function getConversation(id: string) {
-  let conversation = conversations.get(id)
-  console.log('conversation loaded from memory', conversation)
+  let conversation = conversations.get(id) 
 
   if (!conversation) {
     try {
       conversation = await Conversation.fromRedis(id);
-      console.log('conversation loaded from redis', conversation)
+      console.log('conversation loaded from redis', id)
       conversations.set(id, conversation);
     } catch {
       throw new Error("Conversation not found");
     }
+  } else {
+    console.log('conversation loaded from memory', id)
   }
   return conversation;
 }
@@ -42,7 +43,6 @@ app.get("/api/chats/:email", async (req, res) => {
 
 // Retrievies a conversation
 app.get("/api/chat/:id", async (req, res) => {
-  console.log("HEY")
   const { id } = req.params;
 
   try {

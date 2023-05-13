@@ -72,7 +72,7 @@ COPY package.json .
 # the built application from the build stage into the image.
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/./build ././build
-COPY --from=build /usr/src/app/./vectorStore ././vectorStore
+COPY --from=build /usr/src/app/./vectors ././vectors
 
 
 # Expose the port that the application listens on.

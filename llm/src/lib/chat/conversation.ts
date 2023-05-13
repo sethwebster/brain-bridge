@@ -29,7 +29,6 @@ class Conversation implements Conversation {
 
   private updateLastUpdated() {
     this.lastUpdate = new Date();
-    console.log(JSON.stringify(this, null, 2))
     redisClient.set(`conversations:${this.id}`, JSON.stringify(this));
   }
 
@@ -45,7 +44,6 @@ class Conversation implements Conversation {
 
   async add(message: string): Promise<Message> {
     const sender = this.participants.find(p => p.participantType !== "bot");
-    console.log("Sent by", sender);
     this.messages.push(
       {
         id: this.length(),
@@ -59,6 +57,22 @@ class Conversation implements Conversation {
       history: this.messages.map(m => `${m.sender}:${m.text}`),
       store: (this.store as HNSWLib)
     });
+    if (this.messages.filter(m => m.sender !== "bot").length > 10) {
+      const user = this.participants.find(p => p.participantType !== "bot");
+      console.log("Generating Name...");
+      const messages = this.messages.filter(m => m.sender ===user?.name).map(m => `${m.sender}:${m.text}`).slice(0, 50);
+      const name = await generateResponse({
+        prompt: `What is a 1 line, 10-15 character summary of this conversation. 
+          Leave out names and other identifying information.
+          ignore pleaseantries, and anything without substance. ignore your own thoughts and focus on what the user said.
+          Focus on the content of the conversation from the human that is outside the getting to know you parts, and instead on substance, if present.
+        `,
+        history: messages,
+        store: (this.store as HNSWLib)
+      });
+      this.name = name;
+      console.log("Name Generated: ", name);
+    }
     const newMessage = {
       id: this.length(),
       sender: this.participants.find(p => p.participantType === "bot")?.name || "unknown",

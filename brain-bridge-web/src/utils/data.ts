@@ -3,9 +3,7 @@ import path from "path"
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_CHAT_API_URL
-  console.log("The Base", base);
   const url = new URL(endpoint, base);
-  console.log("The Url", url);
   return new URL(endpoint, base).toString();
 }
 
@@ -58,7 +56,6 @@ const Data = {
 
   sendMessage: async (id: string, message: Message): Promise<Message> => {
     const url = makeApiUrl(`chat/${id}/message`);
-    console.log("Chat API Url", url)
     const response = await fetch(url as string, {
       method: "PUT",
       headers: {

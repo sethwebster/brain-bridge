@@ -46,7 +46,6 @@ const generateResponse = async ({
   
   // Search for related context/documents in the vectorStore directory
   const data = await store.similaritySearch(prompt, 2);
-  // console.log("SIm Search", data)
   const context: string[] = [];
   data.forEach((item, i) => {
     context.push(`Context:\n${item.pageContent}`)
