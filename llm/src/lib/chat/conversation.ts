@@ -2,6 +2,8 @@ import generateResponse from "../generate-response";
 import { HNSWLib } from 'langchain/vectorstores';
 import { getTrainingIndex } from "../training/training";
 import redisClient from "../redis/client";
+import { updateUserConversation } from "../user/user";
+import invariant from "tiny-invariant";
 
 class Conversation implements Conversation {
   id: string;
@@ -57,12 +59,13 @@ class Conversation implements Conversation {
       history: this.messages.map(m => `${m.sender}:${m.text}`),
       store: (this.store as HNSWLib)
     });
-    if (this.messages.filter(m => m.sender !== "bot").length > 10) {
+    if (this.messages.filter(m => m.sender !== "bot").length === 10) {
       const user = this.participants.find(p => p.participantType !== "bot");
+      invariant(user, "User not found")
       console.log("Generating Name...");
-      const messages = this.messages.filter(m => m.sender ===user?.name).map(m => `${m.sender}:${m.text}`).slice(0, 50);
+      const messages = this.messages.filter(m => m.sender === user?.name).map(m => `${m.sender}:${m.text}`).slice(0, 50);
       const name = await generateResponse({
-        prompt: `What is a 1 line, 10-15 character summary of this conversation. 
+        prompt: `What is a 1 line, 10-15 character TITLE of this conversation without quotes. 
           Leave out names and other identifying information.
           ignore pleaseantries, and anything without substance. ignore your own thoughts and focus on what the user said.
           Focus on the content of the conversation from the human that is outside the getting to know you parts, and instead on substance, if present.
@@ -70,7 +73,8 @@ class Conversation implements Conversation {
         history: messages,
         store: (this.store as HNSWLib)
       });
-      this.name = name;
+      this.name = name.replace('"', '').replace('"', '');
+      await updateUserConversation(user, { id: this.id, name: this.name })
       console.log("Name Generated: ", name);
     }
     const newMessage = {
