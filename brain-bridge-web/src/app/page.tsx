@@ -1,7 +1,4 @@
 import Image from "next/image";
-import { LoginButton, LogoutButton } from "./components/auth-buttons";
-import { useSession } from "next-auth/react";
-import { getServerSession } from "next-auth";
 
 export default async function Home() {
   return (
