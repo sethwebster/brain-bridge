@@ -39,7 +39,7 @@ async function Nav() {
   const session = await getServerSession();
   const loggedIn = session && session.user;
   return (
-    <nav className="sticky top-0 z-50 flex flex-row p-5 bg-gray-900 border-b border-gray-800">
+    <nav className="fixed top-0 z-50 flex flex-row w-full p-5 bg-gray-900 border-b border-gray-800">
       <div className="flex font-bold ab">
         <Logo />
         <h1 className="relative ml-3 text-xl top-2">Brain Bridge</h1>

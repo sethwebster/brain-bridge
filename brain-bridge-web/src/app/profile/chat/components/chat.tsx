@@ -90,7 +90,7 @@ export default function Chat({
 
   if (!session.user?.email) throw new Error("No user email");
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col w-full">
       <div className="flex-grow w-full p-2 overflow-scroll rounded">
         <Messages
           messages={selectedChatMessages}
