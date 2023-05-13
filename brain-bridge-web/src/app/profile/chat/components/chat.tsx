@@ -1,11 +1,11 @@
 "use client";
 
 import Data from "@/utils/data";
-import { generateRandomInteger } from "@/utils/numbers";
 import { Session } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./Messages";
+import { FakeTypingIndicator } from "./FakeTypingIndicator";
 
 export default function Chat({
   selectedChat,
@@ -89,7 +89,7 @@ export default function Chat({
 
   if (!session.user?.email) throw new Error("No user email");
   return (
-    <div className="flex flex-col flex-grow">
+    <div className="flex flex-col">
       <div className="flex-grow w-full p-2 overflow-scroll rounded">
         <Messages
           messages={selectedChatMessages}
@@ -100,48 +100,19 @@ export default function Chat({
             <FakeTypingIndicator />
           </div>
         )}
-        <div ref={bottomRef} />
+        <div ref={bottomRef} className="m-2" />
       </div>
-
-      <input
-        type="text"
-        name="message"
-        placeholder="Type your message here"
-        className="sticky bottom-0 w-full p-2 mt-4 border rounded outline-none bg-slate-900 border-slate-600"
-        value={currentMessageText}
-        onKeyUp={handleKeyUp}
-        onChange={handleTextChanged}
-      />
+      <div className="sticky bottom-0 w-full p-2 mt-4 bg-opacity-0 outline-none">
+        <input
+          type="text"
+          name="message"
+          placeholder="Type your message here"
+          className="sticky w-full p-2 mb-4 border rounded outline-none bg-slate-900 border-slate-600 bg-opacity-95"
+          value={currentMessageText}
+          onKeyUp={handleKeyUp}
+          onChange={handleTextChanged}
+        />
+      </div>
     </div>
   );
 }
-
-function FakeTypingIndicator() {
-  const [show, setShow] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const i = setTimeout(() => {
-      setShow(true);
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-
-    }, generateRandomInteger(1000, 5000));
-    return () => {
-      clearTimeout(i);
-      setShow(false);
-    };
-  }, []);
-  if (!show) return <> </>;
-  return (
-    <div className="flex flex-row justify-start">
-      <div className="flex flex-row items-center w-10 h-8 mt-2 rounded-lg justify-evenly bg-slate-500 ">
-        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-      </div>
-      <div ref={bottomRef} />
-    </div>
-  );
-}
-
-
