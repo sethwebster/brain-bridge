@@ -5,7 +5,7 @@ import { HNSWLib } from 'langchain/vectorstores';
 import bodyParser from 'body-parser';
 import Conversation from '../lib/chat/conversation';
 import invariant from 'tiny-invariant';
-import { addUserConversation, getUserConversations } from '../lib/user/user';
+import { addUserConversation, getUserConversations, removeUserConversation } from '../lib/user/user';
 
 const app = express();
 app.use(cors())
@@ -18,6 +18,22 @@ const conversations = new Map<string, Conversation>();
 
 let store: HNSWLib | null = null;
 
+async function getConversation(id: string) {
+  let conversation = conversations.get(id)
+  console.log('conversation loaded from memory', conversation)
+
+  if (!conversation) {
+    try {
+      conversation = await Conversation.fromRedis(id);
+      console.log('conversation loaded from redis', conversation)
+      conversations.set(id, conversation);
+    } catch {
+      throw new Error("Conversation not found");
+    }
+  }
+  return conversation;
+}
+
 app.get("/api/chats/:email", async (req, res) => {
   const { email } = req.params;
   const conversations = await getUserConversations({ email }) || []
@@ -28,19 +44,15 @@ app.get("/api/chats/:email", async (req, res) => {
 app.get("/api/chat/:id", async (req, res) => {
   console.log("HEY")
   const { id } = req.params;
-  let conversation = conversations.get(id)
-  console.log('conversation loaded from memory', conversation)
 
-  if (!conversation) {
-    try {
-      conversation = await Conversation.fromRedis(id);
-      console.log('conversation loaded from redis', conversation)
-      conversations.set(id, conversation);
-    } catch {
-      res.status(404).send("Conversation not found");
-    }
+  try {
+    const conversation = await getConversation(id);
+    res.json(conversations.get(id));
+  } catch {
+    res.status(404).send("Conversation not found");
   }
-  res.json(conversations.get(id));
+
+
 });
 
 
@@ -60,19 +72,29 @@ app.post("/api/chat", async (req, res) => {
 app.put("/api/chat/:id/message", async (req, res) => {
   const { id } = req.params;
   const { message } = req.body;
-  let conversation = conversations.get(id);
-  if (!conversation) {
-    try {
-      conversation = await Conversation.fromRedis(id);
-      conversations.set(id, conversation);
-    } catch (e) {
-      res.status(404).send("Conversation not found");
-    }
+  try {
+    const conversation = await getConversation(id);
+    await awaitReady(conversation);
+    const response = await conversation.add(message);
+    res.json(response);
+  } catch (e) {
+    console.log(e);
+    res.status(404).send("Conversation not found");
   }
-  invariant(conversation, 'Conversation should be defined');
-  await awaitReady(conversation);
-  const response = await conversation.add(message);
-  res.json(response);
+});
+
+app.delete("/api/chats/:email/:id", async (req, res) => {
+  const { id, email } = req.params;
+  req.headers['x-api-key']
+  const conversation = await getConversation(id)
+  if (!conversation) {
+    res.status(404).send("Conversation not found");
+    return;
+  }
+  conversations.delete(id);
+  removeUserConversation({ email }, { id, name: null });
+  res.status(204).send();
+
 });
 
 const awaitReady = async (conversation: Conversation) => {
@@ -89,9 +111,6 @@ const awaitReady = async (conversation: Conversation) => {
 
 }
 
-loadStore().then((loadedStore) => {
-  store = loadedStore;
-  app.listen(4000, () =>
-    console.log('Example app listening on port 4000!'),
-  )
-});
+app.listen(4000, () =>
+  console.log('Example app listening on port 4000!'),
+)

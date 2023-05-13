@@ -25,7 +25,7 @@ interface Chat {
   messages: Message[];
 }
 
-type ConversationStub = Pick<Chat, "id" | "name">;
+type ConversationStub = Pick<Conversation, "id" | "name">;
 
 interface TrainingSource {
   type: "file" | "url";

@@ -42,6 +42,19 @@ const Data = {
     const responseMessage = await response.json();
     return responseMessage;
   },
+  deleteChat: async (id: string, user: User) => {
+    const url = makeApiUrl(`chats/${user.email}/${id}`);
+    const response = await fetch(url as string, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    if (!response.ok) {
+      throw new Error("Failed to delete chat");
+    }
+    return;
+  },
 
   sendMessage: async (id: string, message: Message): Promise<Message> => {
     const url = makeApiUrl(`chat/${id}/message`);

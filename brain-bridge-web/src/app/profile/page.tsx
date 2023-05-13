@@ -4,6 +4,7 @@ import { User, getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import Link from "next/link";
 import { NewChat } from "./NewChat";
+import { DeleteChat } from "./DeleteChat";
 
 async function ChatListing({
   conversations,
@@ -26,6 +27,7 @@ async function ChatListing({
             >
               {conversation.name || `Chat ${index + 1}`}
             </Link>{" "}
+            <DeleteChat id={conversation.id} user={session.user as any} />
           </li>
         ))}
       </ul>
@@ -39,6 +41,7 @@ export default async function Profile() {
   const chats = await Data.fetchChats(session.user!.email!);
   return (
     <PaddedContainer>
+      {/* @ts-expect-error RSC*/}
       <ChatListing conversations={chats} />
     </PaddedContainer>
   );
