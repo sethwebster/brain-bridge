@@ -7,6 +7,8 @@ import invariant from 'tiny-invariant';
 import path from 'path';
 import * as redis from 'redis';
 import axios from 'axios';
+import TurndownService from 'turndown';
+import jsdom from 'jsdom';
 
 const SUPPORTED_FILE_TYPES = ["md", "json", "txt"];
 
@@ -21,7 +23,13 @@ async function loadFile(file: string): Promise<string> {
 
 async function loadUrl(url: string) {
   const response = await axios.get(url);
-  return await response.data();
+  if (response.status !== 200) throw new Error(`Failed to load url: ${url}`);
+  const html= response.data;
+  const doc = new jsdom.JSDOM(html).window.document;
+  const htmlDoc = `<html><head><title>${doc.title}</title></head><body>${doc.body.innerHTML}</body></html>`
+  const markdown = new TurndownService().turndown(htmlDoc)
+  console.log("MD", markdown)
+  return markdown;
 }
 
 async function getSourceText(source: TrainingSource): Promise<string> {
@@ -143,11 +151,12 @@ async function vectorize(docs: string[]): Promise<HNSWLib> {
   return store;
 }
 
+const textSplitter = new CharacterTextSplitter({
+  chunkSize: 2000,
+  separator: "\n"
+});
+
 async function splitFileData(data: string[]): Promise<string[]> {
-  const textSplitter = new CharacterTextSplitter({
-    chunkSize: 2000,
-    separator: "\n"
-  });
 
   console.log("Splitting text into chunks...")
   let docs: string[] = [];

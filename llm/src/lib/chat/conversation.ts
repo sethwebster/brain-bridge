@@ -59,7 +59,8 @@ class Conversation implements Conversation {
       history: this.messages.map(m => `${m.sender}:${m.text}`),
       store: (this.store as HNSWLib)
     });
-    if (this.messages.filter(m => m.sender !== "bot").length === 10) {
+    const previousMessages = this.messages.filter(m => m.sender !== "bot");
+    if (previousMessages.length === 10 || (previousMessages.length > 10 && this.name === null)) {
       const user = this.participants.find(p => p.participantType !== "bot");
       invariant(user, "User not found")
       console.log("Generating Name...");

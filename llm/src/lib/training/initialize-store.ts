@@ -90,6 +90,10 @@ async function initalize() {
       location: file
     } as TrainingSource
   });
+  trainingSources.push({
+    type: 'url',
+    location: "https://www.sethwebsterphotography.com/blog/2018/6/15/10-tips-on-telling-a-story-with-your-photography",
+  });
   const store = await createTrainingIndex({ name, sources: trainingSources, storageType: (process.env.VECTOR_STORAGE || "local") as TrainingVectorStorageTypes });
   // console.log("Saving Vectorstore");
   // await store.save("vectorStore")
