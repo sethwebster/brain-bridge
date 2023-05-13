@@ -15,7 +15,7 @@ const ProfileButton = async () => {
     <>
       {loggedIn && (
         <li className="px-5 pt-2.5">
-          <Link href="/profile/chat/1"> Profile</Link>
+          <Link href="/profile"> Profile</Link>
         </li>
       )}
     </>

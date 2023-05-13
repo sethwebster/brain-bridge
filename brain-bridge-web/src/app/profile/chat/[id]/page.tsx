@@ -10,7 +10,8 @@ async function PageContent({ id }: { id: string }) {
   invariant(session, "Session must exist");
   invariant(session.user, "User must be logged in");
   const chats = await Data.fetchChats(session.user!.email!);
-  const selectedChat = await Data.fetchChat(parseInt(id));
+  const selectedChat = await Data.fetchChat(id) as Conversation;
+  console.log("SEL", selectedChat)
   return (
     <div className="flex flex-grow w-full h-full p-8">
       <input type="hidden" name="id" value={selectedChat.id} />

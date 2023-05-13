@@ -1,45 +1,50 @@
-const fakeData = {
-  senders: [
-    {
-      id: "bot",
-      name: "Seth Bot",
-      avatar: "https://www.sethwebsterphotography.com/static/media/seth.1a4b4b5a.jpg",
-    },
-    {
-      id: "sethwebster@gmail.com",
-      name: "Student Guy",
-    }
-  ],
-  chats: [
-    {
-      id: 1,
-      userId: "sethwebster@gmail.com",
-      name: "Chat 1",
-      participants: ["bot", "sethwebster@gmail.com"],
-      messages: [
-       
-      ]
-    }
-  ]
+import { User } from "next-auth";
+import path from "path"
+
+const makeApiUrl = (endpoint: string) => {
+  const base = process.env.NEXT_PUBLIC_CHAT_API_URL
+  console.log("The Base", base);
+  const url = new URL(endpoint, base);
+  console.log("The Url", url);
+  return new URL(endpoint, base).toString();
 }
 
 const Data = {
-  fetchChats: async (userId: string): Promise<ChatStub[]> => {
-    const chats = fakeData.chats.filter(chat => chat.userId === userId).map(chat => (
-      {
-        id: chat.id,
-        name: chat.name,
-      }
-    ));
-    return chats;
+  fetchChats: async (userId: string): Promise<ConversationStub[]> => {
+    const chatsResponse = await fetch(makeApiUrl(`chats/${userId}`));
+    if (chatsResponse.ok) {
+      return await chatsResponse.json();
+    }
+    throw new Error("Failed to fetch chats");
   },
-  fetchChat: async (id: number): Promise<Chat> => {
-    const chat = fakeData.chats.find(chat => chat.id === id);
-    return chat as Chat;
+  fetchChat: async (id: string): Promise<Conversation> => {
+    const chatResponse = await fetch(makeApiUrl(`chat/${id}`));
+    if (chatResponse.ok) {
+      return await chatResponse.json();
+    }
+    throw new Error("Failed to fetch chat " + chatResponse.statusText);
+  },
+  newChat: async (user: { email?: string | null | undefined; name?: string | null | undefined }) => {
+    const url = makeApiUrl(`chat/`);
+    const response = await fetch(url as string, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        "corpus": "local",
+        user
+      }),
+    })
+    if (!response.ok) {
+      throw new Error("Failed to create chat");
+    }
+    const responseMessage = await response.json();
+    return responseMessage;
   },
 
-  sendMessage: async (id: number, message: Message): Promise<Message> => {
-    const url = process.env.NEXT_PUBLIC_CHAT_API_URL?.replace(":id", id.toString());
+  sendMessage: async (id: string, message: Message): Promise<Message> => {
+    const url = makeApiUrl(`chat/${id}/message`);
     console.log("Chat API Url", url)
     const response = await fetch(url as string, {
       method: "PUT",
@@ -52,12 +57,7 @@ const Data = {
       throw new Error("Failed to send message");
     }
     const responseMessage = await response.json();
-    return {
-      text: responseMessage.message,
-      sender: "bot",
-      timestamp: new Date().toISOString(),
-      id: 0,
-    }
+    return responseMessage;
   }
 }
 export default Data;
