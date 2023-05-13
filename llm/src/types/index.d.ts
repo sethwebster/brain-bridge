@@ -25,4 +25,37 @@ interface Chat {
   messages: Message[];
 }
 
-type ChatStub = Pick<Chat, "id" | "name">;
+type ConversationStub = Pick<Chat, "id" | "name">;
+
+interface TrainingSource {
+  type: "file" | "url";
+  location: string;
+}
+
+type TrainingVectorStorageTypes = "local" | "redis";
+
+interface Participant {
+  id: string;
+  name: string;
+  email: string;
+  participantType: 'user' | 'bot';
+}
+
+interface Conversation {
+  id: string;
+  name: string | null = null;
+  messages: Message[];
+  participants: Participant[];
+  corpus: string;
+  store: HNSWLib | null = null;
+  isReady: boolean = false;
+  lastUpdate: Date
+
+  loadStore(): void;
+  join(participant: Participant): void;
+  leave(participant: Participant): void;
+
+  async add(message: string): Promise<{ message: string, id: number }>;
+  length(): number;
+}
+

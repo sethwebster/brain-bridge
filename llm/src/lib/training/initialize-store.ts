@@ -7,6 +7,8 @@ import { glob } from 'glob';
 import urls from '../../training-data/urls';
 import { RequestInfo, RequestInit } from "node-fetch";
 import axios from 'axios';
+import { createTrainingIndex } from './training';
+import { create } from 'domain';
 
 const textSplitter = new CharacterTextSplitter({
   chunkSize: 2000,
@@ -16,9 +18,9 @@ const textSplitter = new CharacterTextSplitter({
 const trainingDataFileTypes = ["md", "json", "txt"];
 async function loadTrainingFileNames(): Promise<string[]> {
   const tasks = trainingDataFileTypes.map((type) => `./src/training-data/**/*.${type}`)
-  .map((pattern) => {
-    return glob(pattern);
-  });
+    .map((pattern) => {
+      return glob(pattern);
+    });
   const files = (await Promise.all(tasks)).flat();
   console.log(`Training on ${files.length} files.`)
   return files;
@@ -37,7 +39,7 @@ async function loadTrainingFiles() {
 async function loadRemoteTrainingData(): Promise<string[]> {
   console.log(`Loading data from ${urls.length} urls`)
   const data = [];
-  for(let x=0;x<data.length;x++) {
+  for (let x = 0; x < data.length; x++) {
     const url = urls[x];
     console.log(`Loading data from ${url}`)
     const response = await axios.get(url);
@@ -80,9 +82,17 @@ async function loadData() {
 
 async function initalize() {
   console.log("Initializing Store...");
-  const store = await loadData();
-  console.log("Saving Vectorstore");
-  await store.save("vectorStore")
+  const name = "testing-store";
+  const localData = await loadTrainingFileNames();
+  const trainingSources = localData.map((file) => {
+    return {
+      type: 'file',
+      location: file
+    } as TrainingSource
+  });
+  const store = await createTrainingIndex({ name, sources: trainingSources, storageType: (process.env.VECTOR_STORAGE || "local") as TrainingVectorStorageTypes });
+  // console.log("Saving Vectorstore");
+  // await store.save("vectorStore")
   console.log("VectorStore saved!");
 }
 

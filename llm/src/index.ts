@@ -1,13 +1,14 @@
 import promptSync from 'prompt-sync';
 import generateResponse, { loadStore } from './lib/generate-response';
 import { HNSWLib } from 'langchain/vectorstores';
+import { getTrainingIndex } from './lib/training/training';
 
 const prompt = promptSync();
 
 const conversationHistory: string[] = [];
 
 async function loop(store: HNSWLib) {
-  
+
   const initial = await generateResponse({
     prompt: "Introduce yourself",
     history: conversationHistory,
@@ -28,6 +29,9 @@ async function loop(store: HNSWLib) {
   }
 }
 
-loadStore().then(store => {
+getTrainingIndex({ name: "local", storageType: 'redis' }).then(store => {
   loop(store);
 });
+
+// loadStore().then(store => {
+// });
