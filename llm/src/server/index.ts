@@ -5,7 +5,8 @@ import { HNSWLib } from 'langchain/vectorstores';
 import bodyParser from 'body-parser';
 import Conversation from '../lib/chat/conversation';
 import invariant from 'tiny-invariant';
-import { addUserConversation, getUserConversations, removeUserConversation } from '../lib/user/user';
+import { addUserConversation, getUserTrainingSets, getUserConversations, removeUserConversation, addUserTrainingSet, updateUserTrainingSet, deleteUserTrainingSet } from '../lib/user/user';
+import { generateId } from '../lib/utils/identity';
 
 const app = express();
 app.use(cors())
@@ -19,7 +20,7 @@ const conversations = new Map<string, Conversation>();
 let store: HNSWLib | null = null;
 
 async function getConversation(id: string) {
-  let conversation = conversations.get(id) 
+  let conversation = conversations.get(id)
 
   if (!conversation) {
     try {
@@ -51,8 +52,6 @@ app.get("/api/chat/:id", async (req, res) => {
   } catch {
     res.status(404).send("Conversation not found");
   }
-
-
 });
 
 
@@ -95,6 +94,41 @@ app.delete("/api/chats/:email/:id", async (req, res) => {
   removeUserConversation({ email }, { id, name: null });
   res.status(204).send();
 
+});
+
+app.get("/api/training-sets/:email", async (req, res) => {
+  const sets = await getUserTrainingSets({ email: req.params.email });
+  res.json(sets);
+})
+
+app.post("/api/training-sets/:email", async (req, res) => {
+  const { email } = req.params;
+  const { name, sources } = req.body;
+  const set = {
+    id: generateId(),
+    name,
+    sources
+  } as TrainingSet;
+  await addUserTrainingSet({ email }, set);
+  res.json(set);
+});
+
+app.put("/api/training-sets/:email/:id", async (req, res) => {
+  const { email, id } = req.params;
+  const { name, sources } = req.body;
+  const set = {
+    id,
+    name,
+    sources
+  } as TrainingSet;
+  await updateUserTrainingSet({ email }, set);
+  res.json(set);
+});
+
+app.delete("/api/training-sets/:email/:id", async (req, res) => {
+  const { email, id } = req.params;
+  await deleteUserTrainingSet({ email }, { id });
+  res.status(204).send();
 });
 
 const awaitReady = async (conversation: Conversation) => {

@@ -68,6 +68,65 @@ const Data = {
     }
     const responseMessage = await response.json();
     return responseMessage;
+  },
+
+  fetchTrainingSets: async (user: { email: string }): Promise<TrainingSet[]> => {
+    const url = makeApiUrl(`training-sets/${user.email}`);
+    const response = await fetch(url as string, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    if (!response.ok) {
+      throw new Error("Failed to fetch training sets");
+    }
+    const responseMessage = await response.json();
+    return responseMessage;
+  },
+  fetchTrainingSet: async (id: string, user: { email: string }): Promise<TrainingSet> => {
+    const url = makeApiUrl(`training-sets/${user.email}/${id}`);
+    const response = await fetch(url as string, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    if (!response.ok) {
+      throw new Error("Failed to fetch training sets");
+    }
+    const responseMessage = await response.json()
+    return responseMessage;
+  },
+  updateTrainingSet: async (id: string, user: { email: string }): Promise<TrainingSet> => {
+    const url = makeApiUrl(`training-sets/${user.email}/${id}`);
+    const response = await fetch(url as string, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    if (!response.ok) {
+      throw new Error("Failed to fetch training sets");
+    }
+    const responseMessage = await response.json()
+    return responseMessage;
+  },
+  deleteTrainingSet: async (id: string, user: { email: string }): Promise<void> => {
+    const url = makeApiUrl(`training-sets/${user.email}/${id}`);
+    const response = await fetch(url as string, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    if (!response.ok) {
+      throw new Error("Failed to fetch training sets");
+    }
+    const responseMessage = await response.json()
+    return responseMessage;
   }
+
+
 }
 export default Data;

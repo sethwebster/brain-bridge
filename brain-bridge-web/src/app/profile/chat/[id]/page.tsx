@@ -13,7 +13,7 @@ async function PageContent({ id }: { id: string }) {
   const selectedChat = await Data.fetchChat(id) as Conversation;
 
   return (
-    <div className="flex flex-grow w-full h-full p-4">
+    <div className="flex w-full h-full p-4">
       <input type="hidden" name="id" value={selectedChat.id} />
       <Chat selectedChat={selectedChat} chats={chats} session={session} />
     </div>

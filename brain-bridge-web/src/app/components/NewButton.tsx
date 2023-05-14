@@ -1,28 +1,12 @@
 "use client";
-import Data from "@/utils/data";
-import { useRouter } from "next/navigation";
-
-export function NewChat({
-  user,
-}: {
-  user: { email?: string | null | undefined; name?: string | null | undefined };
-}) {
-  const router = useRouter();
-  const handleNewChat = async () => {
-    const newChat = await Data.newChat(user);
-    router.push(`/profile/chat/${newChat.id}`);
-  };
+export function NewButton({ onClick }: { onClick?: () => void; }) {
   return (
-    <button
-      className="p-1 text-white bg-blue-400 rounded-md"
-      onClick={handleNewChat}
-    >
+    <button className="p-1 text-white bg-blue-400 rounded-md" onClick={onClick}>
       <svg
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"
         className="w-6 h-6"
         fill="white"
-        // stroke="lightblue"
       >
         <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
         <g

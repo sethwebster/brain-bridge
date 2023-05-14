@@ -1,0 +1,89 @@
+"use client";
+import Data from "@/utils/data";
+import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
+
+export function DeleteTrainingSet({
+  id,
+  user,
+}: {
+  id: string;
+  user: { email?: string | null | undefined; name?: string | null | undefined };
+}) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const handleDeleteTrainingSet = useCallback(async () => {
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
+    await Data.deleteTrainingSet(id, user as any);
+    router.refresh();
+  }, [confirming, id, router, user]);
+  const handleBlur = useCallback(() => {
+    setConfirming(false);
+  }, []);
+  return (
+    <button
+      className={`p-1 text-white bg-blue-400  rounded-md transition-all ${
+        confirming ? "bg-red-400" : "bg-green-400"
+      }}`}
+      onClick={handleDeleteTrainingSet}
+      onBlur={handleBlur}
+    >
+      {!confirming && (
+        <svg
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-4 h-4"
+          stroke="white"
+        >
+          <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+          <g
+            id="SVGRepo_tracerCarrier"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></g>
+          <g id="SVGRepo_iconCarrier">
+            <path
+              d="M6 7V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V7M6 7H5M6 7H8M18 7H19M18 7H16M10 11V16M14 11V16M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7M8 7H16"
+              stroke="#000000"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></path>{" "}
+          </g>
+        </svg>
+      )}
+      {confirming && (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-4 h-4 bg-red-200"
+        >
+          <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+          <g
+            id="SVGRepo_tracerCarrier"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></g>
+          <g id="SVGRepo_iconCarrier">
+            {" "}
+            <g id="Interface / Check">
+              {" "}
+              <path
+                id="Vector"
+                d="M6 12L10.2426 16.2426L18.727 7.75732"
+                stroke="#000000"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>{" "}
+            </g>{" "}
+          </g>
+        </svg>
+      )}
+    </button>
+  );
+}

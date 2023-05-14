@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import Link from "next/link";
-import { NewChat } from "./NewChat";
+import { NewChatButton } from "./NewChatButton";
 import { DeleteChat } from "./DeleteChat";
 
 export async function ChatListing({
@@ -16,7 +16,7 @@ export async function ChatListing({
     <div className="w-full h-full p-4 border-2 border-gray-700 border-dashed rounded-lg">
       <header className="flex justify-between pb-2 border-b border-gray-600 border-dashed">
         <h1 className="text-2xl">Chats</h1>
-        <NewChat user={session.user} />
+        <NewChatButton user={session.user} />
       </header>
       <ul>
         {conversations.map((conversation, index) => (

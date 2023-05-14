@@ -19,7 +19,7 @@ export function Messages({
     );
   }
   return (
-    <ul className="flex flex-col flex-grow px-4 markdown">
+    <ul className="flex flex-col flex-grow px-4 text-white markdown">
       {messages.map((message) => (
         <li
           className={`flex flex-row ${
@@ -28,7 +28,7 @@ export function Messages({
           key={message.id}
         >
           <div
-            className={`mt-2 p-2 rounded-lg ${
+            className={`mt-2 p-2 rounded-lg drop-shadow-md dark:drop-shadow-none ${
               message.sender === userId ? "bg-blue-500" : `bg-slate-500`
             }`}
           >

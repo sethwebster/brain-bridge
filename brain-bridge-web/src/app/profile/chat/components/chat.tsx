@@ -90,7 +90,7 @@ export default function Chat({
 
   if (!session.user?.email) throw new Error("No user email");
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full h-full bg-slate-100 dark:bg-slate-700">
       <div className="flex-grow w-full p-2 overflow-scroll rounded">
         <Messages
           messages={selectedChatMessages}
@@ -108,7 +108,7 @@ export default function Chat({
           type="text"
           name="message"
           placeholder="Type your message here"
-          className="sticky w-full p-2 mb-4 border rounded outline-none bg-slate-900 border-slate-600 bg-opacity-95"
+          className="sticky w-full h-auto p-2 mb-4 border rounded shadow-inner outline-none bg-slate-100 dark:bg-slate-900 border-slate-600 bg-opacity-95"
           value={currentMessageText}
           onKeyUp={handleKeyUp}
           onChange={handleTextChanged}
