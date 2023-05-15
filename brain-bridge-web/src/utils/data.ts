@@ -22,7 +22,7 @@ const Data = {
     }
     throw new Error("Failed to fetch chat " + chatResponse.statusText);
   },
-  newChat: async (user: { email?: string | null | undefined; name?: string | null | undefined }) => {
+  newChat: async (user: { email?: string | null | undefined; name?: string | null | undefined }, trainingSet: string) => {
     const url = makeApiUrl(`chat/`);
     const response = await fetch(url as string, {
       method: "POST",
@@ -30,7 +30,7 @@ const Data = {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        "corpus": "local",
+        "corpus": trainingSet,
         user
       }),
     })
@@ -93,18 +93,34 @@ const Data = {
       },
     })
     if (!response.ok) {
+      throw new Error("Failed to fetch training set");
+    }
+    const responseMessage = await response.json()
+    return responseMessage;
+  },
+  createTrainingSet: async (trainingSet: TrainingSet, user: { email: string }): Promise<TrainingSet> => {
+    const url = makeApiUrl(`training-sets/${user.email}/${trainingSet.id}/train`);
+    const response = await fetch(url as string, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(trainingSet)
+    })
+    if (!response.ok) {
       throw new Error("Failed to fetch training sets");
     }
     const responseMessage = await response.json()
     return responseMessage;
   },
-  updateTrainingSet: async (id: string, user: { email: string }): Promise<TrainingSet> => {
-    const url = makeApiUrl(`training-sets/${user.email}/${id}`);
+  updateTrainingSet: async (trainingSet: TrainingSet, user: { email: string }): Promise<TrainingSet> => {
+    const url = makeApiUrl(`training-sets/${user.email}/${trainingSet.id}`);
     const response = await fetch(url as string, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify(trainingSet)
     })
     if (!response.ok) {
       throw new Error("Failed to fetch training sets");
@@ -125,7 +141,22 @@ const Data = {
     }
     const responseMessage = await response.json()
     return responseMessage;
-  }
+  },
+  trainTrainingSet: async (trainingSet: TrainingSet, user: { email: string }): Promise<TrainingSet> => {
+    const url = makeApiUrl(`training-sets/${user.email}/${trainingSet.id}`);
+    const response = await fetch(url as string, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(trainingSet)
+    })
+    if (!response.ok) {
+      throw new Error("Failed to fetch training sets");
+    }
+    const responseMessage = await response.json()
+    return responseMessage;
+  },
 
 
 }
