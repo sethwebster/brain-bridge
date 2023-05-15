@@ -6,4 +6,5 @@ node_modules
 /*/training-data/*.txt
 !training-data/urls.ts
 vectorStore
+vectors
 .env
