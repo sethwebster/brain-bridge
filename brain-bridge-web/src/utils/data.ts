@@ -99,7 +99,7 @@ const Data = {
     return responseMessage;
   },
   createTrainingSet: async (trainingSet: TrainingSet, user: { email: string }): Promise<TrainingSet> => {
-    const url = makeApiUrl(`training-sets/${user.email}/${trainingSet.id}`);
+    const url = makeApiUrl(`training-sets/${user.email}`);
     const response = await fetch(url as string, {
       method: "POST",
       headers: {
@@ -145,7 +145,7 @@ const Data = {
   trainTrainingSet: async (trainingSet: TrainingSet, user: { email: string }): Promise<TrainingSet> => {
     const url = makeApiUrl(`training-sets/${user.email}/${trainingSet.id}/train`);
     const response = await fetch(url as string, {
-      method: "PUT",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },

@@ -98,7 +98,7 @@ export default function NewTrainingSetForm({
   const handleTrain = useCallback(async () => {
     setIsTraining(true);
     let newSet: TrainingSet;
-    newSet = await Data.createTrainingSet(
+    newSet = await Data.trainTrainingSet(
       trainingSetData,
       user as { email: string }
     );
@@ -169,13 +169,15 @@ export default function NewTrainingSetForm({
         >
           Save
         </button>
-        <button
-          onClick={handleTrain}
-          disabled={isTraining}
-          className="w-full p-2 mt-2 text-white bg-green-400 border rounded-md disabled:bg-slate-400 dark:bg-slate-700 dark:border-slate-600"
-        >
-          Train
-        </button>
+        {trainingSetData.id !== "<new>" && (
+          <button
+            onClick={handleTrain}
+            disabled={isTraining}
+            className="w-full p-2 mt-2 text-white bg-green-400 border rounded-md disabled:bg-slate-400 dark:bg-slate-700 dark:border-slate-600"
+          >
+            Train
+          </button>
+        )}
       </div>
     </div>
   );
