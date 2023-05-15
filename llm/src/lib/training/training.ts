@@ -43,50 +43,22 @@ async function getSourceText(source: TrainingSource): Promise<string> {
   }
 }
 
-export async function getTrainingIndex({ name, storageType }: { name: string, storageType: TrainingVectorStorageTypes }): Promise<HNSWLib> {
-  invariant(name != "local", "Local cannot be used as a name.")
-  switch (storageType) {
-    case "local":
-      const location = getLocalStoragePath(name);
-      const localIndex = HNSWLib.load(location, new OpenAIEmbeddings());
-      return localIndex;
-
-    case "redis":
-      console.log('getTrainingIndex', name)
-      const client = redis.createClient({ url: process.env.REDIS_URL });
-      client.commandOptions({ returnBuffers: true })
-      await client.connect();
-      const keys = getRedisKeys(name);
-      const vectorsData = await client.get(keys.vectors);
-      console.log(`(vectors) Got ${vectorsData?.length} bytes for ${name}`)
-      const documentsData = await client.get(keys.documents);
-      console.log(`(docStore) Got ${documentsData?.length} bytes for ${name}`)
-      invariant(vectorsData, `No vectors found for ${name}`);
-      invariant(documentsData, `No documents found for ${name}`);
-      const tempFilePath = getTempFilePath(name);
-      console.log("Saving index to files...", tempFilePath)
-      if (!fs.existsSync(tempFilePath)) fs.mkdirSync(tempFilePath);
-      const indexPath = path.join(tempFilePath, `hnswlib.index`);
-      const docStorePath = path.join(tempFilePath, `docstore.json`);
-      const argsFilePath = path.join(tempFilePath, `args.json`);
-      fs.writeFileSync(indexPath, vectorsData, "binary")
-      fs.writeFileSync(docStorePath, documentsData, "binary");
-      fs.writeFileSync(argsFilePath, `{"space":"cosine","numDimensions":1536}`);
-      const index = await HNSWLib.load(tempFilePath, new OpenAIEmbeddings())
-      return index;
-    default:
-      throw new Error(`Unsupported storage type: ${storageType}`);
-  }
-}
-
-export async function createTrainingIndex({ name, sources, storageType }: { name: string, sources: TrainingSource[], storageType: TrainingVectorStorageTypes }) {
-  const allContent = await Promise.all(sources.map((source) => getSourceText(source)));
+export async function createTrainingIndex({ name, trainingSet, storageType }: { name: string, trainingSet: TrainingSet, storageType: TrainingVectorStorageTypes }): Promise<TrainingIndex> {
+  const allContent = await Promise.all(trainingSet.sources.map((source) => getSourceText(source)));
   const splitContent = await splitFileData(allContent);
   const store = await vectorize(splitContent);
   switch (storageType) {
     case "local":
       const location = getLocalStoragePath(name);
       await store.save(location)
+      const trainingIndex = {
+        store,
+        corpus: trainingSet.id,
+        // @ts-ignore
+        storageKeys: keys,
+        trainingSet,
+      }
+      return trainingIndex;
       break;
     case "redis":
       const tempFilePath = getTempFilePath(name);
@@ -104,18 +76,82 @@ export async function createTrainingIndex({ name, sources, storageType }: { name
         const docStorePath = path.join(tempFilePath, `docstore.json`);
         let indexData = await fs.promises.readFile(indexPath);
         let docStoreData = await fs.promises.readFile(docStorePath);
-        await Promise.all([
-          console.log(`(Vectors) Sending ${indexData.byteLength} bytes of index data to redis...`),
-          client.set(keys.vectors, indexData),
-          console.log(`(DocStore) Sending ${docStoreData.byteLength} bytes of index data to redis...`),
 
-          client.set(keys.documents, docStoreData)
-        ]);
+        const indexPayload = JSON.stringify({
+          index: indexData,
+        })
+
+        const docStorePayload = JSON.stringify({
+          documents: docStoreData,
+        })
+
+        console.log(`(Vectors) Sending ${indexPayload.length} bytes of index data to redis...`);
+        await client.set(keys.vectors, indexPayload);
+        console.log(`(DocStore) Sending ${docStorePayload.length} bytes of index data to redis...`);
+        await client.set(keys.documents, docStorePayload);
+        const trainingIndex = {
+          store,
+          corpus: trainingSet.id,
+          storageKeys: keys,
+          trainingSet,
+        }
+        await client.set(keys.metadata, JSON.stringify(trainingIndex))
+        return trainingIndex;
       } finally {
         await client.disconnect();
       }
   }
+}
 
+export async function getTrainingIndex({ name, storageType }: { name: string, storageType: TrainingVectorStorageTypes }): Promise<TrainingIndex> {
+  console.log('getTrainingIndex', name, storageType)
+  //TODO: Eventually remove this
+  invariant(name != "local", "Local cannot be used as a name.")
+  switch (storageType) {
+    case "local":
+      const location = getLocalStoragePath(name);
+      const localIndex = HNSWLib.load(location, new OpenAIEmbeddings());
+      // TODO - fix this - we want to allow non-redis storage
+      // @ts-ignore
+      return localIndex;
+
+    case "redis":
+      console.log('REDIS', name)
+      const client = redis.createClient({ url: process.env.REDIS_URL });
+      console.log("Created Redis client")
+      client.commandOptions({ returnBuffers: true })
+      console.log("Connecting to redis")
+      await client.connect();
+      console.log("Connected to redis")
+      const keys = getRedisKeys(name);
+      const metadataStr = await client.get(keys.metadata);
+      invariant(metadataStr, `No metadata found for ${name}`);
+      const metadata = JSON.parse(metadataStr.toString());
+      console.log("Fetching vectors", metadata)
+      const vectorsData = await client.get(metadata.storageKeys.vectors);
+      console.log(`(vectors) Got ${vectorsData?.length} bytes for ${name}`)
+      const documentsData = await client.get(metadata.storageKeys.documents);
+      console.log(`(docStore) Got ${documentsData?.length} bytes for ${name}`)
+      invariant(vectorsData, `No vectors found for ${name}`);
+      invariant(documentsData, `No documents found for ${name}`);
+      const tempFilePath = getTempFilePath(name);
+      console.log("Saving index to files...", tempFilePath)
+      const { index: { data: indexData } } = JSON.parse(vectorsData.toString());
+      const { documents: { data: docsData } } = JSON.parse(documentsData.toString());
+      console.log(indexData, docsData)
+      if (!fs.existsSync(tempFilePath)) fs.mkdirSync(tempFilePath);
+      const indexPath = path.join(tempFilePath, `hnswlib.index`);
+      const docStorePath = path.join(tempFilePath, `docstore.json`);
+      const argsFilePath = path.join(tempFilePath, `args.json`);
+      fs.writeFileSync(indexPath, Buffer.from(indexData));
+      fs.writeFileSync(docStorePath, Buffer.from(docsData));
+      fs.writeFileSync(argsFilePath, `{"space":"cosine","numDimensions":1536}`);
+      const index = await HNSWLib.load(tempFilePath, new OpenAIEmbeddings())
+      metadata.store = index;
+      return metadata;
+    default:
+      throw new Error(`Unsupported storage type: ${storageType}`);
+  }
 }
 
 export async function updateTrainingIndex({ }: { name: string, sources: TrainingSource[], storageType: TrainingVectorStorageTypes }) {
@@ -137,10 +173,12 @@ function getRedisKeys(name: string) {
   invariant(process.env.REDIS_NAMESPACE, "REDIS_NAMESPACE must be set to save redis training data")
   const vectors = path.join(process.env.REDIS_NAMESPACE, name, "vectors");
   const documents = path.join(process.env.REDIS_NAMESPACE, name, "documents");
+  const metadata = path.join(process.env.REDIS_NAMESPACE, name, "metadata");
   console.log("REDIS KEYS", { vectors, documents })
   return {
     vectors,
-    documents
+    documents,
+    metadata
   }
 }
 

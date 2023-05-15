@@ -2,7 +2,7 @@ import generateResponse from "../generate-response";
 import { HNSWLib } from 'langchain/vectorstores';
 import { getTrainingIndex } from "../training/training";
 import redisClient from "../redis/client";
-import { updateUserConversation } from "../user/user";
+import { getUserTrainingSet, updateUserConversation } from "../user/user";
 import invariant from "tiny-invariant";
 
 class Conversation implements Conversation {
@@ -11,9 +11,10 @@ class Conversation implements Conversation {
   messages: Message[];
   participants: Participant[];
   corpus: string;
-  store: HNSWLib | null = null;
+  store: TrainingIndex | null = null;
   isReady: boolean = false;
   lastUpdate = new Date("1970-01-01")
+
   constructor(id: string, corpus: string) {
     this.id = id;
     this.corpus = corpus;
@@ -24,8 +25,9 @@ class Conversation implements Conversation {
   }
 
   private async loadStore() {
-    console.log("CORPUS", this.corpus)
+    console.log(`Loading index for conversation id ${this.id}, corpus ${this.corpus}`)
     this.store = await getTrainingIndex({ name: this.corpus, storageType: process.env.VECTOR_STORAGE as TrainingVectorStorageTypes })
+    console.log(`Successfully loaded index store for conversation id ${this.id}, corpus ${this.corpus}`)
     this.isReady = true;
     this.updateLastUpdated();
   }
@@ -45,6 +47,11 @@ class Conversation implements Conversation {
     this.updateLastUpdated();
   }
 
+  /**
+   * Adds a message to the conversation
+   * @param message the message to add
+   * @returns the newly added message
+   */
   async add(message: string): Promise<Message> {
     const sender = this.participants.find(p => p.participantType !== "bot");
     this.messages.push(
@@ -55,10 +62,13 @@ class Conversation implements Conversation {
         timestamp: new Date().toISOString()
       }
     );
+    invariant(this.store, "Store not loaded")
+    invariant(this.store?.store, "Store not loaded")
     const response = await generateResponse({
+      basePrompt: this.store?.trainingSet.prompt,
       prompt: message,
       history: this.messages.map(m => `${m.sender}:${m.text}`),
-      store: (this.store as HNSWLib)
+      store: (this.store as TrainingIndex).store
     });
     const previousMessages = this.messages.filter(m => m.sender !== "bot");
     if (previousMessages.length === 10 || (previousMessages.length > 10 && this.name === null)) {
@@ -67,13 +77,14 @@ class Conversation implements Conversation {
       console.log("Generating Name...");
       const messages = this.messages.filter(m => m.sender === user?.name).map(m => `${m.sender}:${m.text}`).slice(0, 50);
       const name = await generateResponse({
+        basePrompt: this.store.trainingSet.prompt,
         prompt: `What is a 1 line, 10-15 character TITLE of this conversation without quotes. 
           Leave out names and other identifying information.
           ignore pleaseantries, and anything without substance. ignore your own thoughts and focus on what the user said.
           Focus on the content of the conversation from the human that is outside the getting to know you parts, and instead on substance, if present.
         `,
         history: messages,
-        store: (this.store as HNSWLib)
+        store: this.store.store
       });
       this.name = name.replace('"', '').replace('"', '');
       await updateUserConversation(user, { id: this.id, name: this.name })

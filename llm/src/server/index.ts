@@ -13,6 +13,10 @@ import { createTrainingIndex } from '../lib/training/training';
 const app = express();
 app.use(cors())
 app.use(bodyParser.json());
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}]: ${req.method} ${req.url}`)
+  next();
+})
 app.get('/', (req, res) => {
   res.send('This api is not intended to be called.');
 });
@@ -74,6 +78,8 @@ app.get("/api/chat/:id", async (req, res) => {
 app.post("/api/chat", async (req, res) => {
   const { corpus, user } = req.body;
   console.log("creating conversation", corpus, user)
+  const trainingSet = await getUserTrainingSet(corpus, { email: user.email });
+  invariant(trainingSet, "Training set not found");
   const id = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
   const conversation = new Conversation(id, corpus);
   conversation.join({ ...user, participantType: 'user' });
@@ -98,6 +104,7 @@ app.put("/api/chat/:id/message", async (req, res) => {
   }
 });
 
+// Deletes a conversation
 app.delete("/api/chats/:email/:id", async (req, res) => {
   const { id, email } = req.params;
   req.headers['x-api-key']
@@ -154,7 +161,7 @@ app.post("/api/training-sets/:email/:id/train", async (req, res) => {
   console.log("Creating training set", id)
   await createTrainingIndex({
     name: trainingSet?.id,
-    sources: trainingSet?.sources,
+    trainingSet: trainingSet,
     storageType: 'redis',
   })
   res.json(trainingSet);

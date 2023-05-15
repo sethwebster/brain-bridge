@@ -73,3 +73,14 @@ interface Conversation {
   length(): number;
 }
 
+interface TrainingIndex {
+  store: HNSWLib;
+  corpus: string;
+  trainingSet: TrainingSet;
+  storageKeys: {
+    metadata: string;
+    vectors: string;
+    documents: string;
+  }
+}
+
