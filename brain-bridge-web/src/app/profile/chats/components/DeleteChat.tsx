@@ -17,7 +17,7 @@ export function DeleteChat({
       setConfirming(true);
       return;
     }
-    const newChat = await Data.deleteChat(id, user as any);
+    await Data.deleteChat(id, user as any);
     router.refresh();
   }, [confirming, id, router, user]);
   const handleBlur = useCallback(() => {
