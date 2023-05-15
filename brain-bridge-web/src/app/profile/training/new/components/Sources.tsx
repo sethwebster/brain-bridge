@@ -56,6 +56,15 @@ export default function Sources({
     setNewUrlText("");
   }, []);
 
+  const handleDelete = useCallback(
+    (index: number) => {
+      const newSources = [...sources];
+      newSources.splice(index, 1);
+      onSourcesChanged(newSources);
+    },
+    [onSourcesChanged, sources]
+  );
+
   const isNewUrlValid = useMemo(() => {
     return isValidURL(newUrlText);
   }, [newUrlText]);
@@ -89,31 +98,36 @@ export default function Sources({
           {sources.map((source, index) => (
             <li
               key={index}
-              className={`${source.pending ? "text-gray-500" : ""}`}
+              className={`flex flex-row justify-between ${
+                source.pending ? "text-gray-500" : ""
+              }`}
             >
-              {source.type === "url" && (
-                <>
-                  <div className="w-4 h-4">
-                    <UrlIcon />
-                  </div>
-                  <a
-                    href={source.location}
-                    className="text-blue-500"
-                    target="_blank"
-                    referrerPolicy="no-referrer"
-                  >
-                    {source.location}
-                  </a>
-                </>
-              )}
-              {source.type === "file" && (
-                <a href={source.location}>{source.location}</a>
-              )}
-              {source.pending && (
-                <>
-                  <small> (pending)</small>
-                </>
-              )}
+              <div>
+                {source.type === "url" && (
+                  <>
+                    <div className="w-4 h-4">
+                      <UrlIcon />
+                    </div>
+                    <a
+                      href={source.location}
+                      className="text-blue-500"
+                      target="_blank"
+                      referrerPolicy="no-referrer"
+                    >
+                      {source.location}
+                    </a>
+                  </>
+                )}
+                {source.type === "file" && (
+                  <a href={source.location}>{source.location}</a>
+                )}
+                {source.pending && (
+                  <>
+                    <small> (pending)</small>
+                  </>
+                )}
+              </div>
+              <button onClick={() => handleDelete(index)}>delete</button>
             </li>
           ))}
         </ul>
