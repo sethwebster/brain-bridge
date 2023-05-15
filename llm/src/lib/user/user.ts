@@ -36,7 +36,7 @@ export async function getUserTrainingSets(user: Pick<Participant, "email">) {
 
 export async function getUserTrainingSet(id: string, user: Pick<Participant, "email">) {
   const data = await redisClient.get(`training-sets:${user.email}:${id}`);
-  if (!data) return [];
+  if (!data) return null;
   const set = JSON.parse(data) as TrainingSet;
   return set;
 }
@@ -44,10 +44,13 @@ export async function getUserTrainingSet(id: string, user: Pick<Participant, "em
 export async function addUserTrainingSet(user: Pick<Participant, "email">, set: TrainingSet) {
   const sets = await getUserTrainingSets(user);
   const updated = { ...set, id: generateId(16), dateCreated: new Date(), version: 0 };
-  sets.push(updated);
+  const stub = { ...updated } as TrainingSetStub & { sources?: TrainingSource[] };
+  delete stub.sources;
+  sets.push(stub);
   redisClient.set(`training-sets:${user.email}`, JSON.stringify(sets));
-  redisClient.set(`training-sets:${user.email}:${set.id}`, JSON.stringify(updated));
-  return sets;
+  redisClient.set(`training-sets:${user.email}:${updated.id}`, JSON.stringify(updated));
+  console.log("added training set", updated)
+  return updated;
 }
 
 export async function updateUserTrainingSet(user: Pick<Participant, "email">, set: TrainingSet) {

@@ -5,8 +5,10 @@ import { HNSWLib } from 'langchain/vectorstores';
 import bodyParser from 'body-parser';
 import Conversation from '../lib/chat/conversation';
 import invariant from 'tiny-invariant';
-import { addUserConversation, getUserTrainingSets, getUserConversations, removeUserConversation, addUserTrainingSet, updateUserTrainingSet, deleteUserTrainingSet } from '../lib/user/user';
+import { addUserConversation, getUserTrainingSets, getUserConversations, removeUserConversation, addUserTrainingSet, updateUserTrainingSet, deleteUserTrainingSet, getUserTrainingSet } from '../lib/user/user';
 import { generateId } from '../lib/utils/identity';
+import { OpenAIChat } from 'langchain/llms';
+import { createTrainingIndex } from '../lib/training/training';
 
 const app = express();
 app.use(cors())
@@ -36,6 +38,19 @@ async function getConversation(id: string) {
   return conversation;
 }
 
+app.post("/api/llm/question", async (req, res) => {
+  const { question } = req.body;
+  invariant(question, "Question is required");
+  const model = new OpenAIChat({
+    temperature: 0.2,
+    openAIApiKey: process.env.OPENAI_API_KEY,
+    modelName: 'gpt-3.5-turbo'
+  });
+  model.call(question).then((result) => {
+    res.json(result);
+  });
+});
+
 app.get("/api/chats/:email", async (req, res) => {
   const { email } = req.params;
   const conversations = await getUserConversations({ email }) || []
@@ -58,6 +73,7 @@ app.get("/api/chat/:id", async (req, res) => {
 // Creates a new conversation
 app.post("/api/chat", async (req, res) => {
   const { corpus, user } = req.body;
+  console.log("creating conversation", corpus, user)
   const id = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
   const conversation = new Conversation(id, corpus);
   conversation.join({ ...user, participantType: 'user' });
@@ -103,32 +119,45 @@ app.get("/api/training-sets/:email", async (req, res) => {
 
 app.post("/api/training-sets/:email", async (req, res) => {
   const { email } = req.params;
-  const { name, sources } = req.body;
   const set = {
-    id: generateId(),
-    name,
-    sources
+    ...req.body,
   } as TrainingSet;
-  await addUserTrainingSet({ email }, set);
-  res.json(set);
+  res.json(await addUserTrainingSet({ email }, set));
 });
 
 app.put("/api/training-sets/:email/:id", async (req, res) => {
   const { email, id } = req.params;
-  const { name, sources } = req.body;
-  const set = {
-    id,
-    name,
-    sources
-  } as TrainingSet;
+  const set = req.body as TrainingSet;
+  set.sources = set.sources.map((source) => ({ ...source, pending: false }))
+
   await updateUserTrainingSet({ email }, set);
   res.json(set);
+});
+
+app.get("/api/training-sets/:email/:id", async (req, res) => {
+  const { email, id } = req.params;
+  const resp = await getUserTrainingSet(id, { email })
+  res.json(resp);
 });
 
 app.delete("/api/training-sets/:email/:id", async (req, res) => {
   const { email, id } = req.params;
   await deleteUserTrainingSet({ email }, { id });
   res.status(204).send();
+});
+
+app.post("/api/training-sets/:email/:id/train", async (req, res) => {
+  const { email, id } = req.params;
+  const trainingSet = await getUserTrainingSet(id, { email });
+  invariant(trainingSet, "Training set not found");
+  invariant(trainingSet.id, "Training set id is required")
+  console.log("Creating training set", id)
+  await createTrainingIndex({
+    name: trainingSet?.id,
+    sources: trainingSet?.sources,
+    storageType: 'redis',
+  })
+  res.json(trainingSet);
 });
 
 const awaitReady = async (conversation: Conversation) => {

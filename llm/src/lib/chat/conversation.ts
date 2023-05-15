@@ -24,6 +24,7 @@ class Conversation implements Conversation {
   }
 
   private async loadStore() {
+    console.log("CORPUS", this.corpus)
     this.store = await getTrainingIndex({ name: this.corpus, storageType: process.env.VECTOR_STORAGE as TrainingVectorStorageTypes })
     this.isReady = true;
     this.updateLastUpdated();

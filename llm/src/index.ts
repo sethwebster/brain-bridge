@@ -29,9 +29,9 @@ async function loop(store: HNSWLib) {
   }
 }
 
-getTrainingIndex({ name: "local", storageType: 'redis' }).then(store => {
-  loop(store);
-});
+// getTrainingIndex({ name: "local", storageType: 'redis' }).then(store => {
+//   loop(store);
+// });
 
 // loadStore().then(store => {
 // });

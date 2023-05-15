@@ -18,7 +18,6 @@ interface TrainingSet {
   dateCreated: Date;
   dateUpdated?: Date;
   prompt: string;
-  //TODO: add prompt to training set
 }
 
 type TrainingSetStub = Pick<TrainingSet, "id" | "name" | "version" | "dateCreated" | "dateUpdated">;
@@ -44,6 +43,7 @@ interface TrainingSource {
   type: "file" | "url";
   location: string;
   content?: string;
+  pending?: boolean;
 }
 
 type TrainingVectorStorageTypes = "local" | "redis";

@@ -24,17 +24,17 @@ async function loadFile(file: string): Promise<string> {
 async function loadUrl(url: string) {
   const response = await axios.get(url);
   if (response.status !== 200) throw new Error(`Failed to load url: ${url}`);
-  const html= response.data;
+  const html = response.data;
   const doc = new jsdom.JSDOM(html).window.document;
   const htmlDoc = `<html><head><title>${doc.title}</title></head><body>${doc.body.innerHTML}</body></html>`
   const markdown = new TurndownService().turndown(htmlDoc)
-  console.log("MD", markdown)
   return markdown;
 }
 
 async function getSourceText(source: TrainingSource): Promise<string> {
   switch (source.type) {
     case "file":
+      if (source!.content!.length > 0) return source.content!;
       return await loadFile(source.location);
     case "url":
       return await loadUrl(source.location);
@@ -44,6 +44,7 @@ async function getSourceText(source: TrainingSource): Promise<string> {
 }
 
 export async function getTrainingIndex({ name, storageType }: { name: string, storageType: TrainingVectorStorageTypes }): Promise<HNSWLib> {
+  invariant(name != "local", "Local cannot be used as a name.")
   switch (storageType) {
     case "local":
       const location = getLocalStoragePath(name);
@@ -51,12 +52,15 @@ export async function getTrainingIndex({ name, storageType }: { name: string, st
       return localIndex;
 
     case "redis":
+      console.log('getTrainingIndex', name)
       const client = redis.createClient({ url: process.env.REDIS_URL });
       client.commandOptions({ returnBuffers: true })
       await client.connect();
       const keys = getRedisKeys(name);
       const vectorsData = await client.get(keys.vectors);
+      console.log(`(vectors) Got ${vectorsData?.length} bytes for ${name}`)
       const documentsData = await client.get(keys.documents);
+      console.log(`(docStore) Got ${documentsData?.length} bytes for ${name}`)
       invariant(vectorsData, `No vectors found for ${name}`);
       invariant(documentsData, `No documents found for ${name}`);
       const tempFilePath = getTempFilePath(name);
@@ -128,10 +132,12 @@ function getTempFilePath(name: string) {
 }
 
 function getRedisKeys(name: string) {
+  invariant(name !== "local", "Cannot use 'local' as a name for a training index")
   invariant(process.env.TEMP_FILE_PATH, "TEMP_FILE_PATH must be set to save redis training data")
   invariant(process.env.REDIS_NAMESPACE, "REDIS_NAMESPACE must be set to save redis training data")
   const vectors = path.join(process.env.REDIS_NAMESPACE, name, "vectors");
   const documents = path.join(process.env.REDIS_NAMESPACE, name, "documents");
+  console.log("REDIS KEYS", { vectors, documents })
   return {
     vectors,
     documents
