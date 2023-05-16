@@ -9,6 +9,7 @@ import { addUserConversation, getUserTrainingSets, getUserConversations, removeU
 import { generateId } from '../lib/utils/identity';
 import { OpenAIChat } from 'langchain/llms';
 import { createTrainingIndex } from '../lib/training/training';
+import Mutex from './mutex';
 
 const app = express();
 app.use(cors())
@@ -25,9 +26,25 @@ const conversations = new Map<string, Conversation>();
 
 let store: HNSWLib | null = null;
 
-async function getConversation(id: string) {
-  let conversation = conversations.get(id)
+async function pruneConversations() {
+  console.log('pruning conversations')
+  conversations.forEach((conversation, id) => {
+    const oneHour = 1000 * 60 * 60;
+    const tenMinutes = 1000 * 60 * 10;
+    if (conversation.lastUpdate < new Date(Date.now() - tenMinutes)) {
+      console.log('pruning conversation', id)
+      conversations.delete(id);
+    }
+  });
+  setTimeout(pruneConversations, 1000 * 60);
+}
+pruneConversations();
 
+const mutex = new Mutex();
+
+async function getConversation(id: string) {
+  await mutex.lock()
+  let conversation = conversations.get(id)
   if (!conversation) {
     try {
       conversation = await Conversation.fromRedis(id);
@@ -39,6 +56,7 @@ async function getConversation(id: string) {
   } else {
     console.log('conversation loaded from memory', id)
   }
+  mutex.unlock();
   return conversation;
 }
 
@@ -168,9 +186,14 @@ app.post("/api/training-sets/:email/:id/train", async (req, res) => {
 });
 
 const awaitReady = async (conversation: Conversation) => {
+  return;
   if (conversation.isReady) return;
+  const start = new Date();
   return new Promise((resolve) => {
     let interval = setInterval(() => {
+      if (new Date().getTime() - start.getTime() > 30000) {
+        resolve(conversation);
+      }
       console.log('checking if conversation is ready', conversation.isReady);
       if (conversation.isReady) {
         clearInterval(interval);

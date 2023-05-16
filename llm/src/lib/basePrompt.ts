@@ -55,6 +55,6 @@ ConversationHistory: {history}
 MemoryContext: {context}
 ---
 Human: {prompt}
-Seth Webster:`;
+`;
 
 export default basePrompt;

@@ -16,12 +16,12 @@ class Conversation implements Conversation {
   lastUpdate = new Date("1970-01-01")
 
   constructor(id: string, corpus: string) {
+    console.log("Creating new conversation", id, corpus)
     this.id = id;
     this.corpus = corpus;
     this.messages = [];
     this.participants = [];
     this.loadStore();
-    this.lastUpdate = new Date();
   }
 
   private async loadStore() {
@@ -124,7 +124,7 @@ class Conversation implements Conversation {
     conversation.participants = data.participants;
     conversation.corpus = data.corpus;
     conversation.id = data.id;
-    conversation.loadStore();
+    // conversation.loadStore();
     return conversation;
   }
 }

@@ -127,7 +127,7 @@ export async function getTrainingIndex({ name, storageType }: { name: string, st
       const metadataStr = await client.get(keys.metadata);
       invariant(metadataStr, `No metadata found for ${name}`);
       const metadata = JSON.parse(metadataStr.toString());
-      console.log("Fetching vectors", metadata)
+      // console.log("Fetching vectors", metadata)
       const vectorsData = await client.get(metadata.storageKeys.vectors);
       console.log(`(vectors) Got ${vectorsData?.length} bytes for ${name}`)
       const documentsData = await client.get(metadata.storageKeys.documents);
@@ -138,7 +138,6 @@ export async function getTrainingIndex({ name, storageType }: { name: string, st
       console.log("Saving index to files...", tempFilePath)
       const { index: { data: indexData } } = JSON.parse(vectorsData.toString());
       const { documents: { data: docsData } } = JSON.parse(documentsData.toString());
-      console.log(indexData, docsData)
       if (!fs.existsSync(tempFilePath)) fs.mkdirSync(tempFilePath);
       const indexPath = path.join(tempFilePath, `hnswlib.index`);
       const docStorePath = path.join(tempFilePath, `docstore.json`);
