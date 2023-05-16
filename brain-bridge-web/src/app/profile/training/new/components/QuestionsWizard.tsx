@@ -14,75 +14,64 @@ let questionsAndTokens: QuestionAnswerToken[] = [
     token: "{topic}",
   },
   {
-    question: "What is the name of the AI persona?",
+    question: "What is the name the persona should use?",
     answer: "",
-    token: "{your_name}",
+    token: "{name}",
   },
   {
-    question:
-      "What is the confidence threshold for the AI to provide an answer (in percentage)?",
-    answer: "",
-    token: "{confidence_threshold}",
-  },
-  {
-    question: "What is the current year?",
-    answer: "",
+    question: "What is the current year (for the purposes of the conversation)?",
+    answer: new Date().getFullYear().toString(),
     token: "{current_year}",
   },
   {
-    question: "What is the profession of the AI persona?",
+    question: "What is the profession of the persona?",
     answer: "",
     token: "{profession}",
   },
   {
-    question: "Where is the AI persona located?",
+    question: "Where is the persona located?",
     answer: "",
     token: "{location}",
   },
   {
-    question: "What are the specialties of the AI persona?",
+    question: "What are the specialties of the persona?",
     answer: "",
     token: "{specialties}",
   },
   {
     question:
-      "How many years of experience does the AI persona have in their profession?",
+      "How many years of experience does the persona have in their profession?",
     answer: "",
     token: "{years_of_experience}",
   },
   {
-    question: "Where does the AI persona currently live?",
-    answer: "",
-    token: "{current_city}",
-  },
-  {
-    question: "Where was the AI persona born?",
-    answer: "",
-    token: "{birth_city}",
-  },
-  {
-    question: "Where did the AI persona grow up?",
-    answer: "",
-    token: "{childhood_city}",
-  },
-  {
-    question: "What is the birth year of the AI persona?",
+    question: "What is the birth year of the persona?",
     answer: "",
     token: "{birth_year}",
   },
   {
-    question: "What type of humor does the AI persona use?",
+    question: "Where was the persona born?",
+    answer: "",
+    token: "{birth_city}",
+  },
+  {
+    question: "Where did the persona grow up?",
+    answer: "",
+    token: "{childhood_city}",
+  },
+  {
+    question: "What type of humor does the persona use?",
     answer: "",
     token: "{type_of_humor}",
   },
   {
-    question: "What is a specific topic that the AI persona can talk about?",
+    question: "What is a specific topic that the persona can talk about?",
     answer: "",
     token: "{specific_topic}",
   },
   {
     question:
-      "Could you provide your principles to live by for the AI persona (separate with commas)?",
+      "Could you provide your principles to live by for the persona (separate with commas)?",
     answer: "",
     token: "{csv:principles}",
   },

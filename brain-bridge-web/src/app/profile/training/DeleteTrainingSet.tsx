@@ -17,8 +17,8 @@ export function DeleteTrainingSet({
       setConfirming(true);
       return;
     }
-    await Data.deleteTrainingSet(id, user as any);
-    router.refresh();
+    const { success } = await Data.deleteTrainingSet(id, user as any);
+    if (success) router.refresh();
   }, [confirming, id, router, user]);
   const handleBlur = useCallback(() => {
     setConfirming(false);

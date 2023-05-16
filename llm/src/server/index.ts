@@ -173,16 +173,21 @@ app.delete("/api/training-sets/:email/:id", async (req, res) => {
 
 app.post("/api/training-sets/:email/:id/train", async (req, res) => {
   const { email, id } = req.params;
-  const trainingSet = await getUserTrainingSet(id, { email });
-  invariant(trainingSet, "Training set not found");
-  invariant(trainingSet.id, "Training set id is required")
-  console.log("Creating training set", id)
-  await createTrainingIndex({
-    name: trainingSet?.id,
-    trainingSet: trainingSet,
-    storageType: 'redis',
-  })
-  res.json(trainingSet);
+  try {
+    const trainingSet = await getUserTrainingSet(id, { email });
+    invariant(trainingSet, "Training set not found");
+    invariant(trainingSet.id, "Training set id is required")
+    console.log("Creating training set", id)
+    await createTrainingIndex({
+      name: trainingSet?.id,
+      trainingSet: trainingSet,
+      storageType: 'redis',
+    })
+    res.json(trainingSet);
+  } catch (e: any) {
+    console.log(e);
+    res.status(500).send({ error: e.message });
+  }
 });
 
 const awaitReady = async (conversation: Conversation) => {

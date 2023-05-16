@@ -128,7 +128,7 @@ const Data = {
     const responseMessage = await response.json()
     return responseMessage;
   },
-  deleteTrainingSet: async (id: string, user: { email: string }): Promise<void> => {
+  deleteTrainingSet: async (id: string, user: { email: string }): Promise<APIEnvelope<void>> => {
     const url = makeApiUrl(`training-sets/${user.email}/${id}`);
     const response = await fetch(url as string, {
       method: "DELETE",
@@ -139,10 +139,12 @@ const Data = {
     if (!response.ok) {
       throw new Error("Failed to fetch training sets");
     }
-    const responseMessage = await response.json()
-    return responseMessage;
+    return {
+      success: true,
+      data: undefined      
+    }
   },
-  trainTrainingSet: async (trainingSet: TrainingSet, user: { email: string }): Promise<TrainingSet> => {
+  trainTrainingSet: async (trainingSet: TrainingSet, user: { email: string }): Promise<APIEnvelope<TrainingSet>> => {
     const url = makeApiUrl(`training-sets/${user.email}/${trainingSet.id}/train`);
     const response = await fetch(url as string, {
       method: "POST",
@@ -152,10 +154,19 @@ const Data = {
       body: JSON.stringify(trainingSet)
     })
     if (!response.ok) {
-      throw new Error("Failed to fetch training sets");
+      const body = await response.json();
+      console.log(body);
+      return {
+        success: false,
+        data: trainingSet,
+        error: body.error
+      }
     }
-    const responseMessage = await response.json()
-    return responseMessage;
+    const responseMessage = await response.json() as TrainingSet;
+    return {
+      success: true,
+      data: responseMessage,
+    }
   },
 
 

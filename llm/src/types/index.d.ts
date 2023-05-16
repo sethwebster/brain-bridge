@@ -84,3 +84,9 @@ interface TrainingIndex {
   }
 }
 
+interface APIEnvelope<T> {
+  data: T;
+  error?: string;
+  success: boolean
+}
+
