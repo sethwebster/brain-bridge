@@ -33,17 +33,7 @@ export function FakeTypingIndicator() {
 export function FakeSpeakerIndicator() {
   const [show, setShow] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const i = setTimeout(() => {
-      setShow(true);
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, generateRandomInteger(1000, 5000));
-    return () => {
-      clearTimeout(i);
-      setShow(false);
-    };
-  }, []);
+    
   if (!show) return <> </>;
   return (
     <div className="flex flex-row justify-start animate-pulse bg-">
