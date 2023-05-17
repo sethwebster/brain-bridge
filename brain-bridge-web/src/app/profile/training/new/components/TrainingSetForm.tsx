@@ -8,9 +8,19 @@ import { useRouter } from "next/navigation";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
 import ErrorBox from "@/app/components/error-box";
 
+function removeFooter(prompt: string) {
+  const footerMarker = "-- do not edit below this line --";
+  const footerIndex = prompt.indexOf(footerMarker);
+  if (footerIndex === -1) {
+    return prompt;
+  }
+  return prompt.substring(0, footerIndex);
+}
+
 interface TrainingSetFormProps {
   trainingSet?: TrainingSet;
   promptTemplate: string;
+  promptFooter: string;
   user: {
     email?: string | null | undefined;
     name?: string | null | undefined;
@@ -22,22 +32,28 @@ function TrainingSetForm({
   trainingSet,
   user,
   promptTemplate,
+  promptFooter,
   onUpdate,
 }: TrainingSetFormProps) {
+  console.log(trainingSet)
   const router = useRouter();
   const [showQuestionsPrompts, setShowQuestionsPrompts] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [trainingSetData, setTrainingSetData] = useState<TrainingSet>(
-    trainingSet ?? {
-      name: "",
-      id: "<new>",
-      sources: [],
-      version: 0,
-      dateCreated: new Date(),
-      prompt: promptTemplate,
-    }
+    trainingSet
+      ? {
+          ...trainingSet,
+          prompt: removeFooter(trainingSet.prompt),
+        }
+      : {
+          name: "",
+          id: "<new>",
+          sources: [],
+          version: 0,
+          dateCreated: new Date(),
+          prompt: promptTemplate,
+        }
   );
-
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,9 +74,9 @@ function TrainingSetForm({
     [trainingSetData]
   );
 
-  const handleQnAChange = useCallback(
-    (questionsAndTokens: QuestionAnswerToken[]) => {
-      const newPrompt = questionsAndTokens.reduce((acc, curr) => {
+  const replaceTokens = useCallback(
+    (textWitTokens: string, tokensWithAnswers: QuestionAnswerToken[]) => {
+      return tokensWithAnswers.reduce((acc, curr) => {
         if (curr.answer.trim().length === 0) return acc;
         if (curr.token.startsWith("{csv:")) {
           const csv = curr.answer
@@ -70,11 +86,19 @@ function TrainingSetForm({
           return acc.replaceAll(curr.token, csv);
         }
         return acc.replaceAll(curr.token, curr.answer);
-      }, promptTemplate);
+      }, textWitTokens);
+    },
+    []
+  );
+
+  const handleQnAChange = useCallback(
+    (questionsAndTokens: QuestionAnswerToken[]) => {
+      const newPrompt = replaceTokens(promptTemplate, questionsAndTokens);
+      const newFooter = replaceTokens(promptFooter, questionsAndTokens);
 
       setTrainingSetData({ ...trainingSetData, prompt: newPrompt });
     },
-    [promptTemplate, trainingSetData]
+    [promptFooter, promptTemplate, replaceTokens, trainingSetData]
   );
 
   const handleSourcesChanged = useCallback(
@@ -87,23 +111,21 @@ function TrainingSetForm({
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     let newSet: TrainingSet;
-    if (trainingSetData.id === "<new>") {
-      newSet = await Data.createTrainingSet(
-        trainingSetData,
-        user as { email: string }
-      );
+    const toSave: TrainingSet = {
+      ...trainingSetData,
+      prompt: trainingSetData.prompt.trim() + "\n\n" + promptFooter,
+    };
+    if (toSave.id === "<new>") {
+      newSet = await Data.createTrainingSet(toSave, user as { email: string });
       setIsSaving(false);
       router.push(`/profile/training/${newSet.id}`);
     } else {
-      newSet = await Data.updateTrainingSet(
-        trainingSetData,
-        user as { email: string }
-      );
+      newSet = await Data.updateTrainingSet(toSave, user as { email: string });
       setIsSaving(false);
       // setTrainingSetData(newSet);
       if (onUpdate) onUpdate(newSet);
     }
-  }, [onUpdate, router, trainingSetData, user]);
+  }, [onUpdate, promptFooter, router, trainingSetData, user]);
 
   const handleTrain = useCallback(async () => {
     setError(null);
@@ -121,12 +143,17 @@ function TrainingSetForm({
   }, [router, trainingSetData, user]);
 
   const isDirty = useMemo(() => {
-    return JSON.stringify(trainingSetData) !== JSON.stringify(trainingSet);
+    const trainingSetCleaned = {
+      ...trainingSet,
+      prompt: removeFooter(trainingSet!.prompt),
+    }
+    return JSON.stringify(trainingSetData) !== JSON.stringify(trainingSetCleaned);
   }, [trainingSetData, trainingSet]);
 
   const canSave = useMemo(() => {
     let regex = /\{(?!(history|context|prompt)\})\w+\}/g;
     const allTokensRemoved = regex.exec(trainingSetData.prompt) === null;
+    console.log("Can Save:", trainingSetData.name.trim().length > 0 && allTokensRemoved)
     return trainingSetData.name.trim().length > 0 && allTokensRemoved;
   }, [trainingSetData.name, trainingSetData.prompt]);
 
@@ -197,9 +224,9 @@ function TrainingSetForm({
           </button>
         )}
       </div>
-      {isSaving ? <p>Saving...</p> : <p>Saved</p>}
+      {/* {isSaving ? <p>Saving...</p> : <p>Saved</p>}
       {isTraining ? <p>Training...</p> : <p>Trained</p>}
-      {isDirty ? <p>Unsaved changes</p> : <p>No unsaved</p>}
+      {isDirty ? <p>Unsaved changes</p> : <p>No unsaved</p>} */}
       {error && <ErrorBox message={error} title="An error has occurred" />}
     </div>
   );

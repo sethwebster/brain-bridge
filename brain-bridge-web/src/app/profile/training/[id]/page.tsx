@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import NewTrainingSetForm from "../new/components/TrainingSetForm";
 import Data from "@/utils/data";
-import promptTemplate from "../new/prompt-template";
+import promptTemplate, { promptFooter } from "../new/prompt-template";
 
 export default async function TrainingPage({
   params: { id },
@@ -27,6 +27,7 @@ export default async function TrainingPage({
           trainingSet={set}
           user={session.user}
           promptTemplate={promptTemplate}
+          promptFooter={promptFooter}
         />
       </div>
     </PaddedContainer>

@@ -16,7 +16,7 @@ import { createHash } from 'crypto';
 const app = express();
 console.log(__dirname)
 console.log(__filename)
-app.use(express.static(__dirname+"/public"));
+app.use(express.static(process.env.AUDIO_STORAGE_PATH!));
 app.use(cors())
 app.use(bodyParser.json());
 app.use((req, res, next) => {
@@ -65,6 +65,9 @@ async function getConversation(id: string) {
   return conversation;
 }
 
+/**
+ * Answers a question without the langchain model. This is plain old ChatGPT
+ */
 app.post("/api/llm/question", async (req, res) => {
   const { question } = req.body;
   invariant(question, "Question is required");
@@ -198,8 +201,12 @@ app.post("/api/training-sets/:email/:id/train", async (req, res) => {
 app.post("/api/chat/:id/voice", async (req, res) => {
   const { text } = req.body;
   const fileName = hash(text) + ".mpg";
-  const basePath = path.join(__dirname, "public", "audio");
-  await fs.mkdir(basePath, { recursive: true }, (err) => { });
+  invariant(process.env.AUDIO_STORAGE_PATH, "AUDIO_STORAGE_PATH is required")
+  const basePath = path.join(process.env.AUDIO_STORAGE_PATH, "audio");
+  await fs.mkdir(basePath, { recursive: true }, (err, path) => {
+    if (err) console.log("Failed to make directory", err)
+    if (path) console.log("Path created, or ok", path);
+  });
   const fileDestination = path.join(basePath, fileName);
   if (!fs.existsSync(fileDestination)) {
     invariant(process.env.ELEVENLABS_API_KEY, "ELEVENLABS_API_KEY is required")

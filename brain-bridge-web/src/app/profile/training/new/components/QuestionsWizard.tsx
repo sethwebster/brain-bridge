@@ -70,7 +70,7 @@ let questionsAndTokens: QuestionAnswerToken[] = [
     token: "{type_of_humor}",
   },
   {
-    question: "What is a specific topic that the persona can talk about?",
+    question: "What are other, perhaps related, topics that the persona can talk about?",
     answer: "",
     token: "{specific_topic}",
   },
