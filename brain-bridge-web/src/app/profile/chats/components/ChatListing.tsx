@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import Link from "next/link";
 import { NewChatButton } from "./NewChatButton";
-import { DeleteChat } from "./DeleteChat";
+import { DeleteChat } from "./DeleteChatButton";
 
 export async function ChatListing({
   conversations,

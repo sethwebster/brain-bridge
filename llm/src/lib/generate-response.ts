@@ -11,8 +11,6 @@ export async function loadStore(basePrompt: string) {
   return store;
 }
 
-console.clear();
-
 // OpenAI Configuration
 const model = new OpenAIChat({
   temperature: 0.2,

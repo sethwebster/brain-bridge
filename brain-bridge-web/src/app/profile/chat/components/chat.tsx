@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./Messages";
 import { FakeTypingIndicator } from "./FakeTypingIndicator";
+import { SpeakerIcon } from "../../training/new/components/svg-icons";
 
 export default function Chat({
   selectedChat,
@@ -16,6 +17,7 @@ export default function Chat({
   session: Session;
 }) {
   const [firstLoad, setFirstLoad] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [answerPending, setAnswerPending] = useState(false);
   const [selectedChatMessages, setSelectedChatMessages] = useState(
     selectedChat.messages
@@ -23,15 +25,32 @@ export default function Chat({
   const [currentMessageText, setCurrentMessageText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const playVoice = useCallback((fileUrl: string) => {
+    const myAudio = document.createElement("audio");
+
+    if (myAudio.canPlayType("audio/mpeg")) {
+      myAudio.setAttribute("src", fileUrl);
+    } else if (myAudio.canPlayType("audio/ogg")) {
+      myAudio.setAttribute("src", "audiofile.ogg");
+    }
+
+    // myAudio.currentTime = 5;
+    myAudio.play();
+  }, []);
+
   const getLLMResponse = useCallback(
     async (message: Message) => {
       setAnswerPending(true);
       const llmResponse = await Data.sendMessage(selectedChat.id, message);
       setSelectedChatMessages((messages) => [...messages, llmResponse]);
       setAnswerPending(false);
+      if (soundEnabled) {
+        const voice = await Data.getVoiceMessage(selectedChat.id, llmResponse);
+        playVoice(voice.file);
+      }
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     },
-    [selectedChat.id]
+    [playVoice, selectedChat.id, soundEnabled]
   );
 
   useEffect(() => {
@@ -92,10 +111,22 @@ export default function Chat({
   return (
     <div className="flex flex-col w-full h-full bg-slate-100 dark:bg-slate-700">
       <div className="flex-grow w-full p-2 overflow-scroll rounded">
-        <Messages
-          messages={selectedChatMessages}
-          userId={session.user?.name || session.user?.email || "Unknown"}
-        />
+        <div className="fixed z-50 flex flex-row justify-end w-5/6 p-2 bg-blue-300 border rounded-md shadow bg-opacity-80 md:w-3/4">
+          <button
+            className={`${
+              soundEnabled ? "bg-green-300" : "bg-blue-300"
+            } p-2 rounded`}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+          >
+            <SpeakerIcon />
+          </button>
+        </div>
+        <div className="mt-10">
+          <Messages
+            messages={selectedChatMessages}
+            userId={session.user?.name || session.user?.email || "Unknown"}
+          />
+        </div>
         {answerPending && (
           <div className="ml-4">
             <FakeTypingIndicator />

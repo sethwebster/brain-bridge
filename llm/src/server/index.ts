@@ -10,8 +10,13 @@ import { generateId } from '../lib/utils/identity';
 import { OpenAIChat } from 'langchain/llms';
 import { createTrainingIndex } from '../lib/training/training';
 import Mutex from './mutex';
-
+import fs from 'fs';
+import path from 'path';
+import { createHash } from 'crypto';
 const app = express();
+console.log(__dirname)
+console.log(__filename)
+app.use(express.static(__dirname+"/public"));
 app.use(cors())
 app.use(bodyParser.json());
 app.use((req, res, next) => {
@@ -189,6 +194,51 @@ app.post("/api/training-sets/:email/:id/train", async (req, res) => {
     res.status(500).send({ error: e.message });
   }
 });
+
+app.post("/api/chat/:id/voice", async (req, res) => {
+  const { text } = req.body;
+  const fileName = hash(text) + ".mpg";
+  const basePath = path.join(__dirname, "public", "audio");
+  await fs.mkdir(basePath, { recursive: true }, (err) => { });
+  const fileDestination = path.join(basePath, fileName);
+  if (!fs.existsSync(fileDestination)) {
+    invariant(process.env.ELEVENLABS_API_KEY, "ELEVENLABS_API_KEY is required")
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}?optimize_streaming_latency=0`, {
+      method: 'POST',
+      headers: {
+        'accept': 'audio/mpeg',
+        'xi-api-key': process.env.ELEVENLABS_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_monolingual_v1',
+        voice_settings: {
+          stability: 0.68,
+          similarity_boost: 0.83,
+        }
+      })
+    });
+    const buffer = await response.arrayBuffer();
+    fs.writeFileSync(fileDestination, Buffer.from(buffer));
+    console.log("File written to", fileDestination)
+  }
+  res.json({ file: '/audio/' + fileName })
+});
+
+app.get("/api/chat/:id/voice/:file", async (req, res) => {
+  const { file } = req.params;
+  const filePath = path.join(process.env.TEMP_FILE_PATH!, file);
+  if (!fs.existsSync(filePath)) {
+    res.status(404).send();
+    return;
+  }
+  res.sendFile(filePath);
+});
+
+function hash(text: string) {
+  return createHash('sha256').update(text).digest('hex');
+}
 
 const awaitReady = async (conversation: Conversation) => {
   return;

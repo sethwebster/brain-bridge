@@ -2,15 +2,15 @@
   "name": "photography-tutor",
   "version": "0.0.1",
   "description": "A chatbot for photography",
-  "main": "index.js",
+  "main": "/build/server/index.js",
   "scripts": {
-    "build": "rimraf ./build && npx tsc",
+    "build": "rimraf ./build && npx tsc && cp -rf ./public ./build/server/public",
     "train": "node ./build/lib/training/initialize-store.js",
     "train:interactive": "node ./build/lib/training/interactive.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:dev": "npx nodemon",
     "start:server": "node ./build/server/index.js",
-    "start": "node ./build/index.js"
+    "start": "node ./build/index.js",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon --watch ./build/server --exec node ./build/server/index.js\""
   },
   "keywords": [
     "openai",
@@ -26,6 +26,7 @@
     "@types/node": "^20.1.0",
     "@types/redis": "^4.0.11",
     "@types/turndown": "^5.0.1",
+    "concurrently": "^8.0.1",
     "nodemon": "^2.0.22",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
@@ -39,6 +40,7 @@
     "axios": "^1.4.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "glob": "^10.2.2",

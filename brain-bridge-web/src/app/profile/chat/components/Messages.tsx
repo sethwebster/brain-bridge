@@ -6,7 +6,13 @@ export function Messages({
   messages,
   userId,
 }: {
+  /**
+   * The messages to display.
+   */
   messages: Message[];
+  /**
+   * The ID of the user who is viewing the messages.
+   */
   userId: string;
 }) {
   if (messages.length === 0) {
@@ -25,7 +31,7 @@ export function Messages({
           className={`flex flex-row ${
             message.sender === userId ? "justify-end" : ""
           }`}
-          key={message.id}
+          key={`${message.sender}-${message.id}`}
         >
           <div
             className={`mt-2 p-2 rounded-lg drop-shadow-md dark:drop-shadow-none ${

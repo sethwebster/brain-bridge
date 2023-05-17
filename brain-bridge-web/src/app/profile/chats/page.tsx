@@ -11,7 +11,7 @@ export default async function Page() {
   const trainingSets = await Data.fetchTrainingSets(
     session.user as { email: string }
   );
-  const chats = await Data.fetchChats(session.user!.email!);
+  const chats = await Data.fetchChats({ email: session.user!.email! });
 
   return (
     <PaddedContainer>

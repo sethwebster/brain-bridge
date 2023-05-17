@@ -18,6 +18,7 @@ export function NewChatButton({
   const handleNewChat = async () => {
     const newChat = await Data.newChat(user, selectedTrainingSet);
     router.push(`/profile/chat/${newChat.id}`);
+    router.refresh();
   };
 
   
