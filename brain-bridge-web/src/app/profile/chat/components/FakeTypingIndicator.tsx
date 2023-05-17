@@ -31,10 +31,8 @@ export function FakeTypingIndicator() {
 }
 
 export function FakeSpeakerIndicator() {
-  const [show, setShow] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-    
-  if (!show) return <> </>;
+
   return (
     <div className="flex flex-row justify-start animate-pulse bg-">
       <div className="flex flex-row items-center w-10 h-8 mt-2 text-white rounded-lg justify-evenly bg-slate-500">
