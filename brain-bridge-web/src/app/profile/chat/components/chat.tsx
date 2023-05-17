@@ -5,7 +5,10 @@ import { Session } from "next-auth";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Messages } from "./Messages";
-import { FakeTypingIndicator } from "./FakeTypingIndicator";
+import {
+  FakeSpeakerIndicator,
+  FakeTypingIndicator,
+} from "./FakeTypingIndicator";
 import { SpeakerIcon } from "../../training/new/components/svg-icons";
 
 export default function Chat({
@@ -18,6 +21,7 @@ export default function Chat({
 }) {
   const [firstLoad, setFirstLoad] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundPending, setSoundPending] = useState(false);
   const [answerPending, setAnswerPending] = useState(false);
   const [selectedChatMessages, setSelectedChatMessages] = useState(
     selectedChat.messages
@@ -45,7 +49,10 @@ export default function Chat({
       setSelectedChatMessages((messages) => [...messages, llmResponse]);
       setAnswerPending(false);
       if (soundEnabled) {
+        setSoundPending(true);
         const voice = await Data.getVoiceMessage(selectedChat.id, llmResponse);
+        setSoundPending(false);
+        
         playVoice(voice.file);
       }
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -130,6 +137,11 @@ export default function Chat({
         {answerPending && (
           <div className="ml-4">
             <FakeTypingIndicator />
+          </div>
+        )}
+        {soundPending && (
+          <div className="ml-4">
+            <FakeSpeakerIndicator />
           </div>
         )}
         <div ref={bottomRef} className="m-2" />
