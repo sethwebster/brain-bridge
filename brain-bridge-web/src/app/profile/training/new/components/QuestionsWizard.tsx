@@ -1,12 +1,7 @@
 "use client";
 import { useCallback, useState } from "react";
 
-export interface QuestionAnswerToken {
-  question: string;
-  answer: string;
-  token: string;
-}
-let questionsAndTokens: QuestionAnswerToken[] = [
+export const QuestionsAndTokens: QuestionAnswerToken[] = [
   {
     question:
       "What is the specific topic that the language model should focus on?",
@@ -78,8 +73,10 @@ let questionsAndTokens: QuestionAnswerToken[] = [
 ];
 export function QuestionsWizard({
   onStateChange,
+  questionsAndTokens,
 }: {
-  onStateChange: (questionsAndTokens: QuestionAnswerToken[]) => void;
+  questionsAndTokens: QuestionAnswerToken[],
+  onStateChange: (QuestionsAndTokens: QuestionAnswerToken[]) => void;
 }) {
   const [questionsState, setQuestionsState] = useState(questionsAndTokens);
   const [questionIndex, setQuestionIndex] = useState(0);

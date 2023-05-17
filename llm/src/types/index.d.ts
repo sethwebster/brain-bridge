@@ -18,6 +18,7 @@ interface TrainingSet {
   dateCreated: Date;
   dateUpdated?: Date;
   prompt: string;
+  questionsAndAnswers: QuestionAnswerToken[];
 }
 
 type TrainingSetStub = Pick<TrainingSet, "id" | "name" | "version" | "dateCreated" | "dateUpdated">;
@@ -29,6 +30,11 @@ interface Message {
   timestamp: string;
 }
 
+interface QuestionAnswerToken {
+  question: string;
+  answer: string;
+  token: string;
+}
 interface Chat {
   id: number;
   userId: string;

@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useState, useRef, useMemo } from "react";
-import { QuestionAnswerToken, QuestionsWizard } from "./QuestionsWizard";
+import {
+  QuestionsAndTokens,
+  QuestionsWizard,
+} from "./QuestionsWizard";
 import Sources from "./Sources";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
@@ -35,7 +38,7 @@ function TrainingSetForm({
   promptFooter,
   onUpdate,
 }: TrainingSetFormProps) {
-  console.log(trainingSet)
+  console.log(trainingSet);
   const router = useRouter();
   const [showQuestionsPrompts, setShowQuestionsPrompts] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -52,6 +55,7 @@ function TrainingSetForm({
           version: 0,
           dateCreated: new Date(),
           prompt: promptTemplate,
+          questionsAndAnswers: QuestionsAndTokens,
         }
   );
   const [isSaving, setIsSaving] = useState(false);
@@ -75,18 +79,18 @@ function TrainingSetForm({
   );
 
   const replaceTokens = useCallback(
-    (textWitTokens: string, tokensWithAnswers: QuestionAnswerToken[]) => {
+    (textWithTokens: string, tokensWithAnswers: QuestionAnswerToken[]) => {
       return tokensWithAnswers.reduce((acc, curr) => {
         if (curr.answer.trim().length === 0) return acc;
         if (curr.token.startsWith("{csv:")) {
           const csv = curr.answer
             .split(",")
-            .map((x, index) => `${index + 1}. ${x.trim()}`)
+            .map((x: string, index: number) => `${index + 1}. ${x.trim()}`)
             .join("\n");
           return acc.replaceAll(curr.token, csv);
         }
         return acc.replaceAll(curr.token, curr.answer);
-      }, textWitTokens);
+      }, textWithTokens);
     },
     []
   );
@@ -94,11 +98,13 @@ function TrainingSetForm({
   const handleQnAChange = useCallback(
     (questionsAndTokens: QuestionAnswerToken[]) => {
       const newPrompt = replaceTokens(promptTemplate, questionsAndTokens);
-      const newFooter = replaceTokens(promptFooter, questionsAndTokens);
-
-      setTrainingSetData({ ...trainingSetData, prompt: newPrompt });
+      setTrainingSetData({
+        ...trainingSetData,
+        prompt: newPrompt,
+        questionsAndAnswers: questionsAndTokens,
+      });
     },
-    [promptFooter, promptTemplate, replaceTokens, trainingSetData]
+    [promptTemplate, replaceTokens, trainingSetData]
   );
 
   const handleSourcesChanged = useCallback(
@@ -113,8 +119,12 @@ function TrainingSetForm({
     let newSet: TrainingSet;
     const toSave: TrainingSet = {
       ...trainingSetData,
-      prompt: trainingSetData.prompt.trim() + "\n\n" + promptFooter,
+      prompt:
+        trainingSetData.prompt.trim() +
+        "\n\n" +
+        replaceTokens(promptFooter, trainingSetData.questionsAndAnswers),
     };
+    console.log("TO SAVE", toSave);
     if (toSave.id === "<new>") {
       newSet = await Data.createTrainingSet(toSave, user as { email: string });
       setIsSaving(false);
@@ -146,14 +156,19 @@ function TrainingSetForm({
     const trainingSetCleaned = {
       ...trainingSet,
       prompt: removeFooter(trainingSet!.prompt),
-    }
-    return JSON.stringify(trainingSetData) !== JSON.stringify(trainingSetCleaned);
+    };
+    return (
+      JSON.stringify(trainingSetData) !== JSON.stringify(trainingSetCleaned)
+    );
   }, [trainingSetData, trainingSet]);
 
   const canSave = useMemo(() => {
     let regex = /\{(?!(history|context|prompt)\})\w+\}/g;
     const allTokensRemoved = regex.exec(trainingSetData.prompt) === null;
-    console.log("Can Save:", trainingSetData.name.trim().length > 0 && allTokensRemoved)
+    console.log(
+      "Can Save:",
+      trainingSetData.name.trim().length > 0 && allTokensRemoved
+    );
     return trainingSetData.name.trim().length > 0 && allTokensRemoved;
   }, [trainingSetData.name, trainingSetData.prompt]);
 
@@ -181,7 +196,7 @@ function TrainingSetForm({
         </div>
       )}
       {(showQuestionsPrompts || trainingSetData.id === "<new>") && (
-        <QuestionsWizard onStateChange={handleQnAChange} />
+        <QuestionsWizard onStateChange={handleQnAChange} questionsAndTokens={trainingSetData.questionsAndAnswers} />
       )}
       {trainingSetData.id !== "<new>" && (
         <div>
