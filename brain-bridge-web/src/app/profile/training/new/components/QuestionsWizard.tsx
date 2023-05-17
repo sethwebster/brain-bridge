@@ -19,6 +19,11 @@ let questionsAndTokens: QuestionAnswerToken[] = [
     token: "{name}",
   },
   {
+    question: "What is it your persona is helping people with?",
+    answer: new Date().getFullYear().toString(),
+    token: "{target_audience}",
+  },
+  {
     question: "What is the current year (for the purposes of the conversation)?",
     answer: new Date().getFullYear().toString(),
     token: "{current_year}",
