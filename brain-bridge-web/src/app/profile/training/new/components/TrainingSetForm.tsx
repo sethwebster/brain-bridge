@@ -46,6 +46,7 @@ function TrainingSetForm({
     trainingSet
       ? {
           ...trainingSet,
+          questionsAndAnswers: trainingSet.questionsAndAnswers || QuestionsAndTokens,
           prompt: removeFooter(trainingSet.prompt),
         }
       : {

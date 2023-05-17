@@ -78,7 +78,7 @@ export function QuestionsWizard({
   questionsAndTokens: QuestionAnswerToken[],
   onStateChange: (QuestionsAndTokens: QuestionAnswerToken[]) => void;
 }) {
-  const [questionsState, setQuestionsState] = useState(questionsAndTokens);
+  const [questionsState, setQuestionsState] = useState(questionsAndTokens || QuestionsAndTokens);
   const [questionIndex, setQuestionIndex] = useState(0);
 
   const setQuestionsStateAndNotify = useCallback(
