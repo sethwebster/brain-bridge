@@ -1,27 +1,17 @@
 "use client";
 
 import { useCallback, useState, useRef, useMemo } from "react";
-import {
-  QuestionsAndTokens,
-  QuestionsWizard,
-} from "./QuestionsWizard";
+import { QuestionsAndTokens, QuestionsWizard } from "./QuestionsWizard";
 import Sources from "./Sources";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
 import ErrorBox from "@/app/components/error-box";
-
-function removeFooter(prompt: string) {
-  const footerMarker = "-- do not edit below this line --";
-  const footerIndex = prompt.indexOf(footerMarker);
-  if (footerIndex === -1) {
-    return prompt;
-  }
-  return prompt.substring(0, footerIndex);
-}
+import getDiffsBetweenTwoStrings from "@/utils/getDiffsBetweenTwoStrings";
+import { removeFooter } from "@/utils/prompts";
 
 interface TrainingSetFormProps {
-  trainingSet?: TrainingSet;
+  trainingSet: TrainingSet;
   promptTemplate: string;
   promptFooter: string;
   user: {
@@ -42,23 +32,8 @@ function TrainingSetForm({
   const router = useRouter();
   const [showQuestionsPrompts, setShowQuestionsPrompts] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [trainingSetData, setTrainingSetData] = useState<TrainingSet>(
-    trainingSet
-      ? {
-          ...trainingSet,
-          questionsAndAnswers: trainingSet.questionsAndAnswers || QuestionsAndTokens,
-          prompt: removeFooter(trainingSet.prompt),
-        }
-      : {
-          name: "",
-          id: "<new>",
-          sources: [],
-          version: 0,
-          dateCreated: new Date(),
-          prompt: promptTemplate,
-          questionsAndAnswers: QuestionsAndTokens,
-        }
-  );
+  const [trainingSetData, setTrainingSetData] =
+    useState<TrainingSet>(trainingSet);
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +111,7 @@ function TrainingSetForm({
       // setTrainingSetData(newSet);
       if (onUpdate) onUpdate(newSet);
     }
-  }, [onUpdate, promptFooter, router, trainingSetData, user]);
+  }, [onUpdate, promptFooter, replaceTokens, router, trainingSetData, user]);
 
   const handleTrain = useCallback(async () => {
     setError(null);
@@ -158,17 +133,20 @@ function TrainingSetForm({
       ...trainingSet,
       prompt: removeFooter(trainingSet!.prompt),
     };
+    const areDifferent = JSON.stringify(trainingSetData) !== JSON.stringify(trainingSetCleaned)
+    console.log(getDiffsBetweenTwoStrings(trainingSetData.prompt, trainingSetCleaned.prompt))
+    console.log("Is Dirty", areDifferent)
     return (
-      JSON.stringify(trainingSetData) !== JSON.stringify(trainingSetCleaned)
+      areDifferent
     );
   }, [trainingSetData, trainingSet]);
 
   const canSave = useMemo(() => {
-    let regex = /\{(?!(history|context|prompt)\})\w+\}/g;
+    let regex = /\{(?!(history|context|prompt)(?:.*)\})\w+\}/g;
     const allTokensRemoved = regex.exec(trainingSetData.prompt) === null;
     console.log(
       "Can Save:",
-      trainingSetData.name.trim().length > 0 && allTokensRemoved
+      trainingSetData.name.trim().length > 0,  allTokensRemoved, regex.exec(trainingSetData.prompt) === null
     );
     return trainingSetData.name.trim().length > 0 && allTokensRemoved;
   }, [trainingSetData.name, trainingSetData.prompt]);
@@ -197,7 +175,10 @@ function TrainingSetForm({
         </div>
       )}
       {(showQuestionsPrompts || trainingSetData.id === "<new>") && (
-        <QuestionsWizard onStateChange={handleQnAChange} questionsAndTokens={trainingSetData.questionsAndAnswers} />
+        <QuestionsWizard
+          onStateChange={handleQnAChange}
+          questionsAndTokens={trainingSetData.questionsAndAnswers}
+        />
       )}
       {trainingSetData.id !== "<new>" && (
         <div>

@@ -1,5 +1,4 @@
-"use client";
-function getDiffsBetweenTwoStrings(
+export default function getDiffsBetweenTwoStrings(
   oldString: string,
   newString: string
 ): { added: string[]; removed: string[]; } {

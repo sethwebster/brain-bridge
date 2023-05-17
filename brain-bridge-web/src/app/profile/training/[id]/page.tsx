@@ -4,6 +4,7 @@ import invariant from "tiny-invariant";
 import NewTrainingSetForm from "../new/components/TrainingSetForm";
 import Data from "@/utils/data";
 import promptTemplate, { promptFooter } from "../new/prompt-template";
+import { removeFooter } from "@/utils/prompts";
 
 export default async function TrainingPage({
   params: { id },
@@ -24,7 +25,7 @@ export default async function TrainingPage({
           <h1 className="text-2xl">Set:{set.name}</h1>
         </header>
         <NewTrainingSetForm
-          trainingSet={set}
+          trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
           user={session.user}
           promptTemplate={promptTemplate}
           promptFooter={promptFooter}
