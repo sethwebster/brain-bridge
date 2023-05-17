@@ -10,6 +10,7 @@ import {
   FakeTypingIndicator,
 } from "./FakeTypingIndicator";
 import { SpeakerIcon } from "../../training/new/components/svg-icons";
+import useAudioPlayer from "@/hooks/useAudioPlayer";
 
 export default function Chat({
   selectedChat,
@@ -23,6 +24,7 @@ export default function Chat({
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [soundPending, setSoundPending] = useState(false);
   const [answerPending, setAnswerPending] = useState(false);
+  const player = useAudioPlayer();
   const [selectedChatMessages, setSelectedChatMessages] = useState(
     selectedChat.messages
   );
@@ -30,17 +32,8 @@ export default function Chat({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const playVoice = useCallback((fileUrl: string) => {
-    const myAudio = document.createElement("audio");
-
-    if (myAudio.canPlayType("audio/mpeg")) {
-      myAudio.setAttribute("src", fileUrl);
-    } else if (myAudio.canPlayType("audio/ogg")) {
-      myAudio.setAttribute("src", "audiofile.ogg");
-    }
-
-    // myAudio.currentTime = 5;
-    myAudio.play();
-  }, []);
+    player.play(fileUrl);
+  }, [player]);
 
   const getLLMResponse = useCallback(
     async (message: Message) => {
@@ -52,7 +45,7 @@ export default function Chat({
         setSoundPending(true);
         const voice = await Data.getVoiceMessage(selectedChat.id, llmResponse);
         setSoundPending(false);
-        
+
         playVoice(voice.file);
       }
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
