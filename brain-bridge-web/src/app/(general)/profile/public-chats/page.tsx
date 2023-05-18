@@ -7,6 +7,7 @@ import Link from "next/link";
 import { DeleteTrainingSet } from "../training/DeleteTrainingSet";
 import { PencilIcon } from "../training/new/components/svg-icons";
 import PublicChatItem from "./components/public-chat-item";
+import PublicChatsList from "./components/public-chats-list";
 
 export default async function PublicChatsPage() {
   const session = await getServerSession();
@@ -20,19 +21,11 @@ export default async function PublicChatsPage() {
 
   return (
     <PaddedContainer>
-      <div className="w-full h-full p-4 border-2 border-gray-700 border-dashed rounded-lg">
-        <header className="flex justify-between pb-2 border-b border-gray-600 border-dashed">
-          <h1 className="text-2xl">Public Chats</h1>
-          <NewTrainingSetButton user={session.user} />
-        </header>
-        <ul>
-          {(data || []).map((chat, index) => (
-            <li key={chat.id}>
-              <PublicChatItem publicChat={chat} session={session} trainingSets={sets} />
-            </li>
-          ))}
-        </ul>
-      </div>
+      <PublicChatsList
+        session={session}
+        publicChats={data || []}
+        trainingSets={sets}
+      />
     </PaddedContainer>
   );
 }
