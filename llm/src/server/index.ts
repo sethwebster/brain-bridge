@@ -5,7 +5,7 @@ import { HNSWLib } from 'langchain/vectorstores';
 import bodyParser from 'body-parser';
 import Conversation from '../lib/chat/conversation';
 import invariant from 'tiny-invariant';
-import { addUserConversation, getUserTrainingSets, getUserConversations, removeUserConversation, addUserTrainingSet, updateUserTrainingSet, deleteUserTrainingSet, getUserTrainingSet, getUserPublicChats, addUserPublicChat, updateUserPublicChat, publishUserPublicChat, deleteUserPublicChat, unpublishUserPublicChat, getUserPublicChat } from '../lib/user/user';
+import { addUserConversation, getUserTrainingSets, getUserConversations, removeUserConversation, addUserTrainingSet, updateUserTrainingSet, deleteUserTrainingSet, getUserTrainingSet, getUserPublicChats, addUserPublicChat, updateUserPublicChat, publishUserPublicChat, deleteUserPublicChat, unpublishUserPublicChat, getUserPublicChat, getPublicChat } from '../lib/user/user';
 import { generateId } from '../lib/utils/identity';
 import { OpenAIChat } from 'langchain/llms';
 import { createTrainingIndex } from '../lib/training/training';
@@ -49,20 +49,23 @@ const mutex = new Mutex();
 
 async function getConversation(id: string) {
   await mutex.lock()
-  let conversation = conversations.get(id)
-  if (!conversation) {
-    try {
-      conversation = await Conversation.fromRedis(id);
-      console.log('conversation loaded from redis', id)
-      conversations.set(id, conversation);
-    } catch {
-      throw new Error("Conversation not found");
+  try {
+    let conversation = conversations.get(id)
+    if (!conversation) {
+      try {
+        conversation = await Conversation.fromRedis(id);
+        console.log('conversation loaded from redis', id)
+        conversations.set(id, conversation);
+      } catch {
+        throw new Error("Conversation not found");
+      }
+    } else {
+      console.log('conversation loaded from memory', id)
     }
-  } else {
-    console.log('conversation loaded from memory', id)
+    return conversation;
+  } finally {
+    mutex.unlock();
   }
-  mutex.unlock();
-  return conversation;
 }
 
 /**
@@ -102,17 +105,47 @@ app.get("/api/chat/:id", async (req, res) => {
 
 // Creates a new conversation
 app.post("/api/chat", async (req, res) => {
-  const { corpus, user } = req.body;
-  console.log("creating conversation", corpus, user)
-  const trainingSet = await getUserTrainingSet(corpus, { email: user.email });
-  invariant(trainingSet, "Training set not found");
-  const id = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
-  const conversation = new Conversation(id, corpus);
-  conversation.join({ ...user, participantType: 'user' });
-  conversation.join({ id: 'bot', name: 'Seth Webster', email: 'sethwebster@gmail.com', participantType: 'bot' })
-  conversations.set(id, conversation);
-  await addUserConversation(user, { id, name: null } as any);
-  res.json(conversations.get(id));
+  try {
+    const { corpus, user } = req.body;
+    console.log("creating conversation", corpus, user)
+    const trainingSet = await getUserTrainingSet(corpus, { email: user.email });
+    invariant(trainingSet, "Training set not found");
+    const id = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+    const conversation = new Conversation(id, corpus);
+    conversation.join({ ...user, participantType: 'user' });
+    conversation.join({ id: 'bot', name: 'Seth Webster', email: 'sethwebster@gmail.com', participantType: 'bot' })
+    conversations.set(id, conversation);
+    await addUserConversation(user, { id, name: null } as any);
+    res.json(conversations.get(id));
+  } catch (e: any) {
+    console.log(e)
+    res.status(500).send(e.message);
+  }
+});
+
+app.post("/api/public-chat", async (req, res) => {
+  try {
+    const { trainingSetId, viewer } = req.body as { trainingSetId: string, viewer: Viewer }
+    invariant(trainingSetId, "Training set id is required");
+    console.log("creating public conversation", trainingSetId)
+    const [key, email, setId] = trainingSetId.split(':');
+    const trainingSet = await getUserTrainingSet(setId, { email });
+    invariant(trainingSet, "Training set not found");
+    const id = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+    const conversation = new Conversation(id, setId);
+    conversation.join({
+      id: viewer.id,
+      name: viewer.id,
+      email: viewer.id,
+      participantType: 'user'
+    });
+    conversation.join({ id: 'bot', name: 'bot', email: 'bot@brainbridge.app', participantType: 'bot' })
+    conversations.set(id, conversation);
+    res.json(conversations.get(id));
+  } catch (e: any) {
+    console.log(e)
+    res.status(500).send(e.message);
+  }
 });
 
 // posts a message
@@ -310,6 +343,12 @@ app.delete("/api/:email/public-chats/:id/publish", async (req, res) => {
   res.status(204).send();
 });
 
+app.get("/api/public-chat/:id", async (req, res) => {
+  const { id } = req.params;
+  const conversation = await getPublicChat(id);
+  console.log("conversation", conversation)
+  res.json(conversation);
+});
 
 const awaitReady = async (conversation: Conversation) => {
   return;

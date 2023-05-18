@@ -1,5 +1,5 @@
 "use client";
-import { NewButton } from "@/app/components/NewButton";
+import { NewButton } from "@/app/(general)/components/NewButton";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

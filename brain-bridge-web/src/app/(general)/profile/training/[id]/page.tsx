@@ -1,10 +1,10 @@
-import PaddedContainer from "@/app/components/padded-container";
 import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import NewTrainingSetForm from "../new/components/TrainingSetForm";
 import Data from "@/utils/data";
 import promptTemplate, { promptFooter } from "../new/prompt-template";
 import { removeFooter } from "@/utils/prompts";
+import PaddedContainer from "@/app/(general)/components/padded-container";
 
 export default async function TrainingPage({
   params: { id },

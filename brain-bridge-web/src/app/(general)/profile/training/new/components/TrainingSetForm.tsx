@@ -6,9 +6,10 @@ import Sources from "./Sources";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
-import ErrorBox from "@/app/components/error-box";
 import getDiffsBetweenTwoStrings from "@/utils/getDiffsBetweenTwoStrings";
 import { removeFooter } from "@/utils/prompts";
+import ErrorBox from "@/app/(general)/components/error-box";
+import invariant from "tiny-invariant";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSet;
@@ -121,6 +122,7 @@ function TrainingSetForm({
       user as { email: string }
     );
     if (newSet.success) {
+      invariant(newSet.data, "Training set data is null");
       router.push(`/profile/training/${newSet.data.id}`);
     } else {
       setError(`Training failed: ${newSet.error} `);

@@ -100,6 +100,10 @@ interface PublicChat {
   id: string;
   name: string;
   trainingSet: TrainingSetStub;
+  trainingSetPath: string;
   published: boolean;
 }
 
+interface Viewer {
+  id: string;
+}

@@ -147,15 +147,21 @@ export async function deleteUserPublicChat(user: Pick<Participant, "email">, pub
 }
 
 export async function publishUserPublicChat(user: Pick<Participant, "email">, publicChat: Partial<PublicChat>): Promise<APIEnvelope<PublicChat>> {
+  console.log(publicChat)
   const { data: publishablePublicChat } = await getUserPublicChat(publicChat.id!, user)
+  invariant(publishablePublicChat)
+  invariant(publishablePublicChat.trainingSet, "Cannot publish public chat: Training set not present on publicChat object")
+
   if (!publishablePublicChat) {
     return {
       success: false,
       error: "Public chat not found"
     }
   }
-  const { data: publishedPublicChat } = await updateUserPublicChat(user, { ...publishablePublicChat, published: true });
-  redisClient.set(`public-chats:${publishablePublicChat.id}`, JSON.stringify(publishablePublicChat));
+  /* OK */
+  const { data: publishedPublicChat } = await updateUserPublicChat(user, { ...publishablePublicChat, trainingSetPath: `training-sets:${user.email}:${publishablePublicChat.trainingSet.id}`, published: true });
+  invariant(publishedPublicChat, "Cannot publish public chat: Public chat not found after update")
+  redisClient.set(`public-chats:${publishedPublicChat.id}`, JSON.stringify(publishedPublicChat));
   return {
     success: true,
     data: publishedPublicChat
@@ -171,6 +177,19 @@ export async function unpublishUserPublicChat(user: Pick<Participant, "email">, 
     success: true,
     data: unpublishedPublicChat
   }
+}
+
+export async function getPublicChat(id: string) {
+  console.log("HEY")
+  const publicChat = await redisClient.get(`public-chats:${id}`);
+  if (!publicChat) return {
+    success: false,
+    error: "Public chat not found"
+  }
+  return {
+    success: true,
+    data: JSON.parse(publicChat) as PublicChat
+  };
 }
 
 
@@ -208,6 +227,7 @@ export default {
   deleteUserPublicChat,
   unpublishUserPublicChat,
   publishUserPublicChat,
+  getPublicChat,
   scanRedis,
 
 }

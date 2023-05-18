@@ -1,10 +1,10 @@
-import PaddedContainer from "@/app/components/padded-container";
 import Data from "@/utils/data";
 import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import { NewTrainingSetButton } from "./NewTrainingSetButton";
 import Link from "next/link";
 import { DeleteTrainingSet } from "./DeleteTrainingSet";
+import PaddedContainer from "../../components/padded-container";
 
 export default async function TrainingPage() {
   const session = await getServerSession();

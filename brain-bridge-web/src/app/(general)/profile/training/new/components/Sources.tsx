@@ -1,8 +1,8 @@
-import Modal from "@/app/components/modal";
 import { useFilePicker } from "use-file-picker";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlusAddIcon, UrlIcon } from "./svg-icons";
 import { isValidURL } from "@/utils/validation";
+import Modal from "@/app/(general)/components/modal";
 
 export default function Sources({
   sources,

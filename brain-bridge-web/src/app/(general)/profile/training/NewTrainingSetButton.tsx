@@ -1,6 +1,6 @@
 "use client";
-import { NewButton } from "@/app/components/NewButton";
 import Link from "next/link";
+import { NewButton } from "../../components/NewButton";
 
 export function NewTrainingSetButton({
   user,

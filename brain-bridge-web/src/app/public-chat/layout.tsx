@@ -1,6 +1,5 @@
-import AuthProvider from "./components/auth-provider";
-import Nav from "./components/nav";
-import "./globals.css";
+import Nav from "../(general)/components/nav";
+import "../globals.css";
 import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -18,13 +17,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex flex-col w-full h-screen">
-        <AuthProvider>
-          {/* @ts-expect-error RSC */}
-          <Nav />
-          <div className="flex flex-col flex-grow">
-            <div className="flex flex-col flex-grow">{children}</div>
-          </div>
-        </AuthProvider>
+        <div className="flex flex-col flex-grow w-full h-full">{children}</div>
       </body>
     </html>
   );

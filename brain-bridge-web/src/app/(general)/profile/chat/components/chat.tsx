@@ -11,6 +11,7 @@ import {
 } from "./FakeTypingIndicator";
 import { SpeakerIcon } from "../../training/new/components/svg-icons";
 import useAudioPlayer from "@/hooks/useAudioPlayer";
+import ChatDisplay from "@/app/components/chat-display";
 
 export default function Chat({
   selectedChat,
@@ -31,9 +32,12 @@ export default function Chat({
   const [currentMessageText, setCurrentMessageText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const playVoice = useCallback((fileUrl: string) => {
-    player.play(fileUrl);
-  }, [player]);
+  const playVoice = useCallback(
+    (fileUrl: string) => {
+      player.play(fileUrl);
+    },
+    [player]
+  );
 
   const getLLMResponse = useCallback(
     async (message: Message) => {
@@ -109,47 +113,14 @@ export default function Chat({
 
   if (!session.user?.email) throw new Error("No user email");
   return (
-    <div className="flex flex-col w-full h-full bg-slate-100 dark:bg-slate-700">
-      <div className="flex-grow w-full p-2 overflow-scroll rounded">
-        <div className="fixed z-50 flex flex-row justify-end w-5/6 p-2 bg-blue-300 border rounded-md shadow bg-opacity-80 md:w-3/4">
-          <button
-            className={`${
-              soundEnabled ? "bg-green-300" : "bg-blue-300"
-            } p-2 rounded`}
-            onClick={() => setSoundEnabled(!soundEnabled)}
-          >
-            <SpeakerIcon />
-          </button>
-        </div>
-        <div className="mt-10">
-          <Messages
-            messages={selectedChatMessages}
-            userId={session.user?.name || session.user?.email || "Unknown"}
-          />
-        </div>
-        {answerPending && (
-          <div className="ml-4">
-            <FakeTypingIndicator />
-          </div>
-        )}
-        {soundPending && (
-          <div className="ml-4">
-            <FakeSpeakerIndicator />
-          </div>
-        )}
-        <div ref={bottomRef} className="m-2" />
-      </div>
-      <div className="sticky bottom-0 w-full p-2 mt-4 bg-opacity-0 outline-none">
-        <input
-          type="text"
-          name="message"
-          placeholder="Type your message here"
-          className="sticky w-full h-auto p-2 mb-4 border rounded shadow-inner outline-none bg-slate-100 dark:bg-slate-900 border-slate-600 bg-opacity-95"
-          value={currentMessageText}
-          onKeyUp={handleKeyUp}
-          onChange={handleTextChanged}
-        />
-      </div>
-    </div>
+    <ChatDisplay
+      answerPending={answerPending}
+      soundPending={soundPending}
+      loadedMessages={selectedChatMessages}
+      onNewMessage={handleSend}
+      soundEnabled={soundEnabled}
+      onSoundEnabledChange={(value) => setSoundEnabled(value)}
+      viewer={{ id: session.user?.email }}
+    />
   );
 }
