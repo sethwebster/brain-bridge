@@ -5,7 +5,7 @@ import { HNSWLib } from 'langchain/vectorstores';
 import bodyParser from 'body-parser';
 import Conversation from '../lib/chat/conversation';
 import invariant from 'tiny-invariant';
-import { addUserConversation, getUserTrainingSets, getUserConversations, removeUserConversation, addUserTrainingSet, updateUserTrainingSet, deleteUserTrainingSet, getUserTrainingSet } from '../lib/user/user';
+import { addUserConversation, getUserTrainingSets, getUserConversations, removeUserConversation, addUserTrainingSet, updateUserTrainingSet, deleteUserTrainingSet, getUserTrainingSet, getUserPublicChats, addUserPublicChat, updateUserPublicChat, publishUserPublicChat, deleteUserPublicChat, unpublishUserPublicChat, getUserPublicChat } from '../lib/user/user';
 import { generateId } from '../lib/utils/identity';
 import { OpenAIChat } from 'langchain/llms';
 import { createTrainingIndex } from '../lib/training/training';
@@ -246,6 +246,70 @@ app.get("/api/chat/:id/voice/:file", async (req, res) => {
 function hash(text: string) {
   return createHash('sha256').update(text).digest('hex');
 }
+
+/**
+ * Get's the user's public chats
+ */
+app.get("/api/:email/public-chats", async (req, res) => {
+  const { email } = req.params;
+  const conversations = await getUserPublicChats({ email });
+  res.json(conversations);
+});
+
+/**
+ * Get's the user's public chats
+ */
+app.get("/api/:email/public-chats/:id", async (req, res) => {
+  const { email, id } = req.params;
+  const conversations = await getUserPublicChat(id, { email });
+  res.json(conversations);
+});
+
+/** Create's a User's public chat */
+app.post("/api/:email/public-chats", async (req, res) => {
+  const { email } = req.params;
+  const publicChat = req.body as PublicChat
+  const newPublicChat = await addUserPublicChat({ email }, publicChat);
+  res.json(newPublicChat);
+});
+
+/**
+ * Updates a User's public chat
+ */
+app.put("/api/:email/public-chats/:id", async (req, res) => {
+  const { email, id } = req.params;
+  const publicChat = req.body as PublicChat;
+  const updatedPublicChat = await updateUserPublicChat({ email }, { ...publicChat, id });
+  res.json(updatedPublicChat);
+});
+
+/**
+ * Publishes a User's public chat
+ */
+app.put("/api/:email/public-chats/:id/publish", async (req, res) => {
+  const { email, id } = req.params;
+  const updatedPublicChat = await publishUserPublicChat({ email }, { id });
+  res.json(updatedPublicChat);
+});
+
+/**
+ * Deletes and unpublishes User's public chat
+ */
+app.delete("/api/:email/public-chats/:id", async (req, res) => {
+  const { email, id } = req.params;
+  const data = await deleteUserPublicChat({ email }, { id });
+  res.status(204).json(data);
+});
+
+/**
+ * Unpublishes a User's public chat
+ */
+app.delete("/api/:email/public-chats/:id/publish", async (req, res) => {
+  const { email, id } = req.params;
+  await unpublishUserPublicChat({ email }, { id });
+  res.status(204).send();
+});
+
 
 const awaitReady = async (conversation: Conversation) => {
   return;

@@ -1,3 +1,4 @@
+import invariant from "tiny-invariant";
 import redisClient from "../redis/client";
 import { generateId } from "../utils/identity";
 
@@ -70,6 +71,110 @@ export async function deleteUserTrainingSet(user: Pick<Participant, "email">, se
   return newSets;
 }
 
+export async function getUserPublicChats(user: Pick<Participant, "email">): Promise<APIEnvelope<PublicChat[]>> {
+  const publicChats = await redisClient.get(`public-chats:${user.email}`);
+  return {
+    success: true,
+    data: JSON.parse(publicChats || "[]") as PublicChat[]
+  }
+}
+
+export async function getUserPublicChat(id: string, user: Pick<Participant, "email">): Promise<APIEnvelope<PublicChat>> {
+  const publicChat = await redisClient.get(`public-chats:${user.email}:${id}`);
+  if (!publicChat) return {
+    success: false,
+    error: "Public chat not found"
+  }
+  return {
+    success: true,
+    data: JSON.parse(publicChat) as PublicChat
+  };
+
+}
+
+export async function addUserPublicChat(user: Pick<Participant, "email">, publicChat: PublicChat): Promise<APIEnvelope<PublicChat>> {
+  const { data: publicChats } = await getUserPublicChats(user);
+  invariant(publicChats, "Cannot create public chat: Public chats not found");
+  const trainingSet = await getUserTrainingSet(publicChat.trainingSet.id, user);
+  if (!trainingSet) throw new Error("Cannot create public chat: Training set not found");
+  const newPublicChat = {
+    ...publicChat,
+    trainingSet,
+    id: generateId()
+  }
+  publicChats.push(newPublicChat);
+  redisClient.set(`public-chats:${user.email}`, JSON.stringify(publicChats));
+  redisClient.set(`public-chats:${user.email}:${newPublicChat.id}`, JSON.stringify(newPublicChat));
+  return {
+    success: true,
+    data: newPublicChat
+  }
+}
+
+export async function updateUserPublicChat(user: Pick<Participant, "email">, publicChat: PublicChat): Promise<APIEnvelope<PublicChat>> {
+  const { data: publicChats } = await getUserPublicChats(user);
+  invariant(publicChats, "Cannot update public chat: Public chats not found")
+  const trainingSet = await getUserTrainingSet(publicChat.trainingSet.id, user);
+  if (!publicChats.find(c => c.id === publicChat.id)) throw new Error("Public chat not found");
+  const newPublicChats = publicChats.map(c => c.id === publicChat.id ? { ...publicChat, trainingSet } : c);
+  redisClient.set(`public-chats:${user.email}`, JSON.stringify(newPublicChats));
+  redisClient.set(`public-chats:${user.email}:${publicChat.id}`, JSON.stringify(publicChat));
+  return {
+    success: true,
+    data: publicChat,
+  }
+}
+
+export async function deleteUserPublicChat(user: Pick<Participant, "email">, publicChat: Partial<PublicChat>): Promise<APIEnvelope<PublicChat[]>> {
+  const userPublicChat = await getUserPublicChat(publicChat.id!, user);
+  if (!userPublicChat) throw new Error("Public chat not found");
+  const { data: publicChats } = await getUserPublicChats(user);
+  invariant(publicChats, "Cannot delete public chat: Public chats not found");
+  const newPublicChats = publicChats.filter(c => c.id !== publicChat.id);
+  redisClient.set(`public-chats:${user.email}`, JSON.stringify(newPublicChats));
+  redisClient.del(`public-chats:${user.email}:${publicChat.id}`);
+  try {
+    if (publicChat.published) {
+      await unpublishUserPublicChat(user, publicChat);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+  return {
+    success: true,
+    data: newPublicChats,
+  }
+}
+
+export async function publishUserPublicChat(user: Pick<Participant, "email">, publicChat: Partial<PublicChat>): Promise<APIEnvelope<PublicChat>> {
+  const { data: publishablePublicChat } = await getUserPublicChat(publicChat.id!, user)
+  if (!publishablePublicChat) {
+    return {
+      success: false,
+      error: "Public chat not found"
+    }
+  }
+  const { data: publishedPublicChat } = await updateUserPublicChat(user, { ...publishablePublicChat, published: true });
+  redisClient.set(`public-chats:${publishablePublicChat.id}`, JSON.stringify(publishablePublicChat));
+  return {
+    success: true,
+    data: publishedPublicChat
+  }
+}
+
+export async function unpublishUserPublicChat(user: Pick<Participant, "email">, publicChat: Partial<PublicChat>): Promise<APIEnvelope<PublicChat>> {
+  const { data: unPublishablePublicChat } = await getUserPublicChat(publicChat.id!, user);
+  if (!unPublishablePublicChat) throw new Error("Public chat not found");
+  const { data: unpublishedPublicChat } = await updateUserPublicChat(user, { ...unPublishablePublicChat, published: false });
+  redisClient.del(`public-chats:${unPublishablePublicChat.id}`);
+  return {
+    success: true,
+    data: unpublishedPublicChat
+  }
+}
+
+
+
 async function scanRedis(pattern: string) {
   let cursor = 0;
   const found: string[] = [];
@@ -96,4 +201,13 @@ export default {
   addUserTrainingSet,
   updateUserTrainingSet,
   deleteUserTrainingSet,
+  getUserPublicChats,
+  getUserPublicChat,
+  addUserPublicChat,
+  updateUserPublicChat,
+  deleteUserPublicChat,
+  unpublishUserPublicChat,
+  publishUserPublicChat,
+  scanRedis,
+
 }

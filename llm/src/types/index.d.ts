@@ -91,8 +91,15 @@ interface TrainingIndex {
 }
 
 interface APIEnvelope<T> {
-  data: T;
+  success: boolean;
+  data?: T;
   error?: string;
-  success: boolean
+}
+
+interface PublicChat {
+  id: string;
+  name: string;
+  trainingSet: TrainingSetStub;
+  published: boolean;
 }
 
