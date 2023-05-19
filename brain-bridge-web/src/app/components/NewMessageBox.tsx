@@ -4,7 +4,7 @@ import Input from "./Input";
 interface NewMessageBoxProps {
   onMessageSend: (text: string) => void;
 }
-export default function   NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
+export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
   const [currentMessageText, setCurrentMessageText] = useState("");
 
   const handleSend = useCallback(() => {

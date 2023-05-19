@@ -12,9 +12,9 @@ async function PageContent({ id }: { id: string }) {
   const selectedChat = (await Data.fetchChat(id)) as Conversation;
   console.log(selectedChat)
   return (
-    <div className="flex w-full h-full overflow-hidden">
+    <div className="flex w-full h-full">
       <input type="hidden" name="id" value={selectedChat.id} />
-      <Chat selectedChat={selectedChat} chats={chats} session={session} />
+      <Chat selectedChat={selectedChat} session={session} />
     </div>
   );
 }

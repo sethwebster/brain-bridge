@@ -17,7 +17,6 @@ export default function Chat({
   selectedChat,
   session,
 }: {
-  chats: ConversationStub[];
   selectedChat: Conversation;
   session: Session;
 }) {
@@ -60,15 +59,7 @@ export default function Chat({
   useEffect(() => {
     if (firstLoad) {
       setFirstLoad(false);
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      // getLLMResponse({
-      //   sender: session.user?.name || session.user?.email || "Unknown",
-      //   text: `Hello, I'm ${
-      //     session.user?.name || session.user?.email || "Unknown"
-      //   }.`,
-      //   id: -1,
-      //   timestamp: new Date().toISOString(),
-      // });
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });      
     }
   }, [firstLoad, getLLMResponse, session.user?.email, session.user?.name]);
 
@@ -88,22 +79,6 @@ export default function Chat({
     [getLLMResponse, selectedChatMessages.length]
   );
 
-  const handleKeyUp = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      event.preventDefault();
-      if (event.key === "Enter") {
-        handleSend({
-          sender: session.user?.name || session.user?.email || "Unknown",
-          text: currentMessageText,
-          id: -1,
-          timestamp: new Date().toISOString(),
-        });
-        setCurrentMessageText("");
-      }
-    },
-    [currentMessageText, handleSend, session.user?.email, session.user?.name]
-  );
-
   if (!session.user?.email) throw new Error("No user email");
   return (
     <ChatDisplay
@@ -113,7 +88,7 @@ export default function Chat({
       onNewMessage={handleSend}
       soundEnabled={soundEnabled}
       onSoundEnabledChange={(value) => setSoundEnabled(value)}
-      viewer={{ id: session.user?.email }}
+      viewer={{ id: session.user?.name ?? session.user?.email }}
     />
   );
 }
