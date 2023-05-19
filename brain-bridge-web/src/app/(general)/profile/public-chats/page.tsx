@@ -20,12 +20,10 @@ export default async function PublicChatsPage() {
   const sets = await Data.fetchTrainingSets({ email: session.user!.email! });
 
   return (
-    <PaddedContainer>
-      <PublicChatsList
-        session={session}
-        publicChats={data || []}
-        trainingSets={sets}
-      />
-    </PaddedContainer>
+    <PublicChatsList
+      session={session}
+      publicChats={data || []}
+      trainingSets={sets}
+    />
   );
 }

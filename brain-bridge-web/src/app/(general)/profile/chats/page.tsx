@@ -13,10 +13,6 @@ export default async function Page() {
   );
   const chats = await Data.fetchChats({ email: session.user!.email! });
 
-  return (
-    <PaddedContainer>
-      {/* @ts-expect-error RSC */}
-      <ChatListing conversations={chats} trainingSets={trainingSets} />
-    </PaddedContainer>
-  );
+  {/* @ts-expect-error RSC */}
+  return <ChatListing conversations={chats} trainingSets={trainingSets} />;
 }

@@ -49,15 +49,15 @@ export default function ChatDisplay({
 
   useEffect(() => {
     setTimeout(() => {
-      console.log("Scrolling")
+      console.log("Scrolling");
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   }, [loadedMessages.length, answerPending, soundPending]);
 
   return (
-    <div className="flex flex-col w-full h-full bg-slate-100 dark:bg-slate-700">
-      <div className="flex-grow w-full overflow-scroll">
-        <div className="fixed z-50 flex flex-row justify-end w-full p-2 bg-blue-300 border shadow bg-opacity-80">
+    <div className="flex flex-col overflow-scroll border-2 border-purple-600 bg-slate-100 dark:bg-slate-700">
+      <div className="flex-grow w-full ">
+        {/* <div className="fixed z-50 flex flex-row justify-end w-full p-2 bg-blue-300 border shadow bg-opacity-80">
           <button
             className={`${
               soundEnabled ? "bg-green-300" : "bg-blue-300"
@@ -66,7 +66,7 @@ export default function ChatDisplay({
           >
             <SpeakerIcon />
           </button>
-        </div>
+        </div> */}
         <div className="mt-12">
           <Messages messages={loadedMessages} userId={viewer.id} />
         </div>
@@ -82,7 +82,9 @@ export default function ChatDisplay({
         )}
         <div ref={bottomRef} className="m-2" />
       </div>
-      <NewMessageBox onMessageSend={handleNewMessage} />
+      <div className="fixed bottom-0 w-full p-2 mt-4 bg-opacity-0 border-red-700 outline-none border-3">
+        <NewMessageBox onMessageSend={handleNewMessage} />
+      </div>
     </div>
   );
 }
