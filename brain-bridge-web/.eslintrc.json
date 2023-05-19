@@ -2,6 +2,8 @@
   "extends": "next/core-web-vitals",
   "rules": {
     "no-unused-vars": "warn",
-    "sort-imports":"warn"
-  }
+    "sort-imports": "warn"
+  },
+  "plugins": ["simple-import-sort"]
+  
 }
