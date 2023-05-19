@@ -1,6 +1,5 @@
 "use client";
 
-import Auth0 from "next-auth/providers/auth0";
 import { signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 

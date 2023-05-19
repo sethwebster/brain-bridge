@@ -21,7 +21,6 @@ export default function Chat({
   const [selectedChatMessages, setSelectedChatMessages] = useState(
     selectedChat.messages
   );
-  const [currentMessageText, setCurrentMessageText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const playVoice = useCallback(

@@ -1,12 +1,6 @@
 import Data from "@/utils/data";
 import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
-import { NewTrainingSetButton } from "../training/NewTrainingSetButton";
-import PaddedContainer from "../../components/PaddedContainer";
-import Link from "next/link";
-import { DeleteTrainingSet } from "../training/DeleteTrainingSet";
-import { PencilIcon } from "../training/new/components/SvgIcons";
-import PublicChatItem from "./components/PublicChatItem";
 import PublicChatsList from "./components/PublicChatsList";
 
 export default async function PublicChatsPage() {

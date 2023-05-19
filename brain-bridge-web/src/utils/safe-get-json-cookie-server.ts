@@ -1,8 +1,8 @@
-import { getCookie, setCookie } from "cookies-next";
+import { cookies } from "next/headers";
 
-export function safeGetJSONCookieClient<T>(key: string, defaultValue: T) {
+export function safeGetJSONCookieServer<T>(key: string, defaultValue: T) {
   try {
-    return JSON.parse(getCookie(key) as string);
+    return JSON.parse(cookies().get(key)?.value ?? "{}");
   } catch (e) {
     return defaultValue;
   }

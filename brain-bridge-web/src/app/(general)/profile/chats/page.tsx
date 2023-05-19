@@ -2,7 +2,6 @@ import Data from "@/utils/data";
 import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import { ChatListing } from "./components/ChatListing";
-import PaddedContainer from "../../components/PaddedContainer";
 
 export default async function Page() {
   const session = await getServerSession();

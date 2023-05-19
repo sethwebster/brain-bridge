@@ -1,7 +1,6 @@
 "use client";
 import { Session } from "next-auth";
 import PublicChatItem from "./PublicChatItem";
-import { NewTrainingSetButton } from "../../training/NewTrainingSetButton";
 import { NewButton } from "@/app/(general)/components/NewButton";
 import { useCallback, useState } from "react";
 import EditPublicChat from "./EditPublicChat";
@@ -43,7 +42,7 @@ export default function PublicChatsList({
         <NewButton onClick={() => setAddItem(!addItem)} />
       </header>
       <ul>
-        {(publicChats || []).map((chat, index) => (
+        {(publicChats || []).map((chat) => (
           <li key={chat.id}>
             <PublicChatItem
               publicChat={chat}

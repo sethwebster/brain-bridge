@@ -1,6 +1,6 @@
 "use client";
 import useAutosizeTextArea from "@/hooks/useAutoSizeTextArea";
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function AutoSizingTextArea(
   props: { value: string; } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {

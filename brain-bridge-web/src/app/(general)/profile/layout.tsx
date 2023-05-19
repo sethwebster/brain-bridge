@@ -1,5 +1,4 @@
 import { getServerSession } from "next-auth";
-import PaddedContainer from "../components/PaddedContainer";
 import { SideBar } from "./chat/components/SideBar";
 import Data from "@/utils/data";
 import invariant from "tiny-invariant";

@@ -1,9 +1,7 @@
 import { User } from "next-auth";
-import path from "path"
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_CHAT_API_URL
-  const url = new URL(endpoint, base);
   return new URL(endpoint, base).toString();
 }
 
@@ -296,7 +294,7 @@ const Data = {
     if (!response.ok) {
       throw new Error("Failed to fetch public chats");
     }
-    const { success, data, error } = await response.json();
+    const { data } = await response.json();
     return {
       success: true,
       data
@@ -310,7 +308,7 @@ const Data = {
     if (!response.ok) {
       throw new Error("Failed to fetch public chats");
     }
-    const { success, data, error } = await response.json();
+    const { data } = await response.json();
     return {
       success: true,
       data

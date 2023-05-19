@@ -13,12 +13,11 @@ export function FakeTypingIndicator({
   show,
 }: FaceTypingIndicatorProps) {
   const [visible, setVisible] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
 
   const setVisibleAndNotify = useCallback((val: boolean) => {
     setVisible(val);
     onShown?.(val);
-  }, []);
+  }, [onShown]);
 
   useEffect(() => {
     if (!show) {
@@ -32,7 +31,7 @@ export function FakeTypingIndicator({
       clearTimeout(i);
       setVisibleAndNotify(false);
     };
-  }, [show]);
+  }, [setVisibleAndNotify, show]);
   if (!visible) return <> </>;
   return (
     <div className="flex flex-row justify-start">

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState, useRef, useMemo } from "react";
-import { QuestionsAndTokens, QuestionsWizard } from "./QuestionsWizard";
+import { useCallback, useMemo, useState } from "react";
+import { QuestionsWizard } from "./QuestionsWizard";
 import Sources from "./Sources";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
@@ -136,12 +136,16 @@ function TrainingSetForm({
       ...trainingSet,
       prompt: removeFooter(trainingSet!.prompt),
     };
-    const areDifferent = JSON.stringify(trainingSetData) !== JSON.stringify(trainingSetCleaned)
-    console.log(getDiffsBetweenTwoStrings(trainingSetData.prompt, trainingSetCleaned.prompt))
-    console.log("Is Dirty", areDifferent)
-    return (
-      areDifferent
+    const areDifferent =
+      JSON.stringify(trainingSetData) !== JSON.stringify(trainingSetCleaned);
+    console.log(
+      getDiffsBetweenTwoStrings(
+        trainingSetData.prompt,
+        trainingSetCleaned.prompt
+      )
     );
+    console.log("Is Dirty", areDifferent);
+    return areDifferent;
   }, [trainingSetData, trainingSet]);
 
   const canSave = useMemo(() => {
@@ -149,7 +153,9 @@ function TrainingSetForm({
     const allTokensRemoved = regex.exec(trainingSetData.prompt) === null;
     console.log(
       "Can Save:",
-      trainingSetData.name.trim().length > 0,  allTokensRemoved, regex.exec(trainingSetData.prompt) === null
+      trainingSetData.name.trim().length > 0,
+      allTokensRemoved,
+      regex.exec(trainingSetData.prompt) === null
     );
     return trainingSetData.name.trim().length > 0 && allTokensRemoved;
   }, [trainingSetData.name, trainingSetData.prompt]);

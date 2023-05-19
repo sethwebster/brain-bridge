@@ -11,7 +11,7 @@ export default function Sources({
   sources: TrainingSource[];
   onSourcesChanged: (sources: TrainingSource[]) => void;
 }) {
-  const [openFileSelector, { filesContent, loading, clear }] = useFilePicker({
+  const [openFileSelector, { filesContent, clear }] = useFilePicker({
     accept: [".txt", ".md", ".csv", ".json"],
     multiple: true,
     readFilesContent: true,

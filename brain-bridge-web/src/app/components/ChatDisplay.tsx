@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Messages } from "../(general)/profile/chat/components/Messages";
 import {
   FakeSpeakerIndicator,
@@ -47,7 +47,7 @@ export default function ChatDisplay({
     [onNewMessage, viewer.id]
   );
 
-  const handleTypingIndicatorShown = useCallback((visible: boolean) => {
+  const handleTypingIndicatorShown = useCallback(() => {
     setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
