@@ -10,9 +10,9 @@ async function PageContent({ id }: { id: string }) {
   invariant(session.user, "User must be logged in");
   const chats = await Data.fetchChats({ email: session.user.email! });
   const selectedChat = (await Data.fetchChat(id)) as Conversation;
-
+  console.log(selectedChat)
   return (
-    <div className="flex w-full h-full">
+    <div className="flex w-full h-full overflow-hidden">
       <input type="hidden" name="id" value={selectedChat.id} />
       <Chat selectedChat={selectedChat} chats={chats} session={session} />
     </div>
@@ -20,10 +20,8 @@ async function PageContent({ id }: { id: string }) {
 }
 
 export default async function Page({ params }: { params: { id: string } }) {
-  "use server";
-
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div></div>}>
       {/* @ts-expect-error RSC */}
       <PageContent id={params.id} />
     </Suspense>

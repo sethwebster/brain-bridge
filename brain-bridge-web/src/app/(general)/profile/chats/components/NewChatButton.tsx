@@ -1,12 +1,13 @@
 "use client";
 import { NewButton } from "@/app/(general)/components/NewButton";
+import Select from "@/app/components/Select";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function NewChatButton({
   user,
-  trainingSets
+  trainingSets,
 }: {
   user: { email?: string | null | undefined; name?: string | null | undefined };
   trainingSets?: TrainingSet[];
@@ -21,7 +22,6 @@ export function NewChatButton({
     router.refresh();
   };
 
-  
   const handleTrainingSetChange = (
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
@@ -29,7 +29,7 @@ export function NewChatButton({
   };
   return (
     <div>
-      <select
+      <Select
         className="relative p-2 mr-2 rounded-md -top-1.5"
         onChange={handleTrainingSetChange}
       >
@@ -38,7 +38,7 @@ export function NewChatButton({
             {trainingSet.name}
           </option>
         ))}
-      </select>
+      </Select>
       <NewButton onClick={handleNewChat} />
     </div>
   );

@@ -3,6 +3,8 @@
 import { useCallback, useState } from "react";
 import { SaveIcon } from "../../training/new/components/SvgIcons";
 import invariant from "tiny-invariant";
+import Input from "@/app/components/Input";
+import Select from "@/app/components/Select";
 
 export default function EditPublicChat({
   publicChat,
@@ -47,13 +49,13 @@ export default function EditPublicChat({
   return (
     <div className="flex flex-row w-full p-2">
       <div className="flex flex-row flex-grow">
-        <input
+        <Input
           type="text"
           value={editedPublicChat.name}
           className="flex-1 p-2 mr-2 border rounded-md"
           onChange={handleNameChange}
         />
-        <select
+        <Select
           className="mr-2 border rounded-md flex-3"
           onChange={handleTrainingSetChange}
           value={editedPublicChat.trainingSet.id}
@@ -63,7 +65,7 @@ export default function EditPublicChat({
               {set.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       <button
         className="p-1 px-3 bg-green-200 rounded-md shadow hover:bg-green-400"

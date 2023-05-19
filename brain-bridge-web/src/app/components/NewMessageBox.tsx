@@ -1,9 +1,10 @@
 import { useCallback, useState } from "react";
+import Input from "./Input";
 
 interface NewMessageBoxProps {
   onMessageSend: (text: string) => void;
 }
-export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
+export default function   NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
   const [currentMessageText, setCurrentMessageText] = useState("");
 
   const handleSend = useCallback(() => {
@@ -29,11 +30,11 @@ export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
   );
 
   return (
-    <input
+    <Input
       type="text"
       name="message"
       placeholder="Type your message here"
-      className="sticky w-full h-auto p-2 mb-4 border rounded shadow-inner outline-none bg-slate-100 dark:bg-slate-900 border-slate-600 bg-opacity-95"
+      className="flex-grow p-2 mb-4 border rounded shadow-inner outline-none bg-opacity-95"
       value={currentMessageText}
       onKeyUp={handleKeyUp}
       onChange={handleTextChanged}

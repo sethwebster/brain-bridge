@@ -1,4 +1,5 @@
 "use client";
+import Input from "@/app/components/Input";
 import { useCallback, useState } from "react";
 
 export const QuestionsAndTokens: QuestionAnswerToken[] = [
@@ -133,8 +134,8 @@ export function QuestionsWizard({
             {questionsState[questionIndex].question}
           </div>
           <div className="w-full p-2 mt-2 ml-2 rounded-md dark:bg-slate-700 dark:border-slate-600">
-            <input
-              className="w-full p-2 mt-2 border rounded-md dark:bg-slate-700 dark:border-slate-600"
+            <Input
+              className="w-full p-2 mt-2 border rounded-md"
               type="text"
               value={questionsState[questionIndex].answer}
               onChange={handleQuestionChange}

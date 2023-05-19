@@ -10,6 +10,7 @@ import getDiffsBetweenTwoStrings from "@/utils/getDiffsBetweenTwoStrings";
 import { removeFooter } from "@/utils/prompts";
 import ErrorBox from "@/app/(general)/components/ErrorBox";
 import invariant from "tiny-invariant";
+import Input from "@/app/components/Input";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSet;
@@ -155,8 +156,8 @@ function TrainingSetForm({
 
   return (
     <div>
-      <input
-        className="w-full p-2 mt-2 border rounded-md dark:bg-slate-700 dark:border-slate-600"
+      <Input
+        className="w-full p-2 mt-2 border rounded-md"
         alt="Training Set Name"
         placeholder="Training Set Name"
         type="text"

@@ -20,7 +20,7 @@ export default async function Layout({
   });
   return (
     <div className="flex flex-row w-full h-full bg-slate-100 dark:bg-slate-700">
-      <div className="h-full mt-20 sm:p-4">
+      <div className="h-full sm:p-4">
         <SideBar
           setCount={sets.length}
           chatCount={chats.length}

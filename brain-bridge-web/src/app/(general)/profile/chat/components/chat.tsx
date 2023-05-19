@@ -104,13 +104,6 @@ export default function Chat({
     [currentMessageText, handleSend, session.user?.email, session.user?.name]
   );
 
-  const handleTextChanged = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      setCurrentMessageText(event.target.value);
-    },
-    []
-  );
-
   if (!session.user?.email) throw new Error("No user email");
   return (
     <ChatDisplay
