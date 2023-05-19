@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { NextResponse } from "next/server";
 import PublicChat from "./components/PublicChat";
 import invariant from "tiny-invariant";
+import { safeGetJSONCookieServer } from "@/utils/safe-get-json-cookie-client";
 
 export default async function PublicChatPage({
   params: { id },
@@ -19,12 +20,18 @@ export default async function PublicChatPage({
   invariant(chat, "Chat must exist");
   const userCookies = cookies();
   const viewerId = userCookies.get("viewer-id")?.value ?? generateId();
-  const conversationId = userCookies.get("chat-id")?.value ?? generateId();
+  const conversations = safeGetJSONCookieServer<{ [key: string]: string }>(
+    "chats",
+    {}
+  );
+  const conversationId = conversations[chat.id];
   let conversation: Conversation | undefined;
-  try {
-    conversation = await Data.fetchChat(conversationId);
-  } catch (e) {
-    console.log(`Chat for ${viewerId}/${conversationId} not found`, e);
+  if (conversationId) {
+    try {
+      conversation = await Data.fetchChat(conversationId);
+    } catch (e) {
+      console.log(`Chat for ${viewerId}/${conversationId} not found`, e);
+    }
   }
   if (!conversation) {
     conversation = await Data.newPublicChat(

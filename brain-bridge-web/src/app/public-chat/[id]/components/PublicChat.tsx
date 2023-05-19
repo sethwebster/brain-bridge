@@ -3,6 +3,7 @@ import ChatDisplay from "@/app/components/ChatDisplay";
 import Data from "@/utils/data";
 import { useCallback, useState, useEffect } from "react";
 import { setCookie } from "cookies-next";
+import { safeGetJSONCookieClient } from "@/utils/safe-get-json-cookie-server";
 
 interface PublicChatProps {
   viewer: Viewer;
@@ -23,7 +24,10 @@ export default function PublicChat({
 
   useEffect(() => {
     setCookie("viewer-id", viewer.id, { sameSite: "strict" });
-    setCookie("chat-id", conversation.id, { sameSite: "strict" });
+    const userChats = safeGetJSONCookieClient("chats", {});
+    console.log("TUC", userChats)
+    userChats[publicChat.id] = conversation.id;
+    setCookie("chats", JSON.stringify(userChats), { sameSite: "strict" });
   }, [conversation.id, viewer.id]);
 
   const getLLMResponse = useCallback(
