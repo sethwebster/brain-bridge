@@ -2,7 +2,7 @@ import Data from "@/utils/data";
 import { getServerSession } from "next-auth";
 import { Suspense } from "react";
 import invariant from "tiny-invariant";
-import Chat from "../components/chat";
+import Chat from "../components/PrivateChat";
 
 async function PageContent({ id }: { id: string }) {
   const session = await getServerSession();
