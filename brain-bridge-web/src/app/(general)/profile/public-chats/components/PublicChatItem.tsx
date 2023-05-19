@@ -2,9 +2,9 @@
 
 import { Session } from "next-auth";
 import { DeleteTrainingSet } from "../../training/DeleteTrainingSet";
-import { PencilIcon } from "../../training/new/components/svg-icons";
+import { PencilIcon } from "../../training/new/components/SvgIcons";
 import { useCallback, useState } from "react";
-import EditPublicChat from "./edit-public-chat";
+import EditPublicChat from "./EditPublicChat";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
 import Link from "next/link";

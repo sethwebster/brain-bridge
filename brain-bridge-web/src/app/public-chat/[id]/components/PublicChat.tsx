@@ -1,5 +1,5 @@
 "use client";
-import ChatDisplay from "@/app/components/chat-display";
+import ChatDisplay from "@/app/components/ChatDisplay";
 import Data from "@/utils/data";
 import { useCallback, useState, useEffect } from "react";
 import { setCookie } from "cookies-next";

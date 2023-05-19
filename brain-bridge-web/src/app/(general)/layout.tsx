@@ -1,5 +1,5 @@
-import AuthProvider from "./components/auth-provider";
-import Nav from "./components/nav";
+import AuthProvider from "./components/AuthProvider";
+import Nav from "./components/Nav";
 import "../globals.css";
 import { Inter } from "next/font/google";
 

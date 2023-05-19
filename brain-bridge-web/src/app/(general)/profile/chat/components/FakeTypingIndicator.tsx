@@ -1,7 +1,7 @@
 "use client";
 import { generateRandomInteger } from "@/utils/numbers";
 import { useEffect, useRef, useState } from "react";
-import { SpeakerIcon } from "../../training/new/components/svg-icons";
+import { SpeakerIcon } from "../../training/new/components/SvgIcons";
 
 export function FakeTypingIndicator() {
   const [show, setShow] = useState(false);

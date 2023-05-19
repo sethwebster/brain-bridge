@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { SaveIcon } from "../../training/new/components/svg-icons";
+import { SaveIcon } from "../../training/new/components/SvgIcons";
 import invariant from "tiny-invariant";
 
 export default function EditPublicChat({

@@ -4,7 +4,7 @@ import invariant from "tiny-invariant";
 import { NewTrainingSetButton } from "./NewTrainingSetButton";
 import Link from "next/link";
 import { DeleteTrainingSet } from "./DeleteTrainingSet";
-import PaddedContainer from "../../components/padded-container";
+import PaddedContainer from "../../components/PaddedContainer";
 
 export default async function TrainingPage() {
   const session = await getServerSession();

@@ -1,12 +1,12 @@
-import PaddedContainer from "@/app/(general)/components/padded-container";
-import Chat from "@/app/(general)/profile/chat/components/chat";
-import ChatDisplay from "@/app/components/chat-display";
+import PaddedContainer from "@/app/(general)/components/PaddedContainer";
+import Chat from "@/app/(general)/profile/chat/components/Chat";
+import ChatDisplay from "@/app/components/ChatDisplay";
 import Data from "@/utils/data";
 import generateId from "@/utils/generate-id";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { NextResponse } from "next/server";
-import PublicChat from "./components/public-chat";
+import PublicChat from "./components/PublicChat";
 import invariant from "tiny-invariant";
 
 export default async function PublicChatPage({

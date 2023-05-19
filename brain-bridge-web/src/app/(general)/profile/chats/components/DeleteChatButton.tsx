@@ -2,8 +2,8 @@
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { TrashCan } from "../../training/new/components/svg-icons";
-import DeleteButton from "@/app/(general)/components/delete-button";
+import { TrashCan } from "../../training/new/components/SvgIcons";
+import DeleteButton from "@/app/(general)/components/DeleteButton";
 
 export function DeleteChat({
   id,

@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth";
-import PaddedContainer from "../components/padded-container";
+import PaddedContainer from "../components/PaddedContainer";
 import { SideBar } from "./chat/components/SideBar";
 import Data from "@/utils/data";
 import invariant from "tiny-invariant";
-import SideBarPaddedContainer from "./chat/components/sidebar-padded-container";
+import SideBarPaddedContainer from "./chat/components/SidebarPaddedContainer";
 
 export default async function Layout({
   children,
@@ -19,7 +19,7 @@ export default async function Layout({
     email: session.user.email!,
   });
   return (
-    <div className="flex flex-row w-full h-full border border-green-400 bg-slate-100 dark:bg-slate-700">
+    <div className="flex flex-row w-full h-full bg-slate-100 dark:bg-slate-700">
       <div className="h-full mt-20 sm:p-4">
         <SideBar
           setCount={sets.length}

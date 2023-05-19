@@ -9,9 +9,9 @@ import {
   FakeSpeakerIndicator,
   FakeTypingIndicator,
 } from "./FakeTypingIndicator";
-import { SpeakerIcon } from "../../training/new/components/svg-icons";
+import { SpeakerIcon } from "../../training/new/components/SvgIcons";
 import useAudioPlayer from "@/hooks/useAudioPlayer";
-import ChatDisplay from "@/app/components/chat-display";
+import ChatDisplay from "@/app/components/ChatDisplay";
 
 export default function Chat({
   selectedChat,

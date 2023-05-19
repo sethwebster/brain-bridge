@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
 import getDiffsBetweenTwoStrings from "@/utils/getDiffsBetweenTwoStrings";
 import { removeFooter } from "@/utils/prompts";
-import ErrorBox from "@/app/(general)/components/error-box";
+import ErrorBox from "@/app/(general)/components/ErrorBox";
 import invariant from "tiny-invariant";
 
 interface TrainingSetFormProps {

@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth";
 import TrainingSetForm from "./components/TrainingSetForm";
 import invariant from "tiny-invariant";
-import promptTemplate, { promptFooter } from "./prompt-template";
+import promptTemplate, { promptFooter } from "./PromptTemplate";
 import { QuestionsAndTokens } from "./components/QuestionsWizard";
-import PaddedContainer from "@/app/(general)/components/padded-container";
+import PaddedContainer from "@/app/(general)/components/PaddedContainer";
 
 export default async function NewTrainingSetPage() {
   const session = await getServerSession();

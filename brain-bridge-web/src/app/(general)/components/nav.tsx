@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { getServerSession } from "next-auth";
-import { LoginButton, LogoutButton } from "./auth-buttons";
+import { LoginButton, LogoutButton } from "./AuthButtons";
 import Link from "next/link";
 import { Suspense } from "react";
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UrlIcon } from "../../training/new/components/svg-icons";
+import { UrlIcon } from "../../training/new/components/SvgIcons";
 
 export function SideBar({
   setCount,

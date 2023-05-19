@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SpeakerIcon } from "../(general)/profile/training/new/components/svg-icons";
+import { SpeakerIcon } from "../(general)/profile/training/new/components/SvgIcons";
 import { Messages } from "../(general)/profile/chat/components/Messages";
 import {
   FakeSpeakerIndicator,
   FakeTypingIndicator,
 } from "../(general)/profile/chat/components/FakeTypingIndicator";
-import NewMessageBox from "./new-message-box";
+import NewMessageBox from "./NewMessageBox";
 
 interface ChatProps {
   viewer: Viewer;
@@ -55,9 +55,9 @@ export default function ChatDisplay({
   }, [loadedMessages.length, answerPending, soundPending]);
 
   return (
-    <div className="flex flex-col overflow-scroll border-2 border-purple-600 bg-slate-100 dark:bg-slate-700">
+    <div className="flex flex-col overflow-scroll bg-slate-100 dark:bg-slate-700">
       <div className="flex-grow w-full ">
-        {/* <div className="fixed z-50 flex flex-row justify-end w-full p-2 bg-blue-300 border shadow bg-opacity-80">
+        <div className="fixed z-50 flex flex-row justify-end w-5/6 p-2 bg-blue-300 border shadow bg-opacity-80">
           <button
             className={`${
               soundEnabled ? "bg-green-300" : "bg-blue-300"
@@ -66,7 +66,7 @@ export default function ChatDisplay({
           >
             <SpeakerIcon />
           </button>
-        </div> */}
+        </div>
         <div className="mt-12">
           <Messages messages={loadedMessages} userId={viewer.id} />
         </div>

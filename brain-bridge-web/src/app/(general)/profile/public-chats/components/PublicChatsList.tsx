@@ -1,10 +1,10 @@
 "use client";
 import { Session } from "next-auth";
-import PublicChatItem from "./public-chat-item";
+import PublicChatItem from "./PublicChatItem";
 import { NewTrainingSetButton } from "../../training/NewTrainingSetButton";
 import { NewButton } from "@/app/(general)/components/NewButton";
 import { useCallback, useState } from "react";
-import EditPublicChat from "./edit-public-chat";
+import EditPublicChat from "./EditPublicChat";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
 

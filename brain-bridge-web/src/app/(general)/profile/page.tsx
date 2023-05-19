@@ -1,4 +1,4 @@
-import PaddedContainer from "../components/padded-container";
+import PaddedContainer from "../components/PaddedContainer";
 
 export default async function Profile() {
   return (
