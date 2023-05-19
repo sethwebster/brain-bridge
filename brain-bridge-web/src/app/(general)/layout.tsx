@@ -1,7 +1,7 @@
 import "../globals.css";
 import AuthProvider from "./components/AuthProvider";
 // import { Inter } from "next/font/google";
-import Nav from "./components/Nav";
+import NavBar from "./components/NavBar";
 
 // const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +20,7 @@ export default function RootLayout({
       <body className="flex flex-col w-full h-screen ">
         <AuthProvider>
           {/* @ts-expect-error RSC */}
-          <Nav />
+          <NavBar />
           <div className="flex flex-col h-full">{children}</div>
         </AuthProvider>
       </body>
