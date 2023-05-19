@@ -36,8 +36,6 @@ const SignInOutButton = async () => {
 };
 
 async function Nav() {
-  const session = await getServerSession();
-  const loggedIn = session && session.user;
   return (
     <nav className="fixed top-0 z-50 flex flex-row w-full p-5 dark:border-b dark:border-gray-800 dark:bg-gray-900 bg-slate-100 drop-shadow-md">
       <div className="flex font-bold ab">
