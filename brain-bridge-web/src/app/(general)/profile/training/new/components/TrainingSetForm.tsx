@@ -6,7 +6,7 @@ import Sources from "./Sources";
 import Data from "@/utils/data";
 import { useRouter } from "next/navigation";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
-import getDiffsBetweenTwoStrings from "@/utils/getDiffsBetweenTwoStrings";
+import getDiffsBetweenTwoStrings from "@/utils/get-diffs-between-two-strings";
 import { removeFooter } from "@/utils/prompts";
 import ErrorBox from "@/app/(general)/components/ErrorBox";
 import invariant from "tiny-invariant";
