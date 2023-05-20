@@ -58,27 +58,34 @@ export default function PublicChatItem({
       />
     );
   return (
-    <div className="flex flex-row justify-between p-2">
-      <div className="flex flex-row flex-grow">
-        <button
-          className="p-1.5 mr-2 bg-blue-100 hover:bg-blue-200 shadow rounded-md"
-          onClick={handleEditClicked}
-        >
-          <PencilIcon />
-        </button>
-        <div className="flex flex-row flex-grow justify-evenly">
-          <div>{publicChat.name}</div>
-          <div>
-            <Link href={url} className="text-blue-300">
-              {publicChat.id}
-            </Link>
-          </div>
-          <button onClick={handlePublishUnPublish}>
-            {publicChat.published ? "Published" : "Not published"}
+    <>
+      <div className="grid w-full grid-cols-8 gap-4">
+        <div>
+          <button
+            className="p-1.5 bg-blue-100 hover:bg-blue-200 shadow rounded-md"
+            onClick={handleEditClicked}
+          >
+            <PencilIcon />
           </button>
         </div>
+        <div className="col-span-3 truncate">{publicChat.name}</div>
+        <div className="col-span-2">
+          <Link href={url} className="text-blue-300">
+            {publicChat.id}
+          </Link>
+        </div>
+        <button
+          onClick={handlePublishUnPublish}
+          className={`text-sm ${
+            publicChat.published ? "text-green-500" : "text-red-500"
+          }`}
+        >
+          {publicChat.published ? "⬤" : "⬤"}
+        </button>
+        <div className="flex justify-end">
+          <DeleteTrainingSet id={publicChat.id} user={session.user as any} />
+        </div>
       </div>
-      <DeleteTrainingSet id={publicChat.id} user={session.user as any} />
-    </div>
+    </>
   );
 }
