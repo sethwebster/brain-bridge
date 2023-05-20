@@ -49,10 +49,8 @@ export default async function PublicChatPage({
   );
 }
 
-PublicChatPage.getLayout = function getLayout(page: any) {
-  return <>!!!{page}!!!</>;
-};
 function ensurePublicChat(success: boolean, chat: PublicChat | undefined) {
+  console.log("ensurePublicChat", "success", success, "chat", chat);
   if (!success || !chat) {
     notFound();
   }
