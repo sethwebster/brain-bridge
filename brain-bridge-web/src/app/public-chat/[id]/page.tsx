@@ -1,18 +1,36 @@
-import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
-import invariant from 'tiny-invariant';
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
+import invariant from "tiny-invariant";
 
-import Data from '@/utils/data';
-import generateId from '@/utils/generate-id';
-import { safeGetJSONCookieServer } from '@/utils/safe-get-json-cookie-server';
+import Data from "@/utils/data";
+import generateId from "@/utils/generate-id";
+import { safeGetJSONCookieServer } from "@/utils/safe-get-json-cookie-server";
 
-import PublicChat from './components/PublicChat';
+import PublicChat from "./components/PublicChat";
+import { Metadata } from "next";
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
 
-export default async function PublicChatPage({
-  params: { id },
-}: {
-  params: { id: string };
-}) {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  // read route params
+  const id = params.id;
+
+  // fetch data
+  const { success, data: chat } = await Data.fetchPublicChat(id);
+  if (success) {
+    return {
+      title: `Chat: ${chat?.name}`,
+    };
+  }
+  notFound();
+}
+
+export default async function PublicChatPage({ params: { id } }: PageProps) {
   const { success, data: chat } = await Data.fetchPublicChat(id);
   ensurePublicChat(success, chat);
   invariant(chat, "Chat must exist");
