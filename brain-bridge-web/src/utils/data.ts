@@ -1,4 +1,5 @@
 import { User } from "next-auth";
+import generateId from "./generate-id";
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_CHAT_API_URL
@@ -268,11 +269,12 @@ const Data = {
     }
   },
   fetchPublicChat: async (id: string): Promise<APIEnvelope<PublicChat>> => {
-    const url = makeApiUrl(`public-chat/${id}?x=12`);
+    const url = makeApiUrl(`public-chat/${id}?random=${generateId()}`);
     const response = await fetch(url as string, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "cache-control": "no-cache"
       }
     });
     if (!response.ok) {
