@@ -6,8 +6,9 @@ import invariant from "tiny-invariant";
 
 type InfoBoxProps = {
   title: string;
-  body: string;
+  body?: string;
   dismissable?: boolean;
+  children?: React.ReactNode;
 } & (
   | {
       dismissable: true;
@@ -15,15 +16,14 @@ type InfoBoxProps = {
     }
   | {
       dismissable: false;
-      // dismissableId: undefined;
     }
 );
 
 function InfoBoxDisplay(
   props: InfoBoxProps & { hidden: boolean; handleDismiss: () => void }
 ) {
-  
-  const { title, body, dismissable, hidden, handleDismiss } = props;
+  const { title, dismissable, hidden, handleDismiss } = props;
+
   if (hidden) return <></>;
   return (
     <div
@@ -34,7 +34,9 @@ function InfoBoxDisplay(
         <div>{title}</div>
         {dismissable && <button onClick={handleDismiss}>✕</button>}
       </header>
-      <span className="block sm:inline">{body}</span>
+      <span className="block sm:inline">
+        {props.body} {props.children}
+      </span>
     </div>
   );
 }
