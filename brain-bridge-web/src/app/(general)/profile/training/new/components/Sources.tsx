@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlusAddIcon, UrlIcon } from "./SvgIcons";
 import { isValidURL } from "@/utils/validation";
 import Modal from "@/app/(general)/components/ModalDialog";
+import htmlToMarkdown from "@/utils/html-to-markdown";
 
 export default function Sources({
   sources,
@@ -12,7 +13,7 @@ export default function Sources({
   onSourcesChanged: (sources: TrainingSource[]) => void;
 }) {
   const [openFileSelector, { filesContent, clear }] = useFilePicker({
-    accept: [".txt", ".md", ".csv", ".json"],
+    accept: [".txt", ".md", ".csv", ".json", ".html"],
     multiple: true,
     readFilesContent: true,
   });
@@ -42,7 +43,7 @@ export default function Sources({
         return {
           type: "file",
           location: fileContent.name,
-          content: fileContent.content,
+          content: htmlToMarkdown(fileContent.content),
           pending: true,
         };
       });
