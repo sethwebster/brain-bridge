@@ -26,6 +26,8 @@ export default async function NewTrainingSetPage() {
             version: 0,
             dateCreated: new Date(),
             prompt: promptTemplate,
+            userId: session.user.email!,
+            shares: [],
             questionsAndAnswers: QuestionsAndTokens,
           }}
         />

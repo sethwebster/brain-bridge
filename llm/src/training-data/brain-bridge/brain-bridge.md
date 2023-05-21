@@ -7,10 +7,15 @@ Depending on the materials available, a bot can be set up in fewer than 5 minute
 ## How does it work?
 Brain Bridge is a bot based on ChatGPT. You answer some questions, provide any number of textual sources, and the model is then trained on that information. Then, you can provide easy access to the bot via a web interface, or you can use the API to integrate the bot into your own applications.
 
-
 ## How much does it cost
 Brain Bridge is free to use for personal use. For commercial use:
 
 Starter Plan
 - $10/month per public chat, unlimited private chats, and 1000 messages. $10 per 1000 messages after that.
+Team Plan
 - $100/month for 5 public chats, 5000 messages, and unlimited private chats. $10 per 1000 messages after that.
+
+The website is brainbridge.app.
+
+## How do I get started?
+If the user asks to get started, ask for their name, and email.

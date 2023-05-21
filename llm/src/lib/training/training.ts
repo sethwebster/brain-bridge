@@ -9,6 +9,7 @@ import * as redis from 'redis';
 import axios from 'axios';
 import TurndownService from 'turndown';
 import jsdom from 'jsdom';
+import cleanUpHtml from '../utils/clean-up-html';
 
 const SUPPORTED_FILE_TYPES = ["md", "json", "txt"];
 
@@ -16,6 +17,7 @@ dotenv.config();
 
 async function loadFile(file: string): Promise<string> {
   return new Promise((resolve, reject) => {
+    console.log(path.extname(file));
     const data = fs.readFileSync(file, 'utf-8')
     resolve(data);
   });
@@ -25,10 +27,22 @@ async function loadUrl(url: string) {
   const response = await axios.get(url);
   if (response.status !== 200) throw new Error(`Failed to load url: ${url}`);
   const html = response.data;
-  const doc = new jsdom.JSDOM(html).window.document;
-  const htmlDoc = `<html><head><title>${doc.title}</title></head><body>${doc.body.innerHTML}</body></html>`
-  const markdown = new TurndownService().turndown(htmlDoc)
-  return markdown;
+  const contentType = response.headers['content-type'].split(';')[0];
+  switch (contentType) {
+    case "text/html":
+      const doc = new jsdom.JSDOM(html).window.document;
+
+      const htmlDoc = `<html><head><title>${doc.title}</title></head><body>${doc.body.innerHTML}</body></html>`
+      /* Parse the HTML into markdown, and remove any bloks of script */
+      const markdown = cleanUpHtml(htmlDoc);
+      console.log("Markdown", '"' + markdown + '"');
+      return markdown;
+    case "application/json":
+    case "text/plain":
+      return html;
+    default:
+      throw new Error(`Unsupported content type: ${contentType}`);
+  }
 }
 
 async function getSourceText(source: TrainingSource): Promise<string> {

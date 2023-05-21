@@ -44,7 +44,7 @@ export async function getUserTrainingSet(id: string, user: Pick<Participant, "em
 
 export async function addUserTrainingSet(user: Pick<Participant, "email">, set: TrainingSet) {
   const sets = await getUserTrainingSets(user);
-  const updated = { ...set, id: generateId(16), dateCreated: new Date(), version: 0 };
+  const updated: TrainingSet = { ...set, id: generateId(16), dateCreated: new Date(), version: 0, userId: user.email };
   const stub = { ...updated } as TrainingSetStub & { sources?: TrainingSource[] };
   delete stub.sources;
   sets.push(stub);
@@ -56,8 +56,10 @@ export async function addUserTrainingSet(user: Pick<Participant, "email">, set: 
 
 export async function updateUserTrainingSet(user: Pick<Participant, "email">, set: TrainingSet) {
   const sets = await getUserTrainingSets(user);
-  const updated = { ...set, dateUpdated: new Date(), version: set.version + 1 };
-  const newSets = sets.map(s => s.id === set.id ? updated : s);
+  const updated: TrainingSet = { ...set, dateUpdated: new Date(), version: set.version + 1, userId: user.email };
+  const stub = { ...updated } as TrainingSetStub & { sources?: TrainingSource[] };
+  delete stub.sources;
+  const newSets = sets.map(s => s.id === set.id ? stub : s);
   redisClient.set(`training-sets:${user.email}`, JSON.stringify(newSets));
   redisClient.set(`training-sets:${user.email}:${set.id}`, JSON.stringify(updated));
   return updated;
