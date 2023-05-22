@@ -348,7 +348,6 @@ app.delete("/api/:email/public-chats/:id/publish", async (req, res) => {
 app.get("/api/public-chat/:id", async (req, res) => {
   const { id } = req.params;
   const conversation = await getPublicChat(id);
-  console.log("conversation", conversation)
   res.json(conversation);
 });
 

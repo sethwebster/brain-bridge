@@ -210,6 +210,7 @@ async function vectorize(docs: string[]): Promise<HNSWLib> {
 
 const textSplitter = new CharacterTextSplitter({
   chunkSize: 2000,
+  chunkOverlap:0,
   separator: "\n"
 });
 

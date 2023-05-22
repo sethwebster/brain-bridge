@@ -30,7 +30,6 @@ function TrainingSetForm({
   promptFooter,
   onUpdate,
 }: TrainingSetFormProps) {
-  console.log(trainingSet);
   const router = useRouter();
   const [showQuestionsPrompts, setShowQuestionsPrompts] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -102,7 +101,6 @@ function TrainingSetForm({
         "\n\n" +
         replaceTokens(promptFooter, trainingSetData.questionsAndAnswers),
     };
-    console.log("TO SAVE", toSave);
     if (toSave.id === "<new>") {
       newSet = await Data.createTrainingSet(toSave, user as { email: string });
       setIsSaving(false);

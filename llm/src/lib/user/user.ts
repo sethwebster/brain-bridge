@@ -50,7 +50,6 @@ export async function addUserTrainingSet(user: Pick<Participant, "email">, set: 
   sets.push(stub);
   redisClient.set(`training-sets:${user.email}`, JSON.stringify(sets));
   redisClient.set(`training-sets:${user.email}:${updated.id}`, JSON.stringify(updated));
-  console.log("added training set", updated)
   return updated;
 }
 
@@ -149,7 +148,6 @@ export async function deleteUserPublicChat(user: Pick<Participant, "email">, pub
 }
 
 export async function publishUserPublicChat(user: Pick<Participant, "email">, publicChat: Partial<PublicChat>): Promise<APIEnvelope<PublicChat>> {
-  console.log(publicChat)
   const { data: publishablePublicChat } = await getUserPublicChat(publicChat.id!, user)
   invariant(publishablePublicChat)
   invariant(publishablePublicChat.trainingSet, "Cannot publish public chat: Training set not present on publicChat object")
@@ -182,7 +180,6 @@ export async function unpublishUserPublicChat(user: Pick<Participant, "email">, 
 }
 
 export async function getPublicChat(id: string) {
-  console.log("HEY")
   const publicChat = await redisClient.get(`public-chats:${id}`);
   if (!publicChat) return {
     success: false,
@@ -201,9 +198,7 @@ async function scanRedis(pattern: string) {
   const found: string[] = [];
   const scan = async (pattern: string) => {
     do {
-      // console.log("Found", found)
       const response = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 10000 });
-      // console.log(response);
       cursor = Number(response.cursor);
       found.push(...response.keys);
     } while (cursor !== 0);
