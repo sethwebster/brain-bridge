@@ -62,7 +62,7 @@ class Conversation implements Conversation {
         timestamp: new Date().toISOString()
       }
     );
-    invariant(this.store, "Store not loaded")
+    invariant(this.store, "Store not set")
     invariant(this.store?.store, "Store not loaded")
     const response = await generateResponse({
       basePrompt: this.store?.trainingSet.prompt,
@@ -71,9 +71,25 @@ class Conversation implements Conversation {
       store: (this.store as TrainingIndex).store
     });
     const previousMessages = this.messages.filter(m => m.sender !== "bot");
+    await this.addNameIfPossible(previousMessages);
+    const newMessage = {
+      id: this.length(),
+      sender: this.participants.find(p => p.participantType === "bot")?.name || "unknown",
+      text: response,
+      timestamp: new Date().toISOString()
+    };
+    this.messages.push(
+      newMessage
+    );
+    this.updateLastUpdated();
+    return newMessage;
+  }
+
+  private async addNameIfPossible(previousMessages: Message[]) {
+    invariant(this.store, "Store not loaded")
     if (previousMessages.length === 10 || (previousMessages.length > 10 && this.name === null)) {
       const user = this.participants.find(p => p.participantType !== "bot");
-      invariant(user, "User not found")
+      invariant(user, "User not found");
       console.log("Generating Name...");
       const messages = this.messages.filter(m => m.sender === user?.name).map(m => `${m.sender}:${m.text}`).slice(0, 50);
       const name = await generateResponse({
@@ -87,20 +103,9 @@ class Conversation implements Conversation {
         store: this.store.store
       });
       this.name = name.replace('"', '').replace('"', '');
-      await updateUserConversation(user, { id: this.id, name: this.name })
+      await updateUserConversation(user, { id: this.id, name: this.name });
       console.log("Name Generated: ", name);
     }
-    const newMessage = {
-      id: this.length(),
-      sender: this.participants.find(p => p.participantType === "bot")?.name || "unknown",
-      text: response,
-      timestamp: new Date().toISOString()
-    };
-    this.messages.push(
-      newMessage
-    );
-    this.updateLastUpdated();
-    return newMessage;
   }
 
   length() {

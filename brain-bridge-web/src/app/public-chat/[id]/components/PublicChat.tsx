@@ -6,6 +6,7 @@ import ChatDisplay from "@/app/components/ChatDisplay";
 import Data from "@/utils/data";
 import { safeGetJSONCookieClient } from "@/utils/safe-get-json-cookie-client";
 import useAudioPlayer from "@/hooks/useAudioPlayer";
+import invariant from "tiny-invariant";
 
 interface PublicChatProps {
   viewer: Viewer;
@@ -44,14 +45,31 @@ export default function PublicChat({
     async (message: Message) => {
       setAnswerPending(true);
       const llmResponse = await Data.sendMessage(conversation.id, message);
-      setLoadedMessages((messages) => [...messages, llmResponse]);
       setAnswerPending(false);
-      if (soundEnabled) {
-        setSoundPending(true);
-        const voice = await Data.getVoiceMessage(conversation.id, llmResponse);
-        setSoundPending(false);
+      if (llmResponse.success) {
+        invariant(llmResponse.data, "No data in response");
+        const message = llmResponse.data;
+        setLoadedMessages((messages) => [...messages, message]);
+        if (soundEnabled) {
+          setSoundPending(true);
+          const voice = await Data.getVoiceMessage(
+            conversation.id,
+            llmResponse.data
+          );
+          setSoundPending(false);
 
-        playVoice(voice.file);
+          playVoice(voice.file);
+        }        
+      } else {
+        setLoadedMessages((messages) => [
+          ...messages,
+          {
+            id: Date.now(),
+            text: "⛔️ So sorry! I've failed to get a response for this message. This is likely due to an error on the server. We are working on fixing this.",
+            sender: "error",
+            timestamp: new Date().toISOString(),
+          },
+        ]);
       }
       // bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     },

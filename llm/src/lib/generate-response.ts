@@ -43,8 +43,8 @@ const generateResponse = async ({
   // Search for related context/documents in the vectorStore directory
   const data = await store.similaritySearch(prompt, 2);
   const context: string[] = [];
-  data.forEach((item, i) => {
-    context.push(`Context:\n${item.pageContent}`)
+  data.filter(d => d.pageContent.trim().length > 0).forEach((item, i) => {
+    context.push(`Context:\n${item.pageContent.trim()}`)
   });
   // Run the LLM Chain
   const result = await llmChain.call({ prompt, context: context.join('\n\n'), history });

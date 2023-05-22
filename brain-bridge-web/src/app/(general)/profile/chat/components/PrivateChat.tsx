@@ -5,6 +5,7 @@ import ChatDisplay from "@/app/components/ChatDisplay";
 import Data from "@/utils/data";
 import { Session } from "next-auth";
 import useAudioPlayer from "@/hooks/useAudioPlayer";
+import invariant from "tiny-invariant";
 
 export default function Chat({
   selectedChat,
@@ -34,16 +35,33 @@ export default function Chat({
     async (message: Message) => {
       setAnswerPending(true);
       const llmResponse = await Data.sendMessage(selectedChat.id, message);
-      setSelectedChatMessages((messages) => [...messages, llmResponse]);
       setAnswerPending(false);
-      if (soundEnabled) {
-        setSoundPending(true);
-        const voice = await Data.getVoiceMessage(selectedChat.id, llmResponse);
-        setSoundPending(false);
+      if (llmResponse.success) {
+        invariant(llmResponse.data, "No data in response");
+        const message = llmResponse.data;
+        setSelectedChatMessages((messages) => [...messages, message]);
+        if (soundEnabled) {
+          setSoundPending(true);
+          const voice = await Data.getVoiceMessage(
+            selectedChat.id,
+            llmResponse.data
+          );
+          setSoundPending(false);
 
-        playVoice(voice.file);
+          playVoice(voice.file);
+        }
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        setSelectedChatMessages((messages) => [
+          ...messages,
+          {
+            id: Date.now(),
+            text: "⛔️ So sorry! I've failed to get a response for this message. This is likely due to an error on the server. We are working on fixing this.",
+            sender: "error",
+            timestamp: new Date().toISOString(),
+          },
+        ]);
       }
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     },
     [playVoice, selectedChat.id, soundEnabled]
   );
@@ -51,7 +69,7 @@ export default function Chat({
   useEffect(() => {
     if (firstLoad) {
       setFirstLoad(false);
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });      
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [firstLoad, getLLMResponse, session.user?.email, session.user?.name]);
 

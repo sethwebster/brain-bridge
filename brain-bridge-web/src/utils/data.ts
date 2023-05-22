@@ -72,7 +72,7 @@ const Data = {
     return;
   },
 
-  sendMessage: async (id: string, message: Message): Promise<Message> => {
+  sendMessage: async (id: string, message: Message): Promise<APIEnvelope<Message>> => {
     const url = makeApiUrl(`chat/${id}/message`);
     const response = await fetch(url as string, {
       method: "PUT",
@@ -82,10 +82,16 @@ const Data = {
       body: JSON.stringify({ message: message.text, sender: message.sender }),
     })
     if (!response.ok) {
-      throw new Error("Failed to send message");
+      return {
+        success: false,
+        error: "Failed to send message"
+      }
     }
     const responseMessage = await response.json();
-    return responseMessage;
+    return {
+      success: true,
+      data: responseMessage
+    }
   },
 
   getVoiceMessage: async (id: string, message: Message): Promise<{ file: string }> => {
