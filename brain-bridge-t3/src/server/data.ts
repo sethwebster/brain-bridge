@@ -92,7 +92,6 @@ async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
 
 ///////////////////
 // Conversations //
-
 async function newChat(trainingSetId: string) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to create a chat")
@@ -174,6 +173,7 @@ async function fetchChat(id: string): Promise<ConversationWithRelations> {
 }
 
 async function deleteChat(id: string) {
+  console.log("DELETING", id)
   const session = await getServerSession();
   invariant(session, "User must be logged in to delete chat");
   const chat = await fetchChat(id);
@@ -183,6 +183,19 @@ async function deleteChat(id: string) {
     where: { id },
   });
   return true;
+}
+
+async function clearChat(id: string) {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to delete messages from a chat");
+  let conversation = await ServerData.fetchChat(id);
+  invariant(conversation, "Conversation must exist");
+  if (conversation.userId !== session.user.id) { throw new Error("User does not own this chat"); }
+  await prisma.message.deleteMany({
+    where: { conversationId: id },
+  });
+  conversation = await ServerData.fetchChat(id);
+  return conversation;
 }
 
 //////////////
@@ -254,6 +267,7 @@ const ServerData = {
   fetchChats,
   fetchChat,
   deleteChat,
+  clearChat,
   sendMessage
 }
 

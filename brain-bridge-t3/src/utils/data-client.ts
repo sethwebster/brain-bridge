@@ -66,6 +66,17 @@ async function fetchChats(): Promise<ConversationWithRelations[]> {
   return data
 }
 
+async function clearChat(chatId: string): Promise<ConversationWithRelations> {
+  const response = await fetch(makeApiUrl(`/profile/chat/${chatId}/api/messages`), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  const data = await response.json() as ConversationWithRelations;
+  return data;
+}
+
 async function newChat(trainingSetId: string): Promise<ConversationWithRelations> {
   const response = await fetch(makeApiUrl(`/profile/chats/api`), {
     method: "POST",
@@ -81,7 +92,7 @@ async function newChat(trainingSetId: string): Promise<ConversationWithRelations
 }
 
 async function deleteChat(chatId: string): Promise<{ success: boolean }> {
-  await fetch(makeApiUrl(`/profile/training/api/chat/${chatId}`), {
+  await fetch(makeApiUrl(`/profile/chat/${chatId}/api`), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -98,7 +109,7 @@ async function sendMessage(message: MessageWithRelations) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(message),
+    body: JSON.stringify({ ...message, conversation: { id: message.conversationId } }),
   })
   const text = await response.text();
   const data = JSON.parse(text) as MessageWithRelations;
@@ -112,6 +123,7 @@ const DataClient = {
   deleteTrainingSet,
   trainTrainingSet,
   fetchChats,
+  clearChat,
   newChat,
   deleteChat,
   sendMessage,

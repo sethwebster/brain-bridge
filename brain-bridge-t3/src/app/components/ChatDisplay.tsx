@@ -23,6 +23,7 @@ interface ChatProps {
   soundEnabled: boolean;
   onNewMessage: (newMessage: MessageWithRelations) => void;
   onSoundEnabledChange: (soundEnabled: boolean) => void;
+  onClearChatClicked: () => void;
 }
 
 export default function ChatDisplay({
@@ -30,15 +31,20 @@ export default function ChatDisplay({
   answerPending,
   soundPending,
   soundEnabled,
+  conversation,
   onNewMessage,
   onSoundEnabledChange,
-  conversation,
+  onClearChatClicked,
 }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const handleSoundEnabledChange = useCallback(() => {
     onSoundEnabledChange(!soundEnabled);
   }, [onSoundEnabledChange, soundEnabled]);
+
+  const handleClearChatClicked = useCallback(() => {
+    onClearChatClicked();
+  }, [onClearChatClicked]);
 
   const handleNewMessage = useCallback(
     (message: string) => {
@@ -76,15 +82,19 @@ export default function ChatDisplay({
   }, [answerPending, soundPending]);
 
   return (
-    <div className="flex flex-col w-full h-full mb-20 overflow-scroll bg-slate-100 dark:bg-slate-700">
+    <div className="mb-20 flex h-full w-full flex-col overflow-scroll bg-slate-100 dark:bg-slate-700">
       <ChatToolbar
         soundEnabled={soundEnabled}
         soundPending={soundPending}
         onSoundEnabledClick={handleSoundEnabledChange}
+        onClearChatClick={handleClearChatClicked}
       />
-      <div className="flex-grow w-full h-full">
+      <div className="h-full w-full flex-grow">
         <div className="pt-6">
-          <Messages messages={conversation.messages} userName={viewer.name || viewer.email || viewer.id} />
+          <Messages
+            messages={conversation.messages}
+            userName={viewer.name || viewer.email || viewer.id}
+          />
         </div>
         <div className="ml-4">
           <FakeTypingIndicator
@@ -100,8 +110,8 @@ export default function ChatDisplay({
         <div ref={bottomRef} className="m-2" />
         <div className="h-20 opacity-0" />
       </div>
-      <div className="fixed bottom-0 w-10/12 ml-4 sm:ml-3 sm:w-4/5 ">
-        <div className="sticky bottom-0 flex w-full p-2 mt-4 bg-opacity-0 outline-none">
+      <div className="fixed bottom-0 ml-4 w-10/12 sm:ml-3 sm:w-4/5 ">
+        <div className="sticky bottom-0 mt-4 flex w-full bg-opacity-0 p-2 outline-none">
           <NewMessageBox onMessageSend={handleNewMessage} />
         </div>
       </div>

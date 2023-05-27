@@ -109,6 +109,13 @@ export default function PrivateChat({
     [getLLMResponse]
   );
 
+  const handleClearChatClicked = useCallback(() => {
+    setSelectedChatMessages([]);
+    DataClient.clearChat(selectedChat.id).catch((e)=>{
+      console.log(e);
+    })
+  }, [selectedChat.id]);
+
   if (!session.user?.email) throw new Error("No user email");
   return (
     <ChatDisplay
@@ -121,6 +128,7 @@ export default function PrivateChat({
       soundEnabled={soundEnabled}
       onSoundEnabledChange={(value) => setSoundEnabled(value)}
       viewer={session.user as User}
+      onClearChatClicked={handleClearChatClicked}
     />
   );
 }

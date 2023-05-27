@@ -40,7 +40,7 @@ export default function Sources({
     setNewUrlText("");
     onSourcesChanged([
       ...sources,
-      { type: "URL", name: newUrlText } as TrainingSource,
+      { type: "URL", name: newUrlText, content:"" } as TrainingSource,
     ]);
   }, [newUrlText, onSourcesChanged, sources]);
 
@@ -111,7 +111,7 @@ export default function Sources({
             <li
               key={index}
               className={`flex flex-row justify-between ${
-                source.id.length === 0 ? "text-gray-500" : ""
+                !source.id || source.id.length === 0 ? "text-gray-500" : ""
               }`}
             >
               <div>
@@ -133,7 +133,7 @@ export default function Sources({
                 {source.type === "FILE" && (
                   <a href={source.name}>{source.name}</a>
                 )}
-                {source.id.length === 0 && (
+                {!source.id || source.id.length === 0 && (
                   <>
                     <small> (pending)</small>
                   </>

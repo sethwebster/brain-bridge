@@ -1,6 +1,6 @@
 export const UrlIcon = ({ color }: { color?: string }) => (
   <svg
-    className="w-4 h-4"
+    className="h-4 w-4"
     fill={color ?? "#fff"}
     height="200px"
     width="200px"
@@ -25,7 +25,7 @@ export const UrlIcon = ({ color }: { color?: string }) => (
 
 export const PlusAddIcon = () => (
   <svg
-    className="w-4 h-4 "
+    className="h-4 w-4 "
     viewBox="0 0 24 24"
     xmlns="http://www.w3.org/2000/svg"
     stroke="white"
@@ -91,7 +91,7 @@ export function TrashCan() {
     <svg
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      className="w-4 h-4"
+      className="h-4 w-4"
       stroke="white"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
@@ -119,7 +119,7 @@ export function CheckMark() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="w-4 h-4 bg-red-200"
+      className="h-4 w-4 bg-red-200"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -146,7 +146,7 @@ export function CheckMark() {
 export function SpeakerIcon() {
   return (
     <svg
-      className="w-4 h-4"
+      className="h-4 w-4"
       fill="#000000"
       viewBox="0 0 1920 1920"
       xmlns="http://www.w3.org/2000/svg"
@@ -170,7 +170,7 @@ export function SpeakerIcon() {
 export function PencilIcon() {
   return (
     <svg
-      className="w-4 h-4"
+      className="h-4 w-4"
       fill="#000000"
       viewBox="0 0 32 32"
       version="1.1"
@@ -191,7 +191,12 @@ export function PencilIcon() {
 
 export function SaveIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+    >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
         id="SVGRepo_tracerCarrier"
@@ -209,6 +214,33 @@ export function SaveIcon() {
             strokeLinejoin="round"
           ></path>
         </g>
+      </g>
+    </svg>
+  );
+}
+
+export function EraseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+    >
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+      <g
+        id="SVGRepo_tracerCarrier"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      ></g>
+      <g id="SVGRepo_iconCarrier">
+        {" "}
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z"
+          fill="#1F2328"
+        ></path>{" "}
       </g>
     </svg>
   );

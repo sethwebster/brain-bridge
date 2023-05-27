@@ -99,6 +99,12 @@ const generateResponse = async ({
     inputVariables: ["history", "context", "prompt"]
   });
 
+  console.log("HISTORY", {
+    basePrompt,
+    history,
+    prompt
+  });
+
   // Create the LLM Chain
   const llmChain = new LLMChain({
     llm: model,

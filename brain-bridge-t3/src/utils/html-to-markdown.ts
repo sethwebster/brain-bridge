@@ -1,12 +1,10 @@
-import * as Showdown from "showdown";
+import { NodeHtmlMarkdown } from 'node-html-markdown'
 
 
 export default function htmlToMarkdown(html: string): string {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  const service = new Showdown.Converter();
-
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-  const md = service.makeMarkdown(html).replace(/\{.*\}/g, "");
+  const md = NodeHtmlMarkdown.translate(html).replace(/\{.*\}/g, "");
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return md;
 }
