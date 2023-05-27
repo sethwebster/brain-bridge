@@ -1,4 +1,4 @@
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations } from "~/interfaces/types";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, trainingSetWithRelations, PublicChatWithRelations } from "~/interfaces/types";
 import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";
@@ -11,6 +11,7 @@ async function fetchUserTrainingSets() {
   invariant(user, "User must be logged in to fetch training sets");
   const sets = await prisma.trainingSet.findMany({
     where: { userId: user.user.id },
+    ...trainingSetWithRelations
   });
   return sets;
 }
@@ -138,6 +139,7 @@ async function fetchChats(): Promise<ConversationWithRelations[]> {
           participantId: true,
           conversationId: true,
           conversation: true,
+          publicChatId: true,
         },
       },
       participants: true,
@@ -162,6 +164,7 @@ async function fetchChat(id: string): Promise<ConversationWithRelations> {
           participantId: true,
           conversationId: true,
           conversation: true,
+          publicChatId: true,
         },
       },
       participants: true,
@@ -197,6 +200,64 @@ async function clearChat(id: string) {
   conversation = await ServerData.fetchChat(id);
   return conversation;
 }
+async function fetchPublicChats() {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to fetch public chats");
+  const chats = await prisma.publicChat.findMany({
+    where: { userId: session.user.id },
+    include: {
+      trainingSet: true,
+      messages: true,
+      participants: true,
+    }
+  });
+  return chats;
+}
+
+async function fetchPublicChat(id: string) {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to create a public chat");
+  const chat = await prisma.publicChat.findFirst({
+    where: { id, userId: session.user.id },
+    include: {
+      trainingSet: true,
+      messages: true,
+      participants: true,
+    }
+  });
+  return chat;
+}
+
+
+async function updatePublicChat(publicChat: PublicChatWithRelations) {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to create a public chat");
+  console.log("UPDATING", publicChat)
+  const published = publicChat.published
+  const chat = await prisma.publicChat.update({
+    where: { id: publicChat.id },
+    data: {
+      name: publicChat.name,
+      trainingSet: {
+        connect: { id: publicChat.trainingSetId }
+      },
+      published: publicChat.published,
+      updatedAt: new Date(),      
+    },
+    select: {
+      id: true,
+      name: true,
+      published: true,
+      createdAt: true,
+      updatedAt: true,
+      trainingSet: true,
+      messages: true,
+      participants: true,        
+    }    
+  });
+  return chat;
+}
+
 
 //////////////
 // Messages //
@@ -222,6 +283,8 @@ async function sendMessage(message: MessageWithRelations): Promise<MessageWithRe
       conversation: true,
       participantId: true,
       conversationId: true,
+      publicChatId: true,
+      publicChat: true,
     },
   });
   return newMessage;
@@ -266,6 +329,9 @@ const ServerData = {
   newChat,
   fetchChats,
   fetchChat,
+  fetchPublicChat,
+  fetchPublicChats,
+  updatePublicChat,
   deleteChat,
   clearChat,
   sendMessage

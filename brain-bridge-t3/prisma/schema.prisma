@@ -28,8 +28,9 @@ model TrainingSet {
   trainingSources     TrainingSource[]
   conversations       Conversation[]
   questionsAndAnswers QuestionAndAnswer[]
-  trainingIndexId     String?              
+  trainingIndexId     String?
   trainingIndex       TrainingIndex?
+  publicChats         PublicChat[]
 }
 
 model TrainingIndex {
@@ -93,10 +94,12 @@ model Participant {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   name           String          @default("")
-  conversation   Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  conversationId String
+  conversation   Conversation?   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String?
   messages       Message[]
   type           ParticipantType
+  publicChat     PublicChat?     @relation(fields: [publicChatId], references: [id])
+  publicChatId   String?
 }
 
 model Message {
@@ -108,6 +111,22 @@ model Message {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId String
   participantId  String
+  publicChat     PublicChat?  @relation(fields: [publicChatId], references: [id])
+  publicChatId   String?
+}
+
+model PublicChat {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  name          String        @default("")
+  userId        String
+  trainingSet   TrainingSet   @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  trainingSetId String
+  messages      Message[]
+  participants  Participant[]
+  user          User          @relation(fields: [userId], references: [id])
+  published     Boolean       @default(false)
 }
 
 /////////////////////////////
@@ -148,7 +167,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
   trainingSets  TrainingSet[]
-  Conversation  Conversation[]
+  conversation  Conversation[]
+  publicChats   PublicChat[]
 }
 
 model VerificationToken {

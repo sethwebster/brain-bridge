@@ -1,6 +1,6 @@
-import { Prisma, QuestionAndAnswer } from '@prisma/client';
+import { Prisma, type QuestionAndAnswer } from '@prisma/client';
 
-const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>()({
+export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>()({
   include: {
     trainingSources: true,
     questionsAndAnswers: true,
@@ -35,5 +35,16 @@ const conversationWithRelations = Prisma.validator<Prisma.ConversationArgs>()({
 });
 
 export type ConversationWithRelations = Prisma.ConversationGetPayload<typeof conversationWithRelations>;
+
+const publicChatWithRelations = Prisma.validator<Prisma.PublicChatArgs>()({
+  include: {
+    trainingSet: true,
+    participants: true,
+    messages: messageWithRelations,
+  }
+});
+
+export type PublicChatWithRelations = Prisma.PublicChatGetPayload<typeof publicChatWithRelations>;
+
 
 export type QuestionAndAnswerPartial = Omit<QuestionAndAnswer, "trainingSetId" | "id">;

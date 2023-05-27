@@ -18,7 +18,11 @@ export default async function Layout({
     where: { userId: session.user.id },
   });
 
-  const [sets, chats] = await Promise.all([setsRequest, chatsRequest]);
+  const publicChats = await prisma.publicChat.findMany({
+    where: { userId: session.user.id },
+  });
+
+  const [sets, chats] = await Promise.all([setsRequest, chatsRequest, publicChats]);
   // invariant(session, "Session must exist");
   // invariant(session.user, "User must exist");
   // const sets = await Data.fetchTrainingSets({ email: session.user.email! });
@@ -29,7 +33,7 @@ export default async function Layout({
   return (
     <div className="flex flex-row w-full h-full bg-slate-100 dark:bg-slate-700">
       <div className="h-full sm:p-4">
-        <SideBar setCount={sets.length} chatCount={chats.length} publicChatCount={0} />
+        <SideBar setCount={sets.length} chatCount={chats.length} publicChatCount={publicChats.length} />
       </div>
       <SideBarPaddedContainer>{children}</SideBarPaddedContainer>
     </div>

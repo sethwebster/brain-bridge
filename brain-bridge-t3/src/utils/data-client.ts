@@ -1,6 +1,6 @@
 "use client";
-import { type TrainingSet } from "@prisma/client";
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations } from "~/interfaces/types";
+import { type PublicChat, type TrainingSet } from "@prisma/client";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, PublicChatWithRelations } from "~/interfaces/types";
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_URL
@@ -103,6 +103,52 @@ async function deleteChat(chatId: string): Promise<{ success: boolean }> {
   }
 }
 
+async function createPublicChat(publicChat: PublicChat) {
+  const response = await fetch(makeApiUrl("/profile/public-chats/api"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(publicChat),
+  })
+  const data = await response.json() as PublicChat;
+  return data 
+}
+
+async function updatePublicChat(publicChat: PublicChatWithRelations) {
+  const response = await fetch(makeApiUrl(`/profile/public-chats/api/${publicChat.id}`), {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(publicChat),
+  })
+  const data = await response.json() as PublicChat;
+  return data 
+}
+
+async function unpublishPublicChat(publicChat: PublicChatWithRelations) {
+  await updatePublicChat({
+    ...publicChat,
+    published: false,
+  })
+  return {
+    ...publicChat,
+    published: false,
+  }
+}
+
+async function publishPublicChat(publicChat: PublicChatWithRelations) {
+  await updatePublicChat({
+    ...publicChat,
+    published: true,
+  })
+  return {
+    ...publicChat,
+    published: false,
+  }
+}
+
 async function sendMessage(message: MessageWithRelations) {
   const response = await fetch(makeApiUrl(`/profile/chat/${message.conversationId}/api/message`), {
     method: "POST",
@@ -127,6 +173,10 @@ const DataClient = {
   newChat,
   deleteChat,
   sendMessage,
+  createPublicChat,
+  updatePublicChat,
+  unpublishPublicChat,
+  publishPublicChat,
 }
 
 export default DataClient;

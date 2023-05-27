@@ -1,0 +1,72 @@
+import { cookies } from "next/headers";
+import { notFound } from "next/navigation";
+import invariant from "tiny-invariant";
+
+import { type Metadata } from "next";
+import ServerData from "~/server/data";
+
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  // read route params
+  const id = params.id;
+
+  // fetch data
+  const { success, data: chat } = await ServerData.fetchPublicChat(id);
+  if (success) {
+    return {
+      title: `Chat: ${chat?.name}`,
+    };
+  }
+  notFound();
+}
+
+export default async function PublicChatPage({ params: { id } }: PageProps) {
+  const { success, data: chat } = await Data.fetchPublicChat(id);
+  ensurePublicChat(success, chat);
+  invariant(chat, "Chat must exist");
+  const userCookies = cookies();
+  const viewerId = userCookies.get("viewer-id")?.value ?? generateId();
+  const conversations = safeGetJSONCookieServer<{ [key: string]: string }>(
+    "chats",
+    {}
+  );
+  const conversationId = conversations[chat.id];
+  let conversation: Conversation | undefined;
+  if (conversationId) {
+    try {
+      conversation = await Data.fetchChat(conversationId);
+    } catch (e) {
+      console.log(`Chat for ${viewerId}/${conversationId} not found`, e);
+    }
+  }
+  if (!conversation) {
+    conversation = await Data.newPublicChat(
+      { id: viewerId, email: viewerId, name: viewerId },
+      chat.trainingSetPath
+    );
+  }
+  invariant(conversation, "Conversation must exist");
+  return (
+    <div className="h-full">
+      <PublicChat
+        publicChat={chat}
+        viewer={{ id: viewerId }}
+        conversation={conversation}
+      />
+    </div>
+  );
+}
+
+function ensurePublicChat(success: boolean, chat: PublicChat | undefined) {
+  console.log("ensurePublicChat", "success", success, "chat", chat);
+  if (!success || !chat) {
+    notFound();
+  }
+}
