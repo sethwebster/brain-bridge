@@ -23,6 +23,7 @@ async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
     body: JSON.stringify(trainingSet),
   })
   const data = await response.json() as TrainingSetWithRelations;
+  console.log("DATA", data)
   return data
 }
 

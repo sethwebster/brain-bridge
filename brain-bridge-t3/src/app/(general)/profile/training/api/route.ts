@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
   const trainingSet = payload as TrainingSetWithRelations;
   
-  const result = ServerData.createTrainingSet(trainingSet)
+  const result = await ServerData.createTrainingSet(trainingSet)
   const response = new NextResponse(JSON.stringify(result), { status: 201 });
 
   return response;
