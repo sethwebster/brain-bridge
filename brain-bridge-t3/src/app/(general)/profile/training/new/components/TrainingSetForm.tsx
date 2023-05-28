@@ -126,13 +126,19 @@ function TrainingSetForm({
   }, [onUpdate, promptFooter, replaceTokens, router, trainingSetData]);
 
   const handleTrain = useCallback(async () => {
-    setError(null);
-    setIsTraining(true);
-    const newSet = await Data.trainTrainingSet(trainingSetData.id);
-    if (newSet) {
-      router.refresh();
+    try {
+      setError(null);
+      setIsTraining(true);
+      const newSet = await Data.trainTrainingSet(trainingSetData.id);
+      if (newSet) {
+        router.refresh();
+      }
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message);
+    } finally {
+      setIsTraining(false);
     }
-    setIsTraining(false);
   }, [router, trainingSetData]);
 
   const isDirty = useMemo(() => {
