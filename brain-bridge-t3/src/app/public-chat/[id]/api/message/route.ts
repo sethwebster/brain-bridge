@@ -1,14 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
-import { type MessageWithRelations, messageWithRelations } from "~/interfaces/types";
+import { type MessageWithRelations, messageWithRelations, type ChatResponseMode } from "~/interfaces/types";
 import { BrainBridgeLangChain } from "~/lib/llm";
 import ServerData from "~/server/data";
 import { prisma } from "~/server/db";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
-  const payload = await req.json() as MessageWithRelations;
-  const { participantId, publicChatInstance, text } = payload;
+  const payload = await req.json() as { message: MessageWithRelations, mode: ChatResponseMode };
+  const { message: { participantId, publicChatInstance, text }, mode } = payload;
   const chat = await ServerData.fetchPublicChat(id, true);
 
   invariant(chat, "Chat not found");
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Respond with bot message
   const llm = new BrainBridgeLangChain();
-  const response = await llm.getLangChainResponse(chat.trainingSetId, text, chat.trainingSet.prompt, instance.messages.map(m => `${m.sender.name}: ${m.text}`));
+  const response = await llm.getLangChainResponse(chat.trainingSetId, text, chat.trainingSet.prompt, instance.messages.map(m => `${m.sender.name}: ${m.text}`), mode);
   const sender = instance.participants.find(p => p.type === "BOT");
   let responseMessage: MessageWithRelations;
   if (!sender) {

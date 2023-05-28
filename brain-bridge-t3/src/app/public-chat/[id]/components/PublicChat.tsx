@@ -7,6 +7,7 @@ import { setCookie } from "cookies-next";
 import { useCallback, useEffect, useState } from "react";
 import ChatDisplay, { type NewMessage } from "~/app/components/ChatDisplay";
 import {
+  ChatResponseMode,
   type MessageWithRelations,
   type PublicChatInstanceWithRelations,
 } from "~/interfaces/types";
@@ -49,10 +50,10 @@ export default function PublicChat({
   //   [player]
   // );
 
-  const getLLMResponse = useCallback(async (message: MessageWithRelations) => {
+  const getLLMResponse = useCallback(async (message: MessageWithRelations, mode: ChatResponseMode) => {
     setAnswerPending(true);
     console.log("NEW MESSAGE", message);
-    const llmResponse = await DataClient.sendPublicInstanceChatMessage(message);
+    const llmResponse = await DataClient.sendPublicInstanceChatMessage(message, mode);
     setAnswerPending(false);
     console.log("llmResponse", llmResponse);
     if (llmResponse) {
@@ -97,7 +98,7 @@ export default function PublicChat({
   }, []);
 
   const handleNewMessage = useCallback(
-    async (newMessage: NewMessage) => {
+    async (newMessage: NewMessage, mode: ChatResponseMode) => {
       setAnswerPending(true);
       const formattedMessage: MessageWithRelations = {
         ...newMessage,
@@ -112,7 +113,7 @@ export default function PublicChat({
         participantId: viewer.id,
       };
       setLoadedMessages((messages) => [...messages, formattedMessage]);
-      await getLLMResponse(formattedMessage);
+      await getLLMResponse(formattedMessage, mode);
     },
     [getLLMResponse, publicChat.id, publicChatInstance, viewer]
   );

@@ -25,9 +25,13 @@ export function Messages({
       </div>
     );
   }
+
+  const sorted = messages.sort((a, b) => {
+    return a.createdAt < b.createdAt ? -1 : 1;
+  });
   return (
     <ul className="markdown flex flex-grow flex-col px-4 text-white">
-      {messages.map((message) => (
+      {sorted.map((message) => (
         <li
           className={`flex flex-row ${
             message.sender.name === userName ? "justify-end" : ""
@@ -40,10 +44,12 @@ export function Messages({
             }`}
           >
             <>
-            {/* {message.sender.id}.{message.sender.name}.{userName} */}
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {message.text}
-              </ReactMarkdown>
+              {/* {message.sender.id}.{message.sender.name}.{userName} */}
+              <div className="prose lg:prose-md text-slate-200 dark:text-slate-300">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.text}
+                </ReactMarkdown>
+              </div>
             </>
           </div>
         </li>
