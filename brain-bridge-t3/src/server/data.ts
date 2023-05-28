@@ -1,8 +1,9 @@
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, trainingSetWithRelations, PublicChatWithRelations } from "~/interfaces/types";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, trainingSetWithRelations, PublicChatWithRelations, publicChatInstanceWithRelations, PublicChatInstanceWithRelations, messageWithRelations } from "~/interfaces/types";
 import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";
 import { prisma } from "./db";
+import { Participant } from "@prisma/client";
 
 ///////////////////
 // Training Sets //
@@ -139,7 +140,8 @@ async function fetchChats(): Promise<ConversationWithRelations[]> {
           participantId: true,
           conversationId: true,
           conversation: true,
-          publicChatId: true,
+          publicChatInstanceId: true,
+          publicChatInstance: true,
         },
       },
       participants: true,
@@ -164,7 +166,8 @@ async function fetchChat(id: string): Promise<ConversationWithRelations> {
           participantId: true,
           conversationId: true,
           conversation: true,
-          publicChatId: true,
+          publicChatInstanceId: true,
+          publicChatInstance: true,
         },
       },
       participants: true,
@@ -207,8 +210,6 @@ async function fetchPublicChats() {
     where: { userId: session.user.id },
     include: {
       trainingSet: true,
-      messages: true,
-      participants: true,
     }
   });
   return chats;
@@ -221,19 +222,18 @@ async function fetchPublicChat(id: string) {
     where: { id, userId: session.user.id },
     include: {
       trainingSet: true,
-      messages: true,
-      participants: true,
     }
   });
   return chat;
 }
 
 
-async function updatePublicChat(publicChat: PublicChatWithRelations) {
+// TODO: Remove this published: boolean BS below. Was getting a TS error even though it 
+// works and is on the model
+async function updatePublicChat(publicChat: PublicChatWithRelations & { published: boolean }) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to create a public chat");
   console.log("UPDATING", publicChat)
-  const published = publicChat.published
   const chat = await prisma.publicChat.update({
     where: { id: publicChat.id },
     data: {
@@ -241,8 +241,8 @@ async function updatePublicChat(publicChat: PublicChatWithRelations) {
       trainingSet: {
         connect: { id: publicChat.trainingSetId }
       },
+      updatedAt: new Date(),
       published: publicChat.published,
-      updatedAt: new Date(),      
     },
     select: {
       id: true,
@@ -251,10 +251,70 @@ async function updatePublicChat(publicChat: PublicChatWithRelations) {
       createdAt: true,
       updatedAt: true,
       trainingSet: true,
-      messages: true,
-      participants: true,        
-    }    
+    }
   });
+  return chat;
+}
+
+async function newPublicChatInstance({ participant, publicChat }: { participant: Participant, publicChat: PublicChatWithRelations }) {
+  const chat = await prisma.publicChatInstance.create({
+    data: {
+      participants: {
+        connectOrCreate: [
+          {
+            where: {
+              id: participant.id,
+            },
+            create: {
+              id: participant.id,
+              name: participant.name,
+              type: participant.type,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+          }
+        ]
+      },
+      createdAt: new Date(),
+      publicChat: {
+        connect: { id: publicChat.id }
+      },
+      name: `${publicChat.id}-${publicChat.name}-${participant.name}`,
+      updatedAt: new Date(),
+    },
+    include: {
+      participants: true,
+      publicChat: true,
+      messages: {
+        select: {
+          createdAt: true,
+          id: true,
+          publicChatInstance: true,
+          publicChatInstanceId: true,
+          sender: true,
+          text: true,
+          conversationId: true,
+          conversation: true,
+          participantId: true,
+        }
+      },
+    }
+  });
+  return chat;
+}
+
+async function fetchPublicChatInstance(id: string): Promise<PublicChatInstanceWithRelations> {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to fetch public chat instances");
+  const chat = await prisma.publicChatInstance.findFirst({
+    where: { id },
+    include: {
+      participants: true,
+      publicChat: true,
+      messages: messageWithRelations,
+    }
+  });
+  invariant(chat, "Chat must exist");
   return chat;
 }
 
@@ -264,6 +324,7 @@ async function updatePublicChat(publicChat: PublicChatWithRelations) {
 async function sendMessage(message: MessageWithRelations): Promise<MessageWithRelations> {
   const session = await getServerSession();
   invariant(session, "User must be logged in to send messages");
+  invariant(message.conversationId, "Conversation ID must be provided");
   const newMessage = await prisma.message.create({
     data: {
       conversation: {
@@ -283,8 +344,8 @@ async function sendMessage(message: MessageWithRelations): Promise<MessageWithRe
       conversation: true,
       participantId: true,
       conversationId: true,
-      publicChatId: true,
-      publicChat: true,
+      publicChatInstanceId: true,
+      publicChatInstance: true,
     },
   });
   return newMessage;
@@ -334,7 +395,9 @@ const ServerData = {
   updatePublicChat,
   deleteChat,
   clearChat,
-  sendMessage
+  sendMessage,
+  newPublicChatInstance,
+  fetchPublicChatInstance
 }
 
 export default ServerData;

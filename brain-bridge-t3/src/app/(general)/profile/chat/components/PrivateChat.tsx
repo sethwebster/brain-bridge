@@ -8,7 +8,7 @@ import {
 import { type Session } from "next-auth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import invariant from "tiny-invariant";
-import ChatDisplay from "~/app/components/ChatDisplay";
+import ChatDisplay, { NewMessage } from "~/app/components/ChatDisplay";
 // import useAudioPlayer from "~/hooks/useAudioPlayer";
 import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
@@ -70,12 +70,15 @@ export default function PrivateChat({
               createdAt: new Date(),
               updatedAt: new Date(),
               type: "BOT",
+              publicChatInstanceId: null,
             },
             participantId: "system",
             timestamp: new Date().toISOString(),
             createdAt: new Date(),
             conversation: selectedChat,
             conversationId: selectedChat.id,
+            publicChatInstance: null,
+            publicChatInstanceId: null,
           },
         ]);
       } finally {
@@ -94,26 +97,42 @@ export default function PrivateChat({
   }, [firstLoad, getLLMResponse, session.user?.email, session.user?.name]);
 
   const handleSend = useCallback(
-    async (newMessage: MessageWithRelations) => {
+    async (newMessage: NewMessage) => {
       const sendMessage = async () => {
-        setSelectedChatMessages((messages) => [
-          ...messages,
-          { ...newMessage, id: generateId() },
-        ]);
+        const newMessageAugment: MessageWithRelations = {
+          ...newMessage,
+          id: generateId(),
+          conversationId: selectedChat.id,
+          conversation: selectedChat,
+          participantId: session.user.id,
+          createdAt: new Date(),
+          publicChatInstance: null,
+          publicChatInstanceId: null,
+          sender: {
+            conversationId: selectedChat.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            id: session.user.id,
+            name: session.user.name || "Human",
+            type: "HUMAN",
+            publicChatInstanceId: null,
+          },
+        };
+        setSelectedChatMessages((messages) => [...messages, newMessageAugment]);
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        await getLLMResponse(newMessage);
+        await getLLMResponse(newMessageAugment);
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       };
       await sendMessage();
     },
-    [getLLMResponse]
+    [getLLMResponse, selectedChat, session.user.id, session.user.name]
   );
 
   const handleClearChatClicked = useCallback(() => {
     setSelectedChatMessages([]);
-    DataClient.clearChat(selectedChat.id).catch((e)=>{
+    DataClient.clearChat(selectedChat.id).catch((e) => {
       console.log(e);
-    })
+    });
   }, [selectedChat.id]);
 
   if (!session.user?.email) throw new Error("No user email");

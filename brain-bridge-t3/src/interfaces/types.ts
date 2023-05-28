@@ -18,10 +18,11 @@ const trainingIndexWithRelations = Prisma.validator<Prisma.TrainingIndexArgs>()(
 
 export type TrainingIndexWithRelations = Prisma.TrainingIndexGetPayload<typeof trainingIndexWithRelations>;
 
-const messageWithRelations = Prisma.validator<Prisma.MessageArgs>()({
+export const messageWithRelations = Prisma.validator<Prisma.MessageArgs>()({
   include: {
     sender: true,
     conversation: true,
+    publicChatInstance: true,
   }
 });
 
@@ -39,12 +40,20 @@ export type ConversationWithRelations = Prisma.ConversationGetPayload<typeof con
 const publicChatWithRelations = Prisma.validator<Prisma.PublicChatArgs>()({
   include: {
     trainingSet: true,
-    participants: true,
-    messages: messageWithRelations,
   }
 });
 
 export type PublicChatWithRelations = Prisma.PublicChatGetPayload<typeof publicChatWithRelations>;
+
+export const publicChatInstanceWithRelations = Prisma.validator<Prisma.PublicChatInstanceArgs>()({
+  include: {
+    publicChat: true,
+    messages: messageWithRelations,
+    participants: true,
+  }
+});
+
+export type PublicChatInstanceWithRelations = Prisma.PublicChatInstanceGetPayload<typeof publicChatInstanceWithRelations>;
 
 
 export type QuestionAndAnswerPartial = Omit<QuestionAndAnswer, "trainingSetId" | "id">;

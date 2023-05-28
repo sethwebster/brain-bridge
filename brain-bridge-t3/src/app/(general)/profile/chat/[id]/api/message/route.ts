@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to send a message");
   const payload = await req.json() as MessageWithRelations;
+  invariant(payload.conversationId, "Conversation id must be provided");
   const conversation = await prisma.conversation.findFirst({
     where: {
       id: payload.conversationId,
@@ -27,10 +28,42 @@ export async function POST(req: NextRequest) {
     }
   });
   invariant(conversation, "Conversation must exist");
-  
+
   const userMessage = await storeUserMessage(conversation, payload, session);
   const message = await getLLMResponse(session, conversation, userMessage.text);
   return NextResponse.json(message);
+}
+
+export async function getLLMResponseDirect(conversationId: string, text: string, trainingSetId: string, history: MessageWithRelations[]) {
+  const trainingSet = await prisma.trainingSet.findFirst({
+    where: {
+      id: trainingSetId,
+    }
+  });
+  invariant(trainingSet, "Training set must exist");
+  const trainingIndex = await prisma.trainingIndex.findFirst({
+    where: {
+      trainingSetId: trainingSetId,
+    }
+  });
+  invariant(trainingIndex, "Training index must exist");
+
+  const tempFilePath = getTempFilePath(conversationId + "-" + trainingIndex.id);
+  fs.mkdirSync(tempFilePath, { recursive: true });
+  const indexPath = path.join(tempFilePath, `hnswlib.index`);
+  const docStorePath = path.join(tempFilePath, `docstore.json`);
+  const argsFilePath = path.join(tempFilePath, `args.json`);
+  fs.writeFileSync(indexPath, Buffer.from(trainingIndex.vectors));
+  fs.writeFileSync(docStorePath, Buffer.from(trainingIndex.docStore));
+  fs.writeFileSync(argsFilePath, `{"space":"cosine","numDimensions":1536}`);
+  const index = await HNSWLib.load(tempFilePath, new OpenAIEmbeddings())
+  const llmMessage = await generateResponse({
+    basePrompt: trainingSet.prompt,
+    history: history.map(m => `${m.sender.name}: ${m.text}`),
+    prompt: text,
+    store: index,
+  });
+  return llmMessage;
 }
 
 async function getLLMResponse(session: Session, conversation: (Conversation & {
@@ -60,7 +93,7 @@ async function getLLMResponse(session: Session, conversation: (Conversation & {
   const bot = conversation.participants.find(p => p.name === "Bot");
   invariant(bot, "Bot must exist");
   const index = await HNSWLib.load(tempFilePath, new OpenAIEmbeddings())
-  
+
   const llmMessage = await generateResponse({
     basePrompt: trainingSet.prompt,
     history: conversation.messages.map(m => m.text),
@@ -75,6 +108,8 @@ async function getLLMResponse(session: Session, conversation: (Conversation & {
     sender: bot,
     conversation,
     participantId: bot.id,
+    publicChatInstance: null,
+    publicChatInstanceId: null,
   }
   const result = await storeUserMessage(conversation, message);
   return result;
@@ -97,12 +132,6 @@ const generateResponse = async ({
   const promptTemplate = new PromptTemplate({
     template: basePrompt,
     inputVariables: ["history", "context", "prompt"]
-  });
-
-  console.log("HISTORY", {
-    basePrompt,
-    history,
-    prompt
   });
 
   // Create the LLM Chain
@@ -129,6 +158,7 @@ function getTempFilePath(name: string) {
 async function storeUserMessage(conversation: (Conversation & {
   participants: Participant[];
 }), payload: MessageWithRelations, session?: Session) {
+  invariant(payload.conversationId)
   const participant = conversation?.participants.find(p => p.name === session?.user.name || p.name === "Bot");
   const message = await prisma.message.create({
     data: {

@@ -1,5 +1,6 @@
 "use client";
 import { type PublicChat, type TrainingSet } from "@prisma/client";
+import invariant from "tiny-invariant";
 import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, PublicChatWithRelations } from "~/interfaces/types";
 
 const makeApiUrl = (endpoint: string) => {
@@ -112,7 +113,7 @@ async function createPublicChat(publicChat: PublicChat) {
     body: JSON.stringify(publicChat),
   })
   const data = await response.json() as PublicChat;
-  return data 
+  return data
 }
 
 async function updatePublicChat(publicChat: PublicChatWithRelations) {
@@ -124,7 +125,7 @@ async function updatePublicChat(publicChat: PublicChatWithRelations) {
     body: JSON.stringify(publicChat),
   })
   const data = await response.json() as PublicChat;
-  return data 
+  return data
 }
 
 async function unpublishPublicChat(publicChat: PublicChatWithRelations) {
@@ -150,12 +151,30 @@ async function publishPublicChat(publicChat: PublicChatWithRelations) {
 }
 
 async function sendMessage(message: MessageWithRelations) {
+  console.log("sendMessage", message.conversationId, message)
   const response = await fetch(makeApiUrl(`/profile/chat/${message.conversationId}/api/message`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ ...message, conversation: { id: message.conversationId } }),
+  })
+  const text = await response.text();
+  const data = JSON.parse(text) as MessageWithRelations;
+  return data
+}
+
+async function sendPublicInstanceChatMessage(message: MessageWithRelations) {
+  console.log("sendPublicInstanceChatMessage", message.publicChatInstance?.publicChatId, message)
+
+  invariant(message.publicChatInstance?.publicChatId, "publicChatId is required")
+  invariant(message.publicChatInstanceId, "publicChatInstanceId is required")
+  const response = await fetch(makeApiUrl(`/public-chat/${message.publicChatInstance?.publicChatId}/api/message`), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ...message }),
   })
   const text = await response.text();
   const data = JSON.parse(text) as MessageWithRelations;
@@ -177,6 +196,7 @@ const DataClient = {
   updatePublicChat,
   unpublishPublicChat,
   publishPublicChat,
+  sendPublicInstanceChatMessage
 }
 
 export default DataClient;

@@ -4,6 +4,11 @@ import invariant from "tiny-invariant";
 
 import { type Metadata } from "next";
 import ServerData from "~/server/data";
+import generateId from "~/utils/generate-id";
+import { safeGetJSONCookieServer } from "~/utils/safe-get-json-cookie-server";
+import { type PublicChatInstanceWithRelations } from "~/interfaces/types";
+import PublicChat from "./components/PublicChat";
+import { type PublicChat as PublicChatType } from "@prisma/client";
 
 interface PageProps {
   params: {
@@ -18,8 +23,8 @@ export async function generateMetadata({
   const id = params.id;
 
   // fetch data
-  const { success, data: chat } = await ServerData.fetchPublicChat(id);
-  if (success) {
+  const chat = await ServerData.fetchPublicChat(id);
+  if (chat) {
     return {
       title: `Chat: ${chat?.name}`,
     };
@@ -28,45 +33,62 @@ export async function generateMetadata({
 }
 
 export default async function PublicChatPage({ params: { id } }: PageProps) {
-  const { success, data: chat } = await Data.fetchPublicChat(id);
-  ensurePublicChat(success, chat);
+  const chat = await ServerData.fetchPublicChat(id);
+  ensurePublicChat(chat);
   invariant(chat, "Chat must exist");
   const userCookies = cookies();
   const viewerId = userCookies.get("viewer-id")?.value ?? generateId();
   const conversations = safeGetJSONCookieServer<{ [key: string]: string }>(
     "chats",
-    {}
+    {} as { [key: string]: string }
   );
+  console.log("conversations", conversations);
   const conversationId = conversations[chat.id];
-  let conversation: Conversation | undefined;
+  console.log("conversationId", conversationId);
+  let conversation: PublicChatInstanceWithRelations | undefined;
   if (conversationId) {
     try {
-      conversation = await Data.fetchChat(conversationId);
+      conversation = await ServerData.fetchPublicChatInstance(conversationId);
     } catch (e) {
       console.log(`Chat for ${viewerId}/${conversationId} not found`, e);
     }
   }
   if (!conversation) {
-    conversation = await Data.newPublicChat(
-      { id: viewerId, email: viewerId, name: viewerId },
-      chat.trainingSetPath
-    );
+    conversation = await ServerData.newPublicChatInstance({
+      participant: {
+        id: viewerId,
+        name: viewerId,
+        type: "HUMAN",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        conversationId: null,
+        publicChatInstanceId: null,
+      },
+      publicChat: chat,
+    });
   }
   invariant(conversation, "Conversation must exist");
   return (
     <div className="h-full">
       <PublicChat
         publicChat={chat}
-        viewer={{ id: viewerId }}
-        conversation={conversation}
+        publicChatInstance={conversation}
+        viewer={{
+          id: viewerId,
+          name: viewerId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          type: "HUMAN",
+          conversationId: null,
+          publicChatInstanceId: conversation.id,
+        }}
       />
     </div>
   );
 }
 
-function ensurePublicChat(success: boolean, chat: PublicChat | undefined) {
-  console.log("ensurePublicChat", "success", success, "chat", chat);
-  if (!success || !chat) {
+function ensurePublicChat(chat: PublicChatType | undefined | null) {
+  if (!chat) {
     notFound();
   }
 }

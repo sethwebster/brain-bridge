@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import NewMessageBox from "./NewMessageBox";
 import { ChatToolbar } from "./ChatToolbar";
-import { type User } from "@prisma/client";
+import { Participant, type User } from "@prisma/client";
 import { Messages } from "../(general)/profile/chat/components/Messages";
 import {
   FakeSpeakerIndicator,
@@ -14,14 +14,32 @@ import {
   type MessageWithRelations,
 } from "~/interfaces/types";
 
+
+export interface Viewer {
+  id: string;
+  name: string;
+  email?: string;
+}
+
+export interface ConversationLike {
+  id: string;
+  messages: MessageWithRelations[];
+  participants: Participant[];
+}
+
+export interface NewMessage {
+  text: string;
+  sender: Viewer;
+}
+
 interface ChatProps {
-  viewer: User;
-  conversation: ConversationWithRelations;
+  viewer: Viewer;
+  conversation: ConversationLike;
   // currentMessageText: string;
   answerPending: boolean;
   soundPending: boolean;
   soundEnabled: boolean;
-  onNewMessage: (newMessage: MessageWithRelations) => void;
+  onNewMessage: (newMessage: NewMessage) => void;
   onSoundEnabledChange: (soundEnabled: boolean) => void;
   onClearChatClicked: () => void;
 }
@@ -49,23 +67,11 @@ export default function ChatDisplay({
   const handleNewMessage = useCallback(
     (message: string) => {
       onNewMessage({
-        id: "",
         text: message,
-        createdAt: new Date(),
-        participantId: viewer.id,
-        conversation,
-        conversationId: conversation.id,
-        sender: {
-          id: viewer.id,
-          name: viewer.name || "",
-          conversationId: conversation.id,
-          createdAt: new Date(),
-          type: "HUMAN",
-          updatedAt: new Date(),
-        },
+        sender: viewer,
       });
     },
-    [conversation, onNewMessage, viewer.id, viewer.name]
+    [onNewMessage, viewer]
   );
 
   const handleTypingIndicatorShown = useCallback(() => {
