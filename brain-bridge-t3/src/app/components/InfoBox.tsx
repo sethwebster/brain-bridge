@@ -67,6 +67,29 @@ function InfoBoxDismissable(props: InfoBoxProps) {
 }
 
 export default function InfoBox(props: InfoBoxProps) {
+  return <></>
+  const { dismissable } = props;
+
+  const emptyFunction = useCallback(() => {
+    console.log();
+  }, []);
+
+  return (
+    <>
+      {dismissable ? (
+        <Suspense fallback={null}>
+          <InfoBoxDismissable {...props} />
+        </Suspense>
+      ) : (
+        <Suspense fallback={null}>
+          <InfoBoxDisplay {...props} hidden={false} handleDismiss={emptyFunction} />
+        </Suspense>
+      )}
+    </>
+  );
+}
+
+export function InfoBox2(props: InfoBoxProps) {
   const { dismissable } = props;
 
   const emptyFunction = useCallback(() => {
