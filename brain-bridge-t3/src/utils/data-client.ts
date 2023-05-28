@@ -1,7 +1,7 @@
 "use client";
 import { type PublicChat, type TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, type PublicChatWithRelations, ChatResponseMode } from "~/interfaces/types";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, type PublicChatWithRelations, type ChatResponseMode } from "~/interfaces/types";
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_URL
@@ -201,7 +201,6 @@ async function deletePublicChat(publicChatId: string): Promise<void> {
       "Content-Type": "application/json",
     },
   })
-
 }
 
 const DataClient = {
@@ -212,6 +211,7 @@ const DataClient = {
   trainTrainingSet,
   fetchChats,
   clearChat,
+  clearPublicChatMessages,
   newChat,
   deleteChat,
   sendMessage,

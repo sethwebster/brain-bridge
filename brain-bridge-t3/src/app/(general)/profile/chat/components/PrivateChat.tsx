@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ChatResponseMode,
+  type ChatResponseMode,
   type ConversationWithRelations,
   type MessageWithRelations,
 } from "~/interfaces/types";

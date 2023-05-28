@@ -7,7 +7,7 @@ import { setCookie } from "cookies-next";
 import { useCallback, useEffect, useState } from "react";
 import ChatDisplay, { type NewMessage } from "~/app/components/ChatDisplay";
 import {
-  ChatResponseMode,
+  type ChatResponseMode,
   type MessageWithRelations,
   type PublicChatInstanceWithRelations,
 } from "~/interfaces/types";
@@ -117,6 +117,12 @@ export default function PublicChat({
     },
     [getLLMResponse, publicChat.id, publicChatInstance, viewer]
   );
+
+    const handleClearChatClicked = useCallback(async () => {
+      setLoadedMessages([]);
+      await DataClient.clearPublicChatMessages(publicChatInstance.id)
+    }, [publicChatInstance.id]);
+  
   const handleSoundEnabledChanged = useCallback(
     (enabled: boolean) => setSoundEnabled(enabled),
     []
@@ -131,8 +137,9 @@ export default function PublicChat({
       soundEnabled={soundEnabled}
       answerPending={answerPending}
       soundPending={soundPending}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      onClearChatClicked={() => {}} // TODO
+      
+      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-misused-promises
+      onClearChatClicked={handleClearChatClicked}
     />
   );
 }

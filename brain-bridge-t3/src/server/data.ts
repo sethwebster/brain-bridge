@@ -211,6 +211,17 @@ async function clearChat(id: string) {
   conversation = await ServerData.fetchChat(id);
   return conversation;
 }
+
+async function clearPublicChat(id: string) {
+  let conversation = await ServerData.fetchPublicChatInstance(id);
+  invariant(conversation, "Public chat instance must exist");
+  await prisma.message.deleteMany({
+    where: { publicChatInstanceId: id },
+  });
+  conversation = await ServerData.fetchPublicChatInstance(id);
+  return conversation;
+}
+
 async function fetchPublicChats() {
   const session = await getServerSession();
   invariant(session, "User must be logged in to fetch public chats");
@@ -427,6 +438,7 @@ const ServerData = {
   updatePublicChat,
   deleteChat,
   clearChat,
+  clearPublicChat,
   sendMessage,
   newPublicChatInstance,
   fetchPublicChatInstance,
