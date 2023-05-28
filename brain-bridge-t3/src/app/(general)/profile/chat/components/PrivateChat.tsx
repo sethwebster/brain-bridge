@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ChatResponseMode,
   type ConversationWithRelations,
   type MessageWithRelations,
 } from "~/interfaces/types";
@@ -40,10 +41,10 @@ export default function PrivateChat({
   // );
 
   const getLLMResponse = useCallback(
-    async (message: MessageWithRelations) => {
+    async (message: MessageWithRelations, mode: ChatResponseMode) => {
       setAnswerPending(true);
       try {
-        const llmResponse = await DataClient.sendMessage(message);
+        const llmResponse = await DataClient.sendMessage(message, mode);
         setAnswerPending(false);
         invariant(llmResponse, "No data in response");
         const messageResponse = llmResponse;
@@ -99,7 +100,7 @@ export default function PrivateChat({
   }, [firstLoad, getLLMResponse, session.user?.email, session.user?.name]);
 
   const handleSend = useCallback(
-    async (newMessage: NewMessage) => {
+    async (newMessage: NewMessage, mode: ChatResponseMode) => {
       const sendMessage = async () => {
         const newMessageAugment: MessageWithRelations = {
           ...newMessage,
@@ -122,7 +123,7 @@ export default function PrivateChat({
         };
         setSelectedChatMessages((messages) => [...messages, newMessageAugment]);
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        await getLLMResponse(newMessageAugment);
+        await getLLMResponse(newMessageAugment, mode);
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       };
       await sendMessage();

@@ -1,5 +1,5 @@
 import { type Conversation, type Participant } from "@prisma/client";
-import { type MessageWithRelations } from "~/interfaces/types";
+import { type ChatResponseMode, type MessageWithRelations } from "~/interfaces/types";
 import { type Session } from "next-auth";
 import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
@@ -11,22 +11,24 @@ import { BrainBridgeLangChain } from '~/lib/llm';
 export async function POST(req: NextRequest) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to send a message");
-  const payload = await req.json() as MessageWithRelations;
-  invariant(payload.conversationId, "Conversation id must be provided");
-  const conversation = await ServerData.fetchChat(payload.conversationId);
+  const { message, mode } = await req.json() as { message: MessageWithRelations, mode: ChatResponseMode };
+  console.log("mode", mode, message)
+  invariant(message.conversationId, "Conversation id must be provided");
+  const conversation = await ServerData.fetchChat(message.conversationId);
   invariant(conversation, "Conversation must exist");
   const bot = conversation.participants.find(p => p.name === "Bot");
   invariant(bot, "Bot must exist");
 
-  const userMessage = await storeUserMessage(conversation, payload, session);
+  const userMessage = await storeUserMessage(conversation, message, session);
   const llm = new BrainBridgeLangChain();
   const response = await llm.getLangChainResponse(
     conversation.trainingSetId,
     userMessage.text,
     conversation.trainingSet.prompt,
     conversation.messages.map(m => `${m.sender.name}: ${m.text}`),
+    mode
   )
-  const message: MessageWithRelations = {
+  const newMessage: MessageWithRelations = {
     id: "",
     conversationId: conversation.id,
     text: response,
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
     publicChatInstance: null,
     publicChatInstanceId: null,
   }
-  const result = await storeUserMessage(conversation, message);
+  const result = await storeUserMessage(conversation, newMessage);
   return NextResponse.json(result);
 }
 

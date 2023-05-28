@@ -224,10 +224,8 @@ async function fetchPublicChats() {
 }
 
 async function fetchPublicChat(id: string, publishedOnly: boolean) {
-  const session = await getServerSession();
-  invariant(session, "User must be logged in to create a public chat");
   const chat = await prisma.publicChat.findFirst({
-    where: { id, userId: session.user.id, published: publishedOnly },
+    where: { id, published: publishedOnly },
     include: {
       trainingSet: true,
     }

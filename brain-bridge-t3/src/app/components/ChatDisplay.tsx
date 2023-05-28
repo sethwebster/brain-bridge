@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import NewMessageBox from "./NewMessageBox";
 import { ChatToolbar } from "./ChatToolbar";
 import { type Participant } from "@prisma/client";
@@ -10,9 +10,9 @@ import {
   FakeTypingIndicator,
 } from "../(general)/profile/chat/components/FakeTypingIndicator";
 import {
+  type ChatResponseMode,
   type MessageWithRelations,
 } from "~/interfaces/types";
-
 
 export interface Viewer {
   id: string;
@@ -38,7 +38,7 @@ interface ChatProps {
   answerPending: boolean;
   soundPending: boolean;
   soundEnabled: boolean;
-  onNewMessage: (newMessage: NewMessage) => void;
+  onNewMessage: (newMessage: NewMessage, mode: ChatResponseMode) => void;
   onSoundEnabledChange: (soundEnabled: boolean) => void;
   onClearChatClicked: () => void;
 }
@@ -54,7 +54,7 @@ export default function ChatDisplay({
   onClearChatClicked,
 }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
-
+  const [chatMode, setChatMode] = useState<ChatResponseMode>("one-shot");
   const handleSoundEnabledChange = useCallback(() => {
     onSoundEnabledChange(!soundEnabled);
   }, [onSoundEnabledChange, soundEnabled]);
@@ -68,9 +68,9 @@ export default function ChatDisplay({
       onNewMessage({
         text: message,
         sender: viewer,
-      });
+      }, chatMode);
     },
-    [onNewMessage, viewer]
+    [chatMode, onNewMessage, viewer]
   );
 
   const handleTypingIndicatorShown = useCallback(() => {
@@ -78,6 +78,13 @@ export default function ChatDisplay({
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   }, []);
+
+  const handleChatModeSelectionChanged = useCallback(
+    (mode: ChatResponseMode) => {
+      setChatMode(mode);
+    },
+    []
+  );
 
   useEffect(() => {
     setTimeout(() => {
@@ -89,6 +96,8 @@ export default function ChatDisplay({
   return (
     <div className="mb-20 flex h-full w-full flex-col overflow-scroll bg-slate-100 dark:bg-slate-700">
       <ChatToolbar
+        chatMode={chatMode}
+        onModeSelectionChanged={handleChatModeSelectionChanged}
         soundEnabled={soundEnabled}
         soundPending={soundPending}
         onSoundEnabledClick={handleSoundEnabledChange}

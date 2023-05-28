@@ -58,3 +58,5 @@ export type PublicChatInstanceWithRelations = Prisma.PublicChatInstanceGetPayloa
 
 
 export type QuestionAndAnswerPartial = Omit<QuestionAndAnswer, "trainingSetId" | "id">;
+
+export type ChatResponseMode = "one-shot" | "critique" | "refine";

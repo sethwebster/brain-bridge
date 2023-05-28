@@ -35,6 +35,7 @@ export async function generateMetadata({
   }
 }
 
+
 export default async function PublicChatPage({ params: { id } }: PageProps) {
   try {
     const chat = await ServerData.fetchPublicChat(id, true);

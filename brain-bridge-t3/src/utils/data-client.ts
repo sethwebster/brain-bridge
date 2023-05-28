@@ -1,7 +1,7 @@
 "use client";
 import { type PublicChat, type TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, type PublicChatWithRelations } from "~/interfaces/types";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, type PublicChatWithRelations, ChatResponseMode } from "~/interfaces/types";
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_URL
@@ -151,7 +151,7 @@ async function publishPublicChat(publicChat: PublicChatWithRelations) {
   }
 }
 
-async function sendMessage(message: MessageWithRelations) {
+async function sendMessage(message: MessageWithRelations, mode: ChatResponseMode) {
   console.log("sendMessage", message.conversationId, message)
   invariant(message.conversationId, "conversationId is required")
   const response = await fetch(makeApiUrl(`/profile/chat/${message.conversationId}/api/message`), {
@@ -159,14 +159,14 @@ async function sendMessage(message: MessageWithRelations) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ...message, conversation: { id: message.conversationId } }),
+    body: JSON.stringify({ message: { ...message, conversation: { id: message.conversationId } }, mode }),
   })
   const text = await response.text();
   const data = JSON.parse(text) as MessageWithRelations;
   return data
 }
 
-async function sendPublicInstanceChatMessage(message: MessageWithRelations) {
+async function sendPublicInstanceChatMessage(message: MessageWithRelations, mode: ChatResponseMode) {
   console.log("sendPublicInstanceChatMessage", message.publicChatInstance?.publicChatId, message)
 
   invariant(message.publicChatInstance?.publicChatId, "publicChatId is required")
@@ -176,7 +176,7 @@ async function sendPublicInstanceChatMessage(message: MessageWithRelations) {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ...message }),
+    body: JSON.stringify({ message: { ...message }, mode }),
   })
   const text = await response.text();
   const data = JSON.parse(text) as MessageWithRelations;

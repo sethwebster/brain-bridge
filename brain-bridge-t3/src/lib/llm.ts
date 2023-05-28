@@ -87,7 +87,7 @@ export class BrainBridgeLangChain implements LangChainStore {
    * @param store the HNSWLib instance (the index)
    * @returns 
    */
-  async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[]) {
+  async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine" = "one-shot") {
     const promptTemplate = new PromptTemplate({
       template: basePrompt,
       inputVariables: ["history", "context", "prompt"]
@@ -107,10 +107,77 @@ export class BrainBridgeLangChain implements LangChainStore {
       context.push(`Context:\n${item.pageContent.trim()}`)
     });
 
-    const result = await llmChain.call({ prompt: userPrompt, context: context.join('\n\n'), history }) as LLMResponse;
-    return result.text;
+    const originalResponse = await llmChain.call({ prompt: userPrompt, context: context.join('\n\n'), history }) as LLMResponse;
+    if (mode === "one-shot") {
+      return originalResponse.text;
+    }
+    const critiqued = await this.critique(originalResponse.text, userPrompt, history);
+    if (mode === "critique") {
+      const responseTemplate = `
+        ### Original Request
+        >>>
+        {REQUEST}
+        <<<
+
+        ### Original Response
+        >>>
+        {RESPONSE}
+        <<<
+        
+        ### Critique
+        >>>
+        {CRITIQUE}
+        <<<
+      `;
+      return responseTemplate.replace("{REQUEST}",userPrompt).replace("{RESPONSE}",originalResponse.text).replace("{CRITIQUE}",critiqued.text);
+    }
+    const refined = await this.refine(critiqued.text, originalResponse.text, userPrompt, history);
+    return refined.text.replace("New Response:", "").trim();
   }
 
+  private async critique(firstResponse: string, userPrompt:string, history: string[]) {
+    const promptTemplate = new PromptTemplate({
+      template: `
+        Your Previous Response:
+        {RESPONSE}
 
+        Their question was: 
+        {QUESTION}
+
+        The history is: 
+        {HISTORY}
+
+        ---
+        Above is your previous response. Critique your response to their question. Think step by step, why you said what you said, and how you could have said it better. Remember to think step-by-step.
+      `, inputVariables: ["RESPONSE", "QUESTION", "HISTORY"]});
+
+    const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
+
+    const result = await llmChain.call({ RESPONSE: firstResponse, QUESTION: userPrompt, HISTORY: history }) as LLMResponse;
+    console.log("critique", result.text);
+
+    return result;
+  }
+
+  private async refine(critique: string, firstResponse: string, userPrompt:string, history: string[]) {
+    const promptTemplate = new PromptTemplate({
+      template: `
+        Your Previous Response: {RESPONSE}
+      
+        Your Critique: {CRITIQUE}
+
+        Their question is: {QUESTION}
+
+        The history is: {HISTORY}
+        ---
+        Above is your previous response and your critique of it. Use your critique to refine your response to their question. 
+      `, inputVariables: ["RESPONSE", "QUESTION", "CRITIQUE", "HISTORY"]});
+
+    const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
+
+    const result = await llmChain.call({ RESPONSE: firstResponse, QUESTION: userPrompt, CRITIQUE: critique, HISTORY: history }) as LLMResponse;
+    console.log("refine", result.text);
+    return result;
+  }
 
 }

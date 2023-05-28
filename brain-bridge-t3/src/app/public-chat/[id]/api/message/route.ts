@@ -9,7 +9,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { id } = params;
   const payload = await req.json() as MessageWithRelations;
   const { participantId, publicChatInstance, text } = payload;
-  console.log("PAYLOAD", payload)
   const chat = await ServerData.fetchPublicChat(id, true);
 
   invariant(chat, "Chat not found");
