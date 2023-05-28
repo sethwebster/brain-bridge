@@ -58,13 +58,21 @@ export default async function PublicChatPage({ params: { id } }: PageProps) {
       }
     }
     if (!conversation) {
-      const existing = await ServerData.fetchPublicChatInstanceForViewer(
-        chat.id,
-        viewerId
-      );
-      if (existing) {
-        conversation = existing;
-      } else {
+      console.log("No conversation found cookies");
+      try {
+        const existing = await ServerData.fetchPublicChatInstanceForViewer(
+          chat.id,
+          viewerId
+        );
+        if (existing) {
+          console.log("Existing convo");
+          conversation = existing;
+        }
+      } catch (e) {
+        console.log("Unable to fetch existing conversation", e);
+      }
+      if (!conversation) {
+        console.log("creating new convo");
         conversation = await ServerData.newPublicChatInstance({
           participant: {
             id: viewerId,
