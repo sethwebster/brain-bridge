@@ -8,9 +8,10 @@ import { type TrainingIndex, type TrainingSource } from '@prisma/client';
 import { type TrainingSetWithRelations } from '~/interfaces/types';
 import ServerData from '~/server/data';
 import { cleanUpHtml } from '~/utils/html-to-markdown';
+import { getTempFilePath } from '~/utils/files';
 
 async function loadFile(file: string): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     console.log(path.extname(file));
     const data = fs.readFileSync(file, 'utf-8')
     resolve(data);
@@ -77,70 +78,6 @@ export async function createTrainingIndex({ name, trainingSet }: { name: string,
     trainingSetId: trainingSet.id,
   });
   return trainingIndex;
-}
-
-// export async function getTrainingIndex({ name, storageType }: { name: string, storageType: TrainingVectorStorageTypes }): Promise<TrainingIndex> {
-//   console.log('getTrainingIndex', name, storageType)
-//   //TODO: Eventually remove this
-//   invariant(name != "local", "Local cannot be used as a name.")
-//   switch (storageType) {
-//     case "local":
-//       const location = getLocalStoragePath(name);
-//       const localIndex = HNSWLib.load(location, new OpenAIEmbeddings());
-//       // TODO - fix this - we want to allow non-redis storage
-//       // @ts-ignore
-//       return localIndex;
-
-//     case "redis":
-//       console.log('REDIS', name)
-//       const client = redis.createClient({ url: process.env.REDIS_URL });
-//       console.log("Created Redis client")
-//       client.commandOptions({ returnBuffers: true })
-//       console.log("Connecting to redis")
-//       await client.connect();
-//       console.log("Connected to redis")
-//       const keys = getRedisKeys(name);
-//       const metadataStr = await client.get(keys.metadata);
-//       invariant(metadataStr, `No metadata found for ${name}`);
-//       const metadata = JSON.parse(metadataStr.toString());
-//       // console.log("Fetching vectors", metadata)
-//       const vectorsData = await client.get(metadata.storageKeys.vectors);
-//       console.log(`(vectors) Got ${vectorsData?.length} bytes for ${name}`)
-//       const documentsData = await client.get(metadata.storageKeys.documents);
-//       console.log(`(docStore) Got ${documentsData?.length} bytes for ${name}`)
-//       invariant(vectorsData, `No vectors found for ${name}`);
-//       invariant(documentsData, `No documents found for ${name}`);
-//       const tempFilePath = getTempFilePath(name);
-//       console.log("Saving index to files...", tempFilePath)
-//       const { index: { data: indexData } } = JSON.parse(vectorsData.toString());
-//       const { documents: { data: docsData } } = JSON.parse(documentsData.toString());
-//       if (!fs.existsSync(tempFilePath)) fs.mkdirSync(tempFilePath);
-//       const indexPath = path.join(tempFilePath, `hnswlib.index`);
-//       const docStorePath = path.join(tempFilePath, `docstore.json`);
-//       const argsFilePath = path.join(tempFilePath, `args.json`);
-//       fs.writeFileSync(indexPath, Buffer.from(indexData));
-//       fs.writeFileSync(docStorePath, Buffer.from(docsData));
-//       fs.writeFileSync(argsFilePath, `{"space":"cosine","numDimensions":1536}`);
-//       const index = await HNSWLib.load(tempFilePath, new OpenAIEmbeddings())
-//       metadata.store = index;
-//       return metadata;
-//     default:
-//       throw new Error(`Unsupported storage type: ${storageType}`);
-//   }
-// }
-
-// export async function updateTrainingIndex({ }: { name: string, sources: TrainingSource[], storageType: TrainingVectorStorageTypes }) {
-//   // TODO
-// }
-
-// function getLocalStoragePath(name: string) {
-//   invariant(process.env.LOCAL_STORAGE_PATH, "LOCAL_STORAGE_PATH must be set to save local training data")
-//   const location = path.join(process.env.LOCAL_STORAGE_PATH, `${name}`)
-//   return location;
-// }
-
-function getTempFilePath(name: string) {
-  return path.join(process.env.TEMP_FILE_PATH!, `${name}-${new Date().getTime()}`);
 }
 
 // function getRedisKeys(name: string) {

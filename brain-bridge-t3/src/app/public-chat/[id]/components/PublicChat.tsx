@@ -1,13 +1,11 @@
 "use client";
 import {
-  type Message,
-  PublicChatInstance,
   type Participant,
-  PublicChat,
+  type PublicChat,
 } from "@prisma/client";
 import { setCookie } from "cookies-next";
 import { useCallback, useEffect, useState } from "react";
-import ChatDisplay, { NewMessage } from "~/app/components/ChatDisplay";
+import ChatDisplay, { type NewMessage } from "~/app/components/ChatDisplay";
 import {
   type MessageWithRelations,
   type PublicChatInstanceWithRelations,
@@ -28,7 +26,7 @@ export default function PublicChat({
 }: PublicChatProps) {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [answerPending, setAnswerPending] = useState(false);
-  const [soundPending, setSoundPending] = useState(false);
+  const [soundPending] = useState(false);
   const [loadedMessages, setLoadedMessages] = useState<MessageWithRelations[]>(
     publicChatInstance.messages
   );

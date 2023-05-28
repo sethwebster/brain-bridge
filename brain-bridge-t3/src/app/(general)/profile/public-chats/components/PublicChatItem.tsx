@@ -1,18 +1,22 @@
 "use client";
 
 import { type Session } from "next-auth";
-import { DeleteTrainingSet } from "../../training/DeleteTrainingSet";
 import { PencilIcon } from "../../training/new/components/SvgIcons";
 import { useCallback, useState } from "react";
 import EditPublicChat from "./EditPublicChat";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { type PublicChatWithRelations, type TrainingSetWithRelations } from "~/interfaces/types";
+import {
+  type PublicChatWithRelations,
+  type TrainingSetWithRelations,
+} from "~/interfaces/types";
 import DataClient from "~/utils/data-client";
+import DeleteButton from "../../components/DeleteButton";
+import { TrashCan } from "~/app/components/SvgIcons";
 
 export default function PublicChatItem({
   publicChat,
-  session,
+  session: _session,
   trainingSets,
 }: {
   publicChat: PublicChatWithRelations;
@@ -44,6 +48,11 @@ export default function PublicChatItem({
   }, [publicChat, router]);
 
   const url = `/public-chat/${publicChat.id}`;
+
+  const handleDeleteChatConfirmed = useCallback(async () => {
+    await DataClient.deletePublicChat(publicChat.id);
+    router.refresh();
+  }, [publicChat.id, router]);
 
   if (editing)
     return (
@@ -81,7 +90,14 @@ export default function PublicChatItem({
           {publicChat.published ? "⬤" : "⬤"}
         </button>
         <div className="flex justify-end">
-          <DeleteTrainingSet id={publicChat.id} user={session.user} />
+          <DeleteButton
+            className="rounded-md bg-blue-400 p-2"
+            confirmingClassName="rounded-md bg-red-400 p-2"
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
+            onConfirmed={handleDeleteChatConfirmed}
+          >
+            <TrashCan />
+          </DeleteButton>
         </div>
       </div>
     </>

@@ -1,18 +1,16 @@
-import { type Message } from "@prisma/client";
 import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
-import { getLLMResponseDirect } from "~/app/(general)/profile/chat/[id]/api/message/route";
-import { MessageWithRelations, messageWithRelations, publicChatInstanceWithRelations } from "~/interfaces/types";
+import { type MessageWithRelations, messageWithRelations } from "~/interfaces/types";
+import { BrainBridgeLangChain } from "~/lib/llm";
 import ServerData from "~/server/data";
 import { prisma } from "~/server/db";
-
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
   const payload = await req.json() as MessageWithRelations;
   const { participantId, publicChatInstance, text } = payload;
   console.log("PAYLOAD", payload)
-  const chat = await ServerData.fetchPublicChat(id);
+  const chat = await ServerData.fetchPublicChat(id, true);
 
   invariant(chat, "Chat not found");
   invariant(publicChatInstance, "Public chat instance not provided")
@@ -38,8 +36,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
 
   // Respond with bot message
-  const response = await getLLMResponseDirect(instance.id, text, chat.trainingSetId, instance.messages);
-
+  const llm = new BrainBridgeLangChain();
+  const response = await llm.getLangChainResponse(chat.trainingSetId, text, chat.trainingSet.prompt, instance.messages.map(m => `${m.sender.name}: ${m.text}`));
   const sender = instance.participants.find(p => p.type === "BOT");
   let responseMessage: MessageWithRelations;
   if (!sender) {

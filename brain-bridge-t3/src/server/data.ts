@@ -1,9 +1,17 @@
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, trainingSetWithRelations, PublicChatWithRelations, publicChatInstanceWithRelations, PublicChatInstanceWithRelations, messageWithRelations } from "~/interfaces/types";
+import {
+  type MessageWithRelations,
+  type ConversationWithRelations,
+  type TrainingSetWithRelations,
+  type TrainingIndexWithRelations, trainingSetWithRelations,
+  type PublicChatWithRelations,
+  messageWithRelations,
+  type PublicChatInstanceWithRelations
+} from "~/interfaces/types";
 import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";
 import { prisma } from "./db";
-import { Participant } from "@prisma/client";
+import { type Participant } from "@prisma/client";
 
 ///////////////////
 // Training Sets //
@@ -215,11 +223,11 @@ async function fetchPublicChats() {
   return chats;
 }
 
-async function fetchPublicChat(id: string) {
+async function fetchPublicChat(id: string, publishedOnly: boolean) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to create a public chat");
   const chat = await prisma.publicChat.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id, userId: session.user.id, published: publishedOnly },
     include: {
       trainingSet: true,
     }
@@ -254,6 +262,18 @@ async function updatePublicChat(publicChat: PublicChatWithRelations & { publishe
     }
   });
   return chat;
+}
+
+async function deletePublicChat(id: string) {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to delete a public chat");
+  const chat = await fetchPublicChat(id, false);
+  if (!chat) { notFound(); }
+  if (chat.userId !== session.user.id) { throw new Error("User does not own this public chat"); }
+  await prisma.publicChat.delete({
+    where: { id },
+  });
+  return true;
 }
 
 async function newPublicChatInstance({ participant, publicChat }: { participant: Participant, publicChat: PublicChatWithRelations }) {
@@ -300,6 +320,19 @@ async function newPublicChatInstance({ participant, publicChat }: { participant:
       },
     }
   });
+  return chat;
+}
+
+async function fetchPublicChatInstanceForViewer(id: string, viewerId: string) {
+  const chat = await prisma.publicChatInstance.findFirst({
+    where: { publicChatId: id, participants: { some: { id: viewerId } } },
+    include: {
+      participants: true,
+      publicChat: true,
+      messages: messageWithRelations,
+    }
+  });
+  invariant(chat, "Chat must exist");
   return chat;
 }
 
@@ -391,13 +424,15 @@ const ServerData = {
   fetchChats,
   fetchChat,
   fetchPublicChat,
+  deletePublicChat,
   fetchPublicChats,
   updatePublicChat,
   deleteChat,
   clearChat,
   sendMessage,
   newPublicChatInstance,
-  fetchPublicChatInstance
+  fetchPublicChatInstance,
+  fetchPublicChatInstanceForViewer
 }
 
 export default ServerData;

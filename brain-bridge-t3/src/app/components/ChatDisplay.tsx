@@ -3,21 +3,20 @@
 import { useCallback, useEffect, useRef } from "react";
 import NewMessageBox from "./NewMessageBox";
 import { ChatToolbar } from "./ChatToolbar";
-import { Participant, type User } from "@prisma/client";
+import { type Participant } from "@prisma/client";
 import { Messages } from "../(general)/profile/chat/components/Messages";
 import {
   FakeSpeakerIndicator,
   FakeTypingIndicator,
 } from "../(general)/profile/chat/components/FakeTypingIndicator";
 import {
-  type ConversationWithRelations,
   type MessageWithRelations,
 } from "~/interfaces/types";
 
 
 export interface Viewer {
   id: string;
-  name: string;
+  name?: string;
   email?: string;
 }
 

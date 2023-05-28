@@ -108,7 +108,7 @@ model Message {
 
   sender               Participant         @relation(fields: [participantId], references: [id])
   createdAt            DateTime            @default(now())
-  conversation         Conversation?        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId       String?
   participantId        String
   publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
@@ -132,11 +132,11 @@ model PublicChatInstance {
   id           String        @id @default(cuid())
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  name         String        @default("") @unique
+  name         String        @unique @default("")
   messages     Message[]
   participants Participant[]
-  publicChat   PublicChat    @relation(fields: [publicChatId], references: [id])
-  publicChatId String   
+  publicChat   PublicChat    @relation(fields: [publicChatId], references: [id], onDelete: Cascade)
+  publicChatId String
 }
 
 /////////////////////////////

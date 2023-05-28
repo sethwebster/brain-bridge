@@ -23,68 +23,84 @@ export async function generateMetadata({
   const id = params.id;
 
   // fetch data
-  const chat = await ServerData.fetchPublicChat(id);
+  const chat = await ServerData.fetchPublicChat(id, true);
   if (chat) {
     return {
       title: `Chat: ${chat?.name}`,
     };
+  } else {
+    return {
+      title: "Chat not found",
+    };
   }
-  notFound();
 }
 
 export default async function PublicChatPage({ params: { id } }: PageProps) {
-  const chat = await ServerData.fetchPublicChat(id);
-  ensurePublicChat(chat);
-  invariant(chat, "Chat must exist");
-  const userCookies = cookies();
-  const viewerId = userCookies.get("viewer-id")?.value ?? generateId();
-  const conversations = safeGetJSONCookieServer<{ [key: string]: string }>(
-    "chats",
-    {} as { [key: string]: string }
-  );
-  console.log("conversations", conversations);
-  const conversationId = conversations[chat.id];
-  console.log("conversationId", conversationId);
-  let conversation: PublicChatInstanceWithRelations | undefined;
-  if (conversationId) {
-    try {
-      conversation = await ServerData.fetchPublicChatInstance(conversationId);
-    } catch (e) {
-      console.log(`Chat for ${viewerId}/${conversationId} not found`, e);
+  try {
+    const chat = await ServerData.fetchPublicChat(id, true);
+    ensurePublicChat(chat);
+    invariant(chat, "Chat must exist");
+    const userCookies = cookies();
+    const viewerId = userCookies.get("viewer-id")?.value ?? generateId();
+    const conversations = safeGetJSONCookieServer<{ [key: string]: string }>(
+      "chats",
+      {} as { [key: string]: string }
+    );
+    console.log("conversations", conversations);
+    const conversationId = conversations[chat.id];
+    console.log("conversationId", conversationId);
+    let conversation: PublicChatInstanceWithRelations | undefined;
+    if (conversationId) {
+      try {
+        conversation = await ServerData.fetchPublicChatInstance(conversationId);
+      } catch (e) {
+        console.log(`Chat for ${viewerId}/${conversationId} not found`, e);
+      }
     }
+    if (!conversation) {
+      const existing = await ServerData.fetchPublicChatInstanceForViewer(
+        chat.id,
+        viewerId
+      );
+      if (existing) {
+        conversation = existing;
+      } else {
+        conversation = await ServerData.newPublicChatInstance({
+          participant: {
+            id: viewerId,
+            name: viewerId,
+            type: "HUMAN",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            conversationId: null,
+            publicChatInstanceId: null,
+          },
+          publicChat: chat,
+        });
+      }
+    }
+    invariant(conversation, "Conversation must exist");
+    return (
+      <div className="h-full">
+        <PublicChat
+          publicChat={chat}
+          publicChatInstance={conversation}
+          viewer={{
+            id: viewerId,
+            name: viewerId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            type: "HUMAN",
+            conversationId: null,
+            publicChatInstanceId: conversation.id,
+          }}
+        />
+      </div>
+    );
+  } catch (e) {
+    console.log("Loading chat failed", e);
+    notFound();
   }
-  if (!conversation) {
-    conversation = await ServerData.newPublicChatInstance({
-      participant: {
-        id: viewerId,
-        name: viewerId,
-        type: "HUMAN",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        conversationId: null,
-        publicChatInstanceId: null,
-      },
-      publicChat: chat,
-    });
-  }
-  invariant(conversation, "Conversation must exist");
-  return (
-    <div className="h-full">
-      <PublicChat
-        publicChat={chat}
-        publicChatInstance={conversation}
-        viewer={{
-          id: viewerId,
-          name: viewerId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          type: "HUMAN",
-          conversationId: null,
-          publicChatInstanceId: conversation.id,
-        }}
-      />
-    </div>
-  );
 }
 
 function ensurePublicChat(chat: PublicChatType | undefined | null) {

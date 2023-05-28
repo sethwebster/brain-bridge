@@ -1,7 +1,7 @@
 "use client";
 import { type PublicChat, type TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, PublicChatWithRelations } from "~/interfaces/types";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, type PublicChatWithRelations } from "~/interfaces/types";
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_URL
@@ -152,6 +152,7 @@ async function publishPublicChat(publicChat: PublicChatWithRelations) {
 
 async function sendMessage(message: MessageWithRelations) {
   console.log("sendMessage", message.conversationId, message)
+  invariant(message.conversationId, "conversationId is required")
   const response = await fetch(makeApiUrl(`/profile/chat/${message.conversationId}/api/message`), {
     method: "POST",
     headers: {
@@ -181,6 +182,16 @@ async function sendPublicInstanceChatMessage(message: MessageWithRelations) {
   return data
 }
 
+async function deletePublicChat(publicChatId: string): Promise<void> {
+  await fetch(makeApiUrl(`/profile/public-chats/api/${publicChatId}`), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+
+}
+
 const DataClient = {
   fetchTrainingSet,
   createTrainingSet,
@@ -196,7 +207,8 @@ const DataClient = {
   updatePublicChat,
   unpublishPublicChat,
   publishPublicChat,
-  sendPublicInstanceChatMessage
+  sendPublicInstanceChatMessage,
+  deletePublicChat
 }
 
 export default DataClient;

@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { SaveIcon } from "../../training/new/components/SvgIcons";
 import invariant from "tiny-invariant";
-import { type PublicChatWithRelations, type TrainingSetWithRelations } from "~/interfaces/types";
+import { type PublicChatWithRelations } from "~/interfaces/types";
 import Input from "~/app/components/Input";
 import Select from "~/app/components/Select";
 import { type TrainingSet } from "@prisma/client";

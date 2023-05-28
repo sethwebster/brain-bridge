@@ -84,8 +84,6 @@ export default function PublicChatsList({
                     name: "",
                     trainingSet: firstTrainingSet,
                     published: false,
-                    messages: [],
-                    participants: [],
                     userId: session.user.id,
                     createdAt: new Date(),
                     updatedAt: new Date(),

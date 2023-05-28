@@ -32,6 +32,7 @@ const conversationWithRelations = Prisma.validator<Prisma.ConversationArgs>()({
   include: {
     messages: messageWithRelations,
     participants: true,
+    trainingSet: true,
   }
 });
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { type User } from "@prisma/client";
 import {
   type ConversationWithRelations,
   type MessageWithRelations,
@@ -8,7 +7,10 @@ import {
 import { type Session } from "next-auth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import invariant from "tiny-invariant";
-import ChatDisplay, { NewMessage } from "~/app/components/ChatDisplay";
+import ChatDisplay, {
+  type Viewer,
+  type NewMessage,
+} from "~/app/components/ChatDisplay";
 // import useAudioPlayer from "~/hooks/useAudioPlayer";
 import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
@@ -146,7 +148,7 @@ export default function PrivateChat({
       onNewMessage={handleSend}
       soundEnabled={soundEnabled}
       onSoundEnabledChange={(value) => setSoundEnabled(value)}
-      viewer={session.user as User}
+      viewer={session.user as Viewer}
       onClearChatClicked={handleClearChatClicked}
     />
   );
