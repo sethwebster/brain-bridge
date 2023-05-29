@@ -20,7 +20,7 @@ export const env = createEnv({
       // VERCEL_URL doesn't include `https` so it cant be validated as a URL
       process.env.VERCEL ? z.string().min(1) : z.string().url(),
     ),
-    NEXT_PUBLIC_URL: z.string().url(),
+    NEXT_PUBLIC_BASE_URL: z.string().url(),
     // Add `.min(1) on ID and SECRET if you want to make sure they're not empty
     AUTH0_ISSUER: z.string().min(1),
     AUTH0_CLIENT_ID: z.string().min(1),
@@ -31,6 +31,10 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string().min(1),
     ELEVENLABS_API_KEY: z.string().min(1),
     ELEVENLABS_VOICE_ID: z.string().min(1),
+    NEXT_PUBLIC_R2_ACCOUNT_ID: z.string().min(1),
+    R2_API_KEY: z.string().min(1),
+    R2_API_SECRET: z.string().min(1),
+    R2_USER_FILES_BUCKET: z.string().min(1),
   },
 
   /**
@@ -56,11 +60,15 @@ export const env = createEnv({
     AUTH0_CLIENT_SECRET: process.env.AUTH0_CLIENT_SECRET,
     GITHUB_ID: process.env.GITHUB_ID,
     GITHUB_SECRET: process.env.GITHUB_SECRET,
-    NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     TEMP_FILE_PATH: process.env.TEMP_FILE_PATH,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY,
     ELEVENLABS_VOICE_ID: process.env.ELEVENLABS_VOICE_ID,
+    NEXT_PUBLIC_R2_ACCOUNT_ID: process.env.NEXT_PUBLIC_R2_ACCOUNT_ID,
+    R2_API_KEY: process.env.R2_API_KEY,
+    R2_API_SECRET: process.env.R2_API_SECRET,
+    R2_USER_FILES_BUCKET: process.env.R2_USER_FILES_BUCKET,
 
   },
   /**

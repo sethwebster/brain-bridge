@@ -19,7 +19,7 @@ type InfoBoxProps = {
     }
 );
 
-function InfoBoxDisplay(
+export function InfoBoxDisplay(
   props: InfoBoxProps & { hidden: boolean; handleDismiss: () => void }
 ) {
   const { title, dismissable, hidden, handleDismiss } = props;

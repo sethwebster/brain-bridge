@@ -60,6 +60,7 @@ model TrainingSource {
   trainingSet   TrainingSet        @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
   trainingSetId String
   pending       Boolean            @default(true)
+  mimeType      String?
 }
 
 model QuestionAndAnswer {

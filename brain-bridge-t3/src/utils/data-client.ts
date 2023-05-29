@@ -4,7 +4,7 @@ import invariant from "tiny-invariant";
 import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, type PublicChatWithRelations, type ChatResponseMode } from "~/interfaces/types";
 
 const makeApiUrl = (endpoint: string) => {
-  const base = process.env.NEXT_PUBLIC_URL
+  const base = process.env.NEXT_PUBLIC_BASE_URL
   return new URL(endpoint, base).toString();
 }
 
@@ -203,6 +203,18 @@ async function deletePublicChat(publicChatId: string): Promise<void> {
   })
 }
 
+async function getSignedUrl(fileName: string): Promise<{ url: string }> {
+  const response = await fetch(makeApiUrl(`/api/files/sign`), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ fileNameKey: fileName }),
+  })
+  const data = await response.json() as { url: string };
+  return data;
+}
+
 const DataClient = {
   fetchTrainingSet,
   createTrainingSet,
@@ -220,7 +232,8 @@ const DataClient = {
   unpublishPublicChat,
   publishPublicChat,
   sendPublicInstanceChatMessage,
-  deletePublicChat
+  deletePublicChat,
+  getSignedUrl
 }
 
 export default DataClient;
