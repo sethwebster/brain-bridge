@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { SaveIcon } from "../../training/new/components/SvgIcons";
+import { SaveIcon } from "../../training/components/SvgIcons";
 import invariant from "tiny-invariant";
 import { type PublicChatWithRelations } from "~/interfaces/types";
 import Input from "~/app/components/Input";

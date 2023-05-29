@@ -3,8 +3,8 @@ import invariant from "tiny-invariant";
 import PaddedContainer from "~/app/components/PaddedContainer";
 import { getServerSession } from "~/server/auth";
 import { removeFooter } from "~/utils/prompts";
-import TrainingSetPage from "../new/components/TrainingSetForm";
-import promptTemplate, { promptFooter } from "../new/PromptTemplate";
+import TrainingSetPage from "../components/TrainingSetForm";
+import promptTemplate, { promptFooter } from "../PromptTemplate";
 import ServerData from "~/server/data";
 
 export default async function TrainingPage({

@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
-import { TrashCan } from "../../training/new/components/SvgIcons";
+import { TrashCan } from "../../training/components/SvgIcons";
 import DataClient from "~/utils/data-client";
 import DeleteButton from "../../components/DeleteButton";
 

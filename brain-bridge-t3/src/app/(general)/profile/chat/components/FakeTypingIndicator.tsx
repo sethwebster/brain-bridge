@@ -1,7 +1,7 @@
 "use client";
 import { generateRandomInteger } from "~/utils/numbers";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SpeakerIcon } from "../../training/new/components/SvgIcons";
+import { SpeakerIcon } from "../../training/components/SvgIcons";
 
 interface FaceTypingIndicatorProps {
   onShown?: (visible: boolean) => void;

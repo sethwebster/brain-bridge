@@ -1,7 +1,7 @@
 "use client";
 
 import { type Session } from "next-auth";
-import { PencilIcon } from "../../training/new/components/SvgIcons";
+import { PencilIcon } from "../../training/components/SvgIcons";
 import { useCallback, useState } from "react";
 import EditPublicChat from "./EditPublicChat";
 import { useRouter } from "next/navigation";

@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useState } from "react";
-import { SpeakerIcon } from "../(general)/profile/training/new/components/SvgIcons";
+import { SpeakerIcon } from "../(general)/profile/training/components/SvgIcons";
 import { CheckMark, EraseIcon } from "./SvgIcons";
 import { type ChatResponseMode } from "~/interfaces/types";
 
