@@ -4,13 +4,15 @@
   "description": "A chatbot for photography",
   "main": "/build/server/index.js",
   "scripts": {
-    "build": "rimraf ./build && npx tsc && cp -rf ./public ./build/server/public",
+    "sync-prisma": "mkdir -p ./prisma && cp -rf ../brain-bridge-t3/prisma/* ./prisma/",
+    "build": "rm -rf ./build && mkdir -p ./build && npx prisma generate && cp -rf ./node_modules/.prisma/client ./build/prisma && npx tsc && cp -rf ./public ./build/server/public",
     "train": "node ./build/lib/training/initialize-store.js",
     "train:interactive": "node ./build/lib/training/interactive.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:server": "node ./build/server/index.js",
     "start": "node ./build/index.js",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon --watch ./build/server --exec node ./build/server/index.js\""
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon --watch ./build/server --exec node ./build/server/index.js\"",
+    "postinstall": "prisma generate"
   },
   "keywords": [
     "openai",
@@ -32,11 +34,15 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.341.0",
+    "@aws-sdk/s3-request-presigner": "^3.341.0",
+    "@prisma/client": "^4.14.1",
     "@types/axios": "^0.14.0",
     "@types/glob": "^8.1.0",
     "@types/node-fetch": "^2.6.3",
     "@types/prompt-sync": "^4.2.0",
     "@types/rimraf": "^4.0.5",
+    "aws-sdk": "^2.1386.0",
     "axios": "^1.4.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",

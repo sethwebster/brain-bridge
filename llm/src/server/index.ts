@@ -8,11 +8,13 @@ import invariant from 'tiny-invariant';
 import { addUserConversation, getUserTrainingSets, getUserConversations, removeUserConversation, addUserTrainingSet, updateUserTrainingSet, deleteUserTrainingSet, getUserTrainingSet, getUserPublicChats, addUserPublicChat, updateUserPublicChat, publishUserPublicChat, deleteUserPublicChat, unpublishUserPublicChat, getUserPublicChat, getPublicChat } from '../lib/user/user';
 import { generateId } from '../lib/utils/identity';
 import { OpenAIChat } from 'langchain/llms';
-import { createTrainingIndex } from '../lib/training/training';
 import Mutex from './mutex';
 import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
+import { PrismaClient } from '@prisma/client';
+import { createTrainingIndex } from '../lib/training/new-training';
+
 const app = express();
 console.log(__dirname)
 console.log(__filename)
@@ -223,6 +225,7 @@ app.post("/api/training-sets/:email/:id/train", async (req, res) => {
     console.log("Creating training set", id)
     await createTrainingIndex({
       name: trainingSet?.id,
+      // @ts-ignore
       trainingSet: trainingSet,
       storageType: 'redis',
     })
@@ -351,6 +354,24 @@ app.get("/api/public-chat/:id", async (req, res) => {
   res.json(conversation);
 });
 
+app.post("/api/v2/:id/train", async (req, res) => {
+  const prisma = new PrismaClient();
+  const set = await prisma.trainingSet.findUnique({
+    where: { id: req.params.id }, include: {
+      conversations: true,
+      trainingSources: true,
+      questionsAndAnswers: true,
+    }
+  });
+  invariant(set, "Training set not found");
+  try {
+  const result = await createTrainingIndex({ name: set.name, trainingSet: set });
+  res.json(result)
+  } catch (error: any) {
+    res.json({error})
+  }
+});
+
 const awaitReady = async (conversation: Conversation) => {
   return;
   if (conversation.isReady) return;
@@ -369,6 +390,7 @@ const awaitReady = async (conversation: Conversation) => {
   });
 
 }
+
 
 app.listen(4000, () =>
   console.log('Example app listening on port 4000!'),

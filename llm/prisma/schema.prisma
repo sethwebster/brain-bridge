@@ -1,0 +1,191 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["jsonProtocol"]
+  // output          = "../prisma/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+  // Further reading:
+  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+  url      = env("DATABASE_URL")
+}
+
+model TrainingSet {
+  id                  String              @id @default(cuid())
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  name                String
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String
+  version             Int                 @default(0)
+  prompt              String              @default("") @db.Text
+  trainingSources     TrainingSource[]
+  conversations       Conversation[]
+  questionsAndAnswers QuestionAndAnswer[]
+  trainingIndexId     String?
+  trainingIndex       TrainingIndex?
+  publicChats         PublicChat[]
+}
+
+model TrainingIndex {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  trainingSetId String      @unique
+  pending       Boolean     @default(true)
+  metaData      Json
+  vectors       Bytes
+  docStore      Bytes
+  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+}
+
+enum TrainingSourceType {
+  FILE
+  URL
+}
+
+model TrainingSource {
+  id            String             @id @default(cuid())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  type          TrainingSourceType
+  name          String
+  content       String
+  trainingSet   TrainingSet        @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  trainingSetId String
+  pending       Boolean            @default(true)
+  mimeType      String?
+}
+
+model QuestionAndAnswer {
+  id            String      @id @default(cuid())
+  question      String
+  answer        String
+  token         String
+  trainingSetId String
+  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  name          String        @default("")
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  trainingSet   TrainingSet   @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  trainingSetId String
+  messages      Message[]
+  participants  Participant[]
+}
+
+enum ParticipantType {
+  BOT
+  HUMAN
+}
+
+model Participant {
+  id                   String              @id @default(cuid())
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  name                 String              @default("")
+  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId       String?
+  messages             Message[]
+  type                 ParticipantType
+  publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
+  publicChatInstanceId String?
+}
+
+model Message {
+  id   String @id @default(cuid())
+  text String @default("") @db.Text
+
+  sender               Participant         @relation(fields: [participantId], references: [id])
+  createdAt            DateTime            @default(now())
+  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId       String?
+  participantId        String
+  publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
+  publicChatInstanceId String?
+}
+
+model PublicChat {
+  id                 String               @id @default(cuid())
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  name               String               @default("")
+  userId             String
+  trainingSet        TrainingSet          @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  trainingSetId      String
+  user               User                 @relation(fields: [userId], references: [id])
+  published          Boolean              @default(false)
+  publicChatInstance PublicChatInstance[]
+}
+
+model PublicChatInstance {
+  id           String        @id @default(cuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  name         String        @unique @default("")
+  messages     Message[]
+  participants Participant[]
+  publicChat   PublicChat    @relation(fields: [publicChatId], references: [id], onDelete: Cascade)
+  publicChatId String
+}
+
+/////////////////////////////
+// NextAuth Related Models //
+/////////////////////////////
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String?
+  email         String?        @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  trainingSets  TrainingSet[]
+  conversation  Conversation[]
+  publicChats   PublicChat[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
