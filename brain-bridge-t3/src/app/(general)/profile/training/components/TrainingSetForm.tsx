@@ -9,7 +9,7 @@ import { AutoSizingTextArea } from "./AutoSizingTextArea";
 import { removeFooter } from "~/utils/prompts";
 import Input from "~/app/components/Input";
 import ErrorBox from "~/app/components/ErrorBox";
-import { QuestionAndAnswer, type TrainingSource } from "@prisma/client";
+import { type QuestionAndAnswer, type TrainingSource } from "@prisma/client";
 import {
   type QuestionAndAnswerPartial,
   type TrainingSetWithRelations,
@@ -133,8 +133,11 @@ function TrainingSetForm({
       setError(null);
       setIsTraining(true);
       const newSet = await Data.trainTrainingSet(trainingSetData.id);
-      if (newSet) {
+      console.log("newSet",newSet)
+      if (newSet && newSet.id) {
         router.refresh();
+      } else {
+        setError("😥 Something went wrong. Typically this error results from one or more of your documents being too big. Documents should each be 500kb or smaller.");
       }
     } catch (err) {
       const error = err as Error;
@@ -172,7 +175,7 @@ function TrainingSetForm({
   return (
     <div>
       <Input
-        className="mt-2 w-full rounded-md border p-2"
+        className="w-full p-2 mt-2 border rounded-md"
         alt="Training Set Name"
         placeholder="Training Set Name"
         type="text"
@@ -217,7 +220,7 @@ function TrainingSetForm({
       )}
       {showPrompt && (
         <AutoSizingTextArea
-          className="mt-2 w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
+          className="w-full p-2 mt-2 border rounded-md dark:border-slate-600 dark:bg-slate-700"
           placeholder="Prompt"
           name="prompt"
           value={trainingSetData.prompt}
@@ -234,7 +237,7 @@ function TrainingSetForm({
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onClick={handleSave}
           disabled={!isDirty || isSaving || !canSave}
-          className="mt-2 w-full rounded-md border bg-blue-400 p-2 text-white disabled:bg-slate-400 dark:border-slate-600 dark:bg-slate-700"
+          className="w-full p-2 mt-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-400 dark:border-slate-600 dark:bg-slate-700"
         >
           Save
         </button>
@@ -243,7 +246,7 @@ function TrainingSetForm({
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onClick={handleTrain}
             disabled={isDirty || isTraining}
-            className="mt-2 w-full rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-400 dark:border-slate-600 dark:bg-slate-700"
+            className="w-full p-2 mt-2 text-white bg-green-400 border rounded-md disabled:bg-slate-400 dark:border-slate-600 dark:bg-slate-700"
           >
             Train
           </button>
