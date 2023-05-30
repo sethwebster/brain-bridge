@@ -217,7 +217,7 @@ function TrainingSetForm({
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onClick={handleSave}
           disabled={!isDirty || isSaving || !canSave}
-          className="w-full p-2 mt-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-400 dark:border-slate-600 dark:bg-slate-700"
+          className="w-full p-2 mt-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
         >
           {isSaving ? "Saving..." :"Save"}
         </button>
@@ -226,7 +226,7 @@ function TrainingSetForm({
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onClick={handleTrain}
             disabled={isDirty || isTraining}
-            className="w-full p-2 mt-2 text-white bg-green-400 border rounded-md disabled:bg-slate-400 dark:border-slate-600 dark:bg-slate-700"
+            className="w-full p-2 mt-2 text-white bg-green-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400"
           >
             Train
           </button>
