@@ -8,6 +8,7 @@ import Modal from "~/app/components/ModalDialog";
 import DataClient from "~/utils/data-client";
 import R2Client from "~/lib/R2Client";
 import invariant from "tiny-invariant";
+import Input from "~/app/components/Input";
 
 export default function Sources({
   sources,
@@ -255,7 +256,7 @@ export default function Sources({
         onConfirm={handleConfirmNewUrl}
         onCancel={handleCancelNewUrl}
       >
-        <input
+        <Input
           type="url"
           className="w-full p-2"
           autoFocus
