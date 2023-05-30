@@ -239,8 +239,9 @@ async function fetchPublicChats() {
 }
 
 async function fetchPublicChat(id: string, publishedOnly: boolean) {
+  const where = publishedOnly ? { id, published: true } : { id };
   const chat = await prisma.publicChat.findFirst({
-    where: { id, published: publishedOnly },
+    where,
     include: {
       trainingSet: true,
     }
