@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
-import { type MessageWithRelations, messageWithRelations, type ChatResponseMode } from "~/interfaces/types";
+import { type MessageWithRelations, messageWithRelations, type ChatResponseMode } from "~/server/interfaces/types";
 import { BrainBridgeLangChain } from "~/lib/llm";
 import ServerData from "~/server/data";
 import { prisma } from "~/server/db";

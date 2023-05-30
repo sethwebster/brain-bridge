@@ -10,7 +10,7 @@ import {
   type ChatResponseMode,
   type MessageWithRelations,
   type PublicChatInstanceWithRelations,
-} from "~/interfaces/types";
+} from "~/server/interfaces/types";
 import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
 import { safeGetJSONCookieClient } from "~/utils/safe-get-json-cookie-client";

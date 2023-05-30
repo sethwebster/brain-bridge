@@ -8,7 +8,7 @@ import { NewButton } from "~/app/components/NewButton";
 import {
   type PublicChatWithRelations,
   type TrainingSetWithRelations,
-} from "~/interfaces/types";
+} from "~/server/interfaces/types";
 import PublicChatItem from "./PublicChatItem";
 import EditPublicChat from "./EditPublicChat";
 import DataClient from "~/utils/data-client";

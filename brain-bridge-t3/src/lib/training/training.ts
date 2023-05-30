@@ -5,7 +5,7 @@ import { OpenAIEmbeddings } from 'langchain/embeddings';
 import path from 'path';
 import jsdom from 'jsdom';
 import { type TrainingIndex, type TrainingSource } from '@prisma/client';
-import { type TrainingSetWithRelations } from '~/interfaces/types';
+import { type TrainingSetWithRelations } from '~/server/interfaces/types';
 import ServerData from '~/server/data';
 import { cleanUpHtml } from '~/utils/html-to-markdown';
 import { getTempFilePath } from '~/utils/files';
@@ -26,14 +26,14 @@ async function loadUrl(url: string): Promise<string> {
   const response = await fetch(url);
   if (response.status !== 200) throw new Error(`Failed to load url: ${url}`);
   console.log("file retrieved");
-  const html = await response.text();
-  console.log("file length", html.length);
+  const data = await response.text();
+  console.log("file length", data.length);
   const headerRaw = response.headers.get('content-type') ?? "text/html";
   const contentType = headerRaw.split(';')[0];
   switch (contentType) {
     case "text/html":
       console.log("Processing html")
-      const doc = new jsdom.JSDOM(html).window.document;
+      const doc = new jsdom.JSDOM(data).window.document;
 
       const htmlDoc = `<html><head><title>${doc.title}</title></head><body>${doc.body.innerHTML}</body></html>`
       /* Parse the HTML into markdown, and remove any bloks of script */
@@ -42,7 +42,7 @@ async function loadUrl(url: string): Promise<string> {
       return markdown;
     case "application/json":
     case "text/plain":
-      return html;
+      return data;
     default:
       throw new Error(`Unsupported content type: ${contentType ?? ""}`);
   }

@@ -13,7 +13,7 @@ import { QuestionAndAnswer, type TrainingSource } from "@prisma/client";
 import {
   type QuestionAndAnswerPartial,
   type TrainingSetWithRelations,
-} from "~/interfaces/types";
+} from "~/server/interfaces/types";
 import { InfoBoxDisplay } from "~/app/components/InfoBox";
 
 interface TrainingSetFormProps {

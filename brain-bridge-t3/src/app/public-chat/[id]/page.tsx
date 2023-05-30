@@ -6,7 +6,7 @@ import { type Metadata } from "next";
 import ServerData from "~/server/data";
 import generateId from "~/utils/generate-id";
 import { safeGetJSONCookieServer } from "~/utils/safe-get-json-cookie-server";
-import { type PublicChatInstanceWithRelations } from "~/interfaces/types";
+import { type PublicChatInstanceWithRelations } from "~/server/interfaces/types";
 import PublicChat from "./components/PublicChat";
 import { type PublicChat as PublicChatType } from "@prisma/client";
 

@@ -4,7 +4,7 @@ import {
   type ChatResponseMode,
   type ConversationWithRelations,
   type MessageWithRelations,
-} from "~/interfaces/types";
+} from "~/server/interfaces/types";
 import { type Session } from "next-auth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import invariant from "tiny-invariant";

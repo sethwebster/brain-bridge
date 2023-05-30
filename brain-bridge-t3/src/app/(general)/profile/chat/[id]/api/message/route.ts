@@ -1,5 +1,5 @@
 import { type Conversation, type Participant } from "@prisma/client";
-import { type ChatResponseMode, type MessageWithRelations } from "~/interfaces/types";
+import { type ChatResponseMode, type MessageWithRelations } from "~/server/interfaces/types";
 import { type Session } from "next-auth";
 import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";

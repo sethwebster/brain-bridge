@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { type TrainingSetWithRelations } from "~/interfaces/types";
+import { type TrainingSetWithRelations } from "~/server/interfaces/types";
 import { type NextRequest, NextResponse } from "next/server";
 import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";

@@ -6,7 +6,7 @@ import {
   type PublicChatWithRelations,
   messageWithRelations,
   type PublicChatInstanceWithRelations
-} from "~/interfaces/types";
+} from "~/server/interfaces/types";
 import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";
