@@ -3,6 +3,7 @@ import { type TrainingSetWithRelations } from "~/server/interfaces/types";
 import { type NextRequest, NextResponse } from "next/server";
 import invariant from "tiny-invariant";
 import { prisma } from "~/server/db";
+import ServerData from "~/server/data";
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
@@ -46,7 +47,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     },
   })
 
-  const response = new NextResponse(JSON.stringify(data), {
+  const trainingSet = await ServerData.fetchUserTrainingSet(id);
+
+  const response = new NextResponse(JSON.stringify(trainingSet), {
     status: 200,
     headers: {
       "Content-Type": "application/json",

@@ -7,6 +7,8 @@ import { getServerSession } from "~/server/auth";
 import { prisma } from '~/server/db';
 import ServerData from '~/server/data';
 import { BrainBridgeLangChain } from '~/lib/llm';
+import { promptFooter } from "~/app/(general)/profile/training/PromptTemplate";
+import replaceTokens from "~/utils/replace-tokens";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession();
@@ -21,10 +23,11 @@ export async function POST(req: NextRequest) {
 
   const userMessage = await storeUserMessage(conversation, message, session);
   const llm = new BrainBridgeLangChain();
+  const fullPrompt = conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, conversation.trainingSet.questionsAndAnswers)
   const response = await llm.getLangChainResponse(
     conversation.trainingSetId,
     userMessage.text,
-    conversation.trainingSet.prompt,
+    fullPrompt,
     conversation.messages.map(m => `${m.sender.name}: ${m.text}`),
     mode
   )

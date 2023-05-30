@@ -4,7 +4,7 @@ import PaddedContainer from "~/app/components/PaddedContainer";
 import { getServerSession } from "~/server/auth";
 import { removeFooter } from "~/utils/prompts";
 import TrainingSetPage from "../components/TrainingSetForm";
-import promptTemplate, { promptFooter } from "../PromptTemplate";
+import promptTemplate from "../PromptTemplate";
 import ServerData from "~/server/data";
 
 export default async function TrainingPage({
@@ -30,7 +30,6 @@ export default async function TrainingPage({
           trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
           user={session.user}
           promptTemplate={promptTemplate}
-          promptFooter={promptFooter}
         />
       </div>
     </PaddedContainer>

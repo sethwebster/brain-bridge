@@ -40,7 +40,11 @@ export type ConversationWithRelations = Prisma.ConversationGetPayload<typeof con
 
 const publicChatWithRelations = Prisma.validator<Prisma.PublicChatArgs>()({
   include: {
-    trainingSet: true,
+    trainingSet: {
+      include: {
+        questionsAndAnswers: true
+      }
+    }
   }
 });
 

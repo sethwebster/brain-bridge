@@ -179,7 +179,11 @@ async function fetchChat(id: string): Promise<ConversationWithRelations> {
         },
       },
       participants: true,
-      trainingSet: true,
+      trainingSet: { 
+        include: {
+          questionsAndAnswers: true,
+        }
+      }
     }
   });
   if (!chat) { notFound(); }

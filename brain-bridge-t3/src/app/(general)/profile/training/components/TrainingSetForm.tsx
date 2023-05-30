@@ -6,7 +6,6 @@ import Sources from "./Sources";
 import Data from "~/utils/data-client";
 import { useRouter } from "next/navigation";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
-import { removeFooter } from "~/utils/prompts";
 import Input from "~/app/components/Input";
 import ErrorBox from "~/app/components/ErrorBox";
 import { type QuestionAndAnswer, type TrainingSource } from "@prisma/client";
@@ -15,11 +14,11 @@ import {
   type TrainingSetWithRelations,
 } from "~/server/interfaces/types";
 import { InfoBoxDisplay } from "~/app/components/InfoBox";
+import replaceTokens from "~/utils/replace-tokens";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
   promptTemplate: string;
-  promptFooter: string;
   user: {
     email?: string | null | undefined;
     name?: string | null | undefined;
@@ -30,7 +29,6 @@ interface TrainingSetFormProps {
 function TrainingSetForm({
   trainingSet,
   promptTemplate,
-  promptFooter,
   onUpdate,
 }: TrainingSetFormProps) {
   const router = useRouter();
@@ -56,24 +54,7 @@ function TrainingSetForm({
       setTrainingSetData({ ...trainingSetData, name: e.target.value });
     },
     [trainingSetData]
-  );
-
-  const replaceTokens = useCallback(
-    (textWithTokens: string, tokensWithAnswers: QuestionAndAnswerPartial[]) => {
-      return tokensWithAnswers.reduce((acc, curr) => {
-        if (curr.answer.trim().length === 0) return acc;
-        if (curr.token.startsWith("{csv:")) {
-          const csv = curr.answer
-            .split(",")
-            .map((x: string, index: number) => `${index + 1}. ${x.trim()}`)
-            .join("\n");
-          return acc.replaceAll(curr.token, csv);
-        }
-        return acc.replaceAll(curr.token, curr.answer);
-      }, textWithTokens);
-    },
-    []
-  );
+  );  
 
   const handleQnAChange = useCallback(
     (questionsAndTokens: QuestionAndAnswerPartial[]) => {
@@ -82,10 +63,10 @@ function TrainingSetForm({
         ...trainingSetData,
         prompt: newPrompt,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        questionsAndAnswers: questionsAndTokens as QuestionAndAnswer[]
+        questionsAndAnswers: questionsAndTokens as QuestionAndAnswer[],
       });
     },
-    [promptTemplate, replaceTokens, trainingSetData]
+    [promptTemplate, trainingSetData]
   );
 
   const handleSourcesChanged = useCallback(
@@ -103,10 +84,7 @@ function TrainingSetForm({
     let newSet: TrainingSetWithRelations;
     const toSave: TrainingSetWithRelations = {
       ...trainingSetData,
-      prompt:
-        trainingSetData.prompt.trim() +
-        "\n\n" +
-        replaceTokens(promptFooter, trainingSetData.questionsAndAnswers),
+      prompt: trainingSetData.prompt.trim(),
     };
     try {
       if (toSave.id.length === 0) {
@@ -116,9 +94,10 @@ function TrainingSetForm({
       } else {
         newSet = await Data.updateTrainingSet(toSave);
         setIsSaving(false);
-        // setTrainingSetData(newSet);
         if (onUpdate) onUpdate(newSet);
+        setTrainingSetData(newSet);
         router.refresh();
+
       }
     } catch (err) {
       const error = err as Error;
@@ -126,18 +105,20 @@ function TrainingSetForm({
     } finally {
       setIsSaving(false);
     }
-  }, [onUpdate, promptFooter, replaceTokens, router, trainingSetData]);
+  }, [onUpdate, router, trainingSetData]);
 
   const handleTrain = useCallback(async () => {
     try {
       setError(null);
       setIsTraining(true);
       const newSet = await Data.trainTrainingSet(trainingSetData.id);
-      console.log("newSet",newSet)
+      console.log("newSet", newSet);
       if (newSet && newSet.id) {
         router.refresh();
       } else {
-        setError("😥 Something went wrong. Typically this error results from one or more of your documents being too big. Documents should each be 500kb or smaller.");
+        setError(
+          "😥 Something went wrong. Typically this error results from one or more of your documents being too big. Documents should each be 500kb or smaller."
+        );
       }
     } catch (err) {
       const error = err as Error;
@@ -148,12 +129,9 @@ function TrainingSetForm({
   }, [router, trainingSetData]);
 
   const isDirty = useMemo(() => {
-    const trainingSetCleaned = {
-      ...trainingSet,
-      prompt: removeFooter(trainingSet.prompt),
-    };
     const areDifferent =
-      JSON.stringify(trainingSetData) !== JSON.stringify(trainingSetCleaned);
+      JSON.stringify(trainingSetData) !== JSON.stringify(trainingSet);
+
     return areDifferent;
   }, [trainingSetData, trainingSet]);
 
@@ -186,7 +164,9 @@ function TrainingSetForm({
       {!allQuestionsAnswered && (
         <InfoBoxDisplay
           hidden={false}
-          handleDismiss={() => {console.log("dismiss")}}
+          handleDismiss={() => {
+            console.log("dismiss");
+          }}
           title="Questions and Answers"
           body="You need to answer all questions before you can save or train."
           dismissable={false}
@@ -239,7 +219,7 @@ function TrainingSetForm({
           disabled={!isDirty || isSaving || !canSave}
           className="w-full p-2 mt-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-400 dark:border-slate-600 dark:bg-slate-700"
         >
-          Save
+          {isSaving ? "Saving..." :"Save"}
         </button>
         {!isNew && (
           <button
@@ -252,9 +232,9 @@ function TrainingSetForm({
           </button>
         )}
       </div>
+      {/* {isDirty ? <p>Unsaved changes</p> : <p>No unsaved</p>} */}
       {/* {isSaving ? <p>Saving...</p> : <p>Saved</p>}
-      {isTraining ? <p>Training...</p> : <p>Trained</p>}
-      {isDirty ? <p>Unsaved changes</p> : <p>No unsaved</p>} */}
+      {isTraining ? <p>Training...</p> : <p>Trained</p>}*/}
       {error && <ErrorBox message={error} title="An error has occurred" />}
     </div>
   );
