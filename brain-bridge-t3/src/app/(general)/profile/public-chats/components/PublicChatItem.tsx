@@ -13,6 +13,7 @@ import {
 import DataClient from "~/utils/data-client";
 import DeleteButton from "../../components/DeleteButton";
 import { TrashCan } from "~/app/components/SvgIcons";
+import Modal from "~/app/components/ModalDialog";
 
 export default function PublicChatItem({
   publicChat,
@@ -28,6 +29,7 @@ export default function PublicChatItem({
   const handleEditClicked = useCallback(() => {
     setEditing(true);
   }, []);
+  const [deleteModalShown, setDeleteModalShown] = useState(false);
 
   const handleSave = useCallback(
     async (publicChat: PublicChatWithRelations) => {
@@ -53,6 +55,14 @@ export default function PublicChatItem({
     await DataClient.deletePublicChat(publicChat.id);
     router.refresh();
   }, [publicChat.id, router]);
+
+  const handleDeleteChat = useCallback(() => {
+    if (publicChat.published) {
+      setDeleteModalShown(true);
+    } else {
+      void handleDeleteChatConfirmed()
+    }
+  }, [handleDeleteChatConfirmed, publicChat.published]);
 
   if (editing)
     return (
@@ -91,15 +101,29 @@ export default function PublicChatItem({
         </button>
         <div className="flex justify-end">
           <DeleteButton
-            className="rounded-md bg-blue-400 p-2"
+            className="p-2 bg-blue-400 rounded-md"
             confirmingClassName="rounded-md bg-red-400 p-2"
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
-            onConfirmed={handleDeleteChatConfirmed}
+            onConfirmed={handleDeleteChat}
           >
             <TrashCan />
           </DeleteButton>
         </div>
       </div>
+      <Modal
+        title="Delete Published Chat"
+        confirmText="Delete"
+        closeText="Cancel"
+        show={deleteModalShown}
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        onConfirm={handleDeleteChatConfirmed}
+      >
+        <p className="text-slate-700">
+          Are you sure you want to delete this public chat? This action cannot
+          be undone. Any links to this chat will result in a page not found, and
+          all user conversations and messages will be lost.
+        </p>
+      </Modal>
     </>
   );
 }

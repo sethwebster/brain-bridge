@@ -3,13 +3,14 @@ import invariant from "tiny-invariant";
 import Link from "next/link";
 import { NewChatButton } from "./NewChatButton";
 import { DeleteChat } from "./DeleteChatButton";
-import { type Conversation, type TrainingSet } from "@prisma/client";
+import { type TrainingSet } from "@prisma/client";
+import { type ConversationWithRelations } from "~/server/interfaces/types";
 
 export async function ChatListing({
   conversations,
   trainingSets
 }: {
-  conversations: Conversation[];
+  conversations: ConversationWithRelations[];
   trainingSets: TrainingSet[]
 }) {
   const session = await getServerSession();
@@ -32,6 +33,7 @@ export async function ChatListing({
             >
               {conversation.name || `Chat ${index + 1}`}
             </Link>
+            <div>{conversation.trainingSet.name}</div>
             <DeleteChat id={conversation.id} user={session.user} />
           </li>
         ))}
