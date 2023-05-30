@@ -38,7 +38,7 @@ export default function EditPublicChat({
       invariant(newTrainingSet, "Training set not found");
       setEditedPublicChat({
         ...editedPublicChat,
-        
+        trainingSet: newTrainingSet,
       });
     },
     [editedPublicChat, trainingSets]
