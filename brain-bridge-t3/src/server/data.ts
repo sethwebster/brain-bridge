@@ -5,7 +5,8 @@ import {
   type TrainingIndexWithRelations, trainingSetWithRelations,
   type PublicChatWithRelations,
   messageWithRelations,
-  type PublicChatInstanceWithRelations
+  type PublicChatInstanceWithRelations,
+  conversationWithRelations
 } from "~/server/interfaces/types";
 import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
@@ -138,23 +139,7 @@ async function fetchChats(): Promise<ConversationWithRelations[]> {
   invariant(session, "User must be logged in to fetch chats");
   const chats = await prisma.conversation.findMany({
     where: { userId: session.user.id },
-    include: {
-      messages: {
-        select: {
-          id: true,
-          text: true,
-          createdAt: true,
-          sender: true,
-          participantId: true,
-          conversationId: true,
-          conversation: true,
-          publicChatInstanceId: true,
-          publicChatInstance: true,
-        },
-      },
-      participants: true,
-      trainingSet: true,
-    }
+    ...conversationWithRelations
   });
   return chats;
 }

@@ -22,8 +22,9 @@ export async function POST(req: NextRequest) {
   invariant(bot, "Bot must exist");
 
   const userMessage = await storeUserMessage(conversation, message, session);
+  const questionsAndAnswers = conversation.trainingSet.questionsAndAnswers;
   const llm = new BrainBridgeLangChain();
-  const fullPrompt = conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, conversation.trainingSet.questionsAndAnswers)
+  const fullPrompt = conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers)
   const response = await llm.getLangChainResponse(
     conversation.trainingSetId,
     userMessage.text,

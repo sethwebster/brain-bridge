@@ -28,11 +28,15 @@ export const messageWithRelations = Prisma.validator<Prisma.MessageArgs>()({
 
 export type MessageWithRelations = Prisma.MessageGetPayload<typeof messageWithRelations>;
 
-const conversationWithRelations = Prisma.validator<Prisma.ConversationArgs>()({
+export const conversationWithRelations = Prisma.validator<Prisma.ConversationArgs>()({
   include: {
     messages: messageWithRelations,
     participants: true,
-    trainingSet: true,
+    trainingSet: { 
+      include: {
+        questionsAndAnswers: true,
+      }
+    }
   }
 });
 
@@ -40,11 +44,7 @@ export type ConversationWithRelations = Prisma.ConversationGetPayload<typeof con
 
 const publicChatWithRelations = Prisma.validator<Prisma.PublicChatArgs>()({
   include: {
-    trainingSet: {
-      include: {
-        questionsAndAnswers: true
-      }
-    }
+    trainingSet: true,
   }
 });
 
