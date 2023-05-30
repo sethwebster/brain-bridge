@@ -20,6 +20,7 @@ export const env = createEnv({
       // VERCEL_URL doesn't include `https` so it cant be validated as a URL
       process.env.VERCEL ? z.string().min(1) : z.string().url(),
     ),
+    API_ENDPOINT: z.string().url(),
     NEXT_PUBLIC_BASE_URL: z.string().url(),
     // Add `.min(1) on ID and SECRET if you want to make sure they're not empty
     AUTH0_ISSUER: z.string().min(1),
@@ -69,7 +70,7 @@ export const env = createEnv({
     R2_API_KEY: process.env.R2_API_KEY,
     R2_API_SECRET: process.env.R2_API_SECRET,
     R2_USER_FILES_BUCKET: process.env.R2_USER_FILES_BUCKET,
-
+    API_ENDPOINT: process.env.API_ENDPOINT,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.
