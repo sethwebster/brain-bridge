@@ -3,7 +3,6 @@ import Modal from "~/app/components/ModalDialog";
 import { type TrainingSetWithRelations } from "~/server/interfaces/types";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
 import { type MissedQuestions } from "@prisma/client";
-import { CheckMark } from "~/app/components/SvgIcons";
 
 function MissedQuestion({ missed }: { missed: MissedQuestions }) {
   return (

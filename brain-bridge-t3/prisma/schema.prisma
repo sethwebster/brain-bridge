@@ -33,7 +33,6 @@ model TrainingSet {
   publicChats         PublicChat[]
   missedQuestions     MissedQuestions[]
   trainingSetShares   TrainingSetShares[]
-
 }
 
 

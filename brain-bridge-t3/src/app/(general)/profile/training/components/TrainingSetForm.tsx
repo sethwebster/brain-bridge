@@ -9,7 +9,7 @@ import { AutoSizingTextArea } from "./AutoSizingTextArea";
 import Input from "~/app/components/Input";
 import ErrorBox from "~/app/components/ErrorBox";
 import {
-  MissedQuestions,
+  type MissedQuestions,
   type QuestionAndAnswer,
   type TrainingSource,
 } from "@prisma/client";

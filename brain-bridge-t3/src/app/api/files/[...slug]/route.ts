@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 import R2 from "~/lib/R2";
 import { getServerSession } from "~/server/auth";

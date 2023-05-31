@@ -1,19 +1,16 @@
 "use client";
-import Link from "next/link";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
 import { NewButton } from "~/app/components/NewButton";
 import DataClient from "~/utils/data-client";
 import promptTemplate from "./PromptTemplate";
-import { QuestionsAndTokens } from "./components/QuestionsWizard";
 import { useRouter } from "next/navigation";
 
 interface NewTrainingSetButtonProps {
-  onConfirmCreate: (name: string) => void;
+  empty?: boolean;
 }
 export function NewTrainingSetButton({
-  onConfirmCreate,
 }: NewTrainingSetButtonProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string>("");
@@ -39,6 +36,7 @@ export function NewTrainingSetButton({
       userId: "",
       trainingIndexId: "",
       missedQuestions: [],
+      trainingSetShares: [],
     });
     router.push("/profile/training/" + result.id);
   }, [inputValue, router]);

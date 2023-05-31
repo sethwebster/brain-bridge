@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   });
   invariant(existing, "Training set must exist to update")
   const payload = (await request.json()) as TrainingSetWithRelations;
-  const data = await prisma.trainingSet.update({
+  await prisma.trainingSet.update({
     where: {
       id,
     },
