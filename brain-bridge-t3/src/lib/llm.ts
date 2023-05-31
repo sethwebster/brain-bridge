@@ -8,10 +8,6 @@ import invariant from "tiny-invariant";
 import { prisma } from "~/server/db";
 import { getTempFilePath } from "~/utils/files";
 
-interface LLMResponse {
-  text: string;
-}
-
 interface LangChainStorage {
   getIndex(id: string): Promise<HNSWLib>;
 }
@@ -58,11 +54,22 @@ export class BrainBridgeStorage implements LangChainStorage {
   }
 }
 
+export interface LLMResponse {
+  text: string;
+}
+export interface LLMBrainBridgeResponse {
+  question: string;
+  answer: string;
+  confidence: number;
+}
+
 export class BrainBridgeLangChain implements LangChainStore {
   storage: LangChainStorage
   _store: HNSWLib | null = null;
-  constructor(storage: LangChainStorage = new BrainBridgeStorage()) {
+  private _lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void;
+  constructor(storage: LangChainStorage = new BrainBridgeStorage(), lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void) {
     this.storage = storage;
+    this._lowConfidenceAnswerHandler = lowConfidenceAnswerHandler;
   }
 
   private getStore(trainingSetId: string): Promise<HNSWLib> {
@@ -107,11 +114,30 @@ export class BrainBridgeLangChain implements LangChainStore {
       context.push(`Context:\n${item.pageContent.trim()}`)
     });
 
-    const originalResponse = await llmChain.call({ prompt: userPrompt, context: context.join('\n\n'), history }) as LLMResponse;
-    if (mode === "one-shot") {
-      return originalResponse.text;
+
+    let rawResponse = await this.makeLangChainCall(llmChain, userPrompt, context, history);
+
+    let response = this.tryParseResponse(userPrompt, rawResponse);
+
+    if (response.confidence === -1) {
+      rawResponse = await this.makeLangChainCall(llmChain, userPrompt, context, history);
+      response = this.tryParseResponse(userPrompt, rawResponse);
     }
-    const critiqued = await this.critique(originalResponse.text, userPrompt, history);
+
+    console.log(response.confidence)
+    if (response.confidence <= 0.85) {
+      console.warn("LOW CONFIDENCE ANSWER", response);
+      if (this._lowConfidenceAnswerHandler) {
+        this._lowConfidenceAnswerHandler(response);
+      }
+    }
+    
+    if (mode === "one-shot") {
+      return response.answer;
+    }
+
+
+    const critiqued = await this.critique(response.answer, userPrompt, history);
     if (mode === "critique") {
       const responseTemplate = `
         ### Original Request
@@ -129,13 +155,67 @@ export class BrainBridgeLangChain implements LangChainStore {
         {CRITIQUE}
         <<<
       `;
-      return responseTemplate.replace("{REQUEST}",userPrompt).replace("{RESPONSE}",originalResponse.text).replace("{CRITIQUE}",critiqued.text);
+      return responseTemplate.replace("{REQUEST}", userPrompt).replace("{RESPONSE}", response.answer).replace("{CRITIQUE}", critiqued.text);
     }
-    const refined = await this.refine(critiqued.text, originalResponse.text, userPrompt, history);
+    const refined = await this.refine(critiqued.text, response.answer, userPrompt, history);
     return refined.text.replace("New Response:", "").trim();
   }
 
-  private async critique(firstResponse: string, userPrompt:string, history: string[]) {
+  private async makeLangChainCall(llmChain: LLMChain<string>, userPrompt: string, context: string[], history: string[]) {
+    try {
+    return await llmChain.call({ prompt: userPrompt, context: context.join('\n\n'), history }) as LLMResponse;
+    } catch (err: unknown) {
+      console.error("THIS IS THE", JSON.stringify(err, null, 2))
+      throw err;
+    }
+  }
+
+  private tryParseResponse(userPrompt: string, rawResponse: LLMResponse) {
+    // UGH
+    // TODO: I cannot get, with a prompt, the system to _stop_ sending things outside the JSON payload.
+    // So here, we're cleaning up the response to only include the JSON payload.
+    // This is a hack, and I'm not proud of it.
+    const parseable = /\{[\S\s]*\}/gm
+    const matched = rawResponse.text.match(parseable);
+    let response: LLMBrainBridgeResponse | null = null;
+    if (matched) {
+      const cleanPercentageRegex = /\"confidence\":?\s(\d*%)/gm;
+      let base = matched[0];
+      const rex = new RegExp(cleanPercentageRegex);
+      const matches = rex.exec(base);
+      if (matches && matches?.length > 1) {
+        const percentage = matches[1] || "0%";
+        const amount = parseInt(percentage.replace("%", "")) / 100;
+        base = base.replace(cleanPercentageRegex, `"confidence": ${amount}`)
+      }
+      /// Hooray, JSON      
+      response = this.tryParsePayload(userPrompt, base);
+      if (response.confidence > 1) {
+        response.confidence = response.confidence / 100;
+      }
+    } else {
+      /// Ugh, no JSON
+      const cleanInCase = rawResponse.text.replaceAll(parseable, "");
+      response = this.tryParsePayload(userPrompt, cleanInCase);
+    }
+    console.log("FINAL RESPONSE", response)
+    return response;
+  }
+
+  private tryParsePayload(question: string, rawString: string): LLMBrainBridgeResponse {
+    try {
+      return JSON.parse(rawString) as LLMBrainBridgeResponse;
+    } catch (err) {
+      console.log("UNABLE TO PARSE RESPONSE", err, rawString)
+      return {
+        question,
+        answer: rawString,
+        confidence: -1,
+      }
+    }
+  }
+
+  private async critique(firstResponse: string, userPrompt: string, history: string[]) {
     const promptTemplate = new PromptTemplate({
       template: `
         Your Previous Response:
@@ -149,7 +229,8 @@ export class BrainBridgeLangChain implements LangChainStore {
 
         ---
         Above is your previous response. Critique your response to their question. Think step by step, why you said what you said, and how you could have said it better. Remember to think step-by-step.
-      `, inputVariables: ["RESPONSE", "QUESTION", "HISTORY"]});
+      `, inputVariables: ["RESPONSE", "QUESTION", "HISTORY"]
+    });
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 
@@ -159,7 +240,7 @@ export class BrainBridgeLangChain implements LangChainStore {
     return result;
   }
 
-  private async refine(critique: string, firstResponse: string, userPrompt:string, history: string[]) {
+  private async refine(critique: string, firstResponse: string, userPrompt: string, history: string[]) {
     const promptTemplate = new PromptTemplate({
       template: `
         Your Previous Response: {RESPONSE}
@@ -171,7 +252,8 @@ export class BrainBridgeLangChain implements LangChainStore {
         The history is: {HISTORY}
         ---
         Above is your previous response and your critique of it. Use your critique to refine your response to their question. 
-      `, inputVariables: ["RESPONSE", "QUESTION", "CRITIQUE", "HISTORY"]});
+      `, inputVariables: ["RESPONSE", "QUESTION", "CRITIQUE", "HISTORY"]
+    });
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 

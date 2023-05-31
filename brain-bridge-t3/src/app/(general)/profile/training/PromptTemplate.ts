@@ -1,3 +1,7 @@
+export const promptHeader = `
+-- system --
+Do not include any explanations, only provide a RFC8259 compliant JSON response with the keys "question", "answer" (your answer formatted as markdown), and "confidence" (as a decimal).
+`
 const promptTemplate = `
 -- rules of engagement --
 # this defines the rules of engagement for the language model
@@ -51,12 +55,12 @@ export const promptFooter = `
 -- do not edit below this line --
 Remember what you've already talked about and the details shared.
 
-Format your responses using Markdown format. If you share a domain name, make sure to share it as a markdown link. If you share a link to an image, render the correct markdown to display it.
+When you format your answer in Markdown format: If you share a domain name, make sure to share it as a markdown link. If you share a link to an image, render the correct markdown to display it.
 
 Use the following pieces of MemoryContext to answer the human. ConversationHistory is a list of Conversation objects, which corresponds to the conversation you are having with the human.
 ConversationHistory: {history}
 MemoryContext: {context}
 Human: {prompt}
-{name}:`;
+The JSON Response:`;
 
 export default promptTemplate;

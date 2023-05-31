@@ -8,18 +8,19 @@ export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
   const [currentMessageText, setCurrentMessageText] = useState("");
 
   const handleSend = useCallback(() => {
-    onMessageSend(currentMessageText);
+    onMessageSend(currentMessageText.trim());
   }, [currentMessageText, onMessageSend]);
 
   const handleKeyUp = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       event.preventDefault();
       if (event.key === "Enter") {
+        if (currentMessageText.trim().length === 0) return;
         handleSend();
         setCurrentMessageText("");
       }
     },
-    [handleSend]
+    [currentMessageText, handleSend]
   );
 
   const handleTextChanged = useCallback(
