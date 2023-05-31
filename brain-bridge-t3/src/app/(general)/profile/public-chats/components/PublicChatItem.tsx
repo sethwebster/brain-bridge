@@ -64,6 +64,10 @@ export default function PublicChatItem({
     }
   }, [handleDeleteChatConfirmed, publicChat.published]);
 
+  const handleDeleteModalClosed = useCallback(() => {
+    setDeleteModalShown(false);
+  }, []);
+
   if (editing)
     return (
       <EditPublicChat
@@ -117,6 +121,7 @@ export default function PublicChatItem({
         show={deleteModalShown}
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onConfirm={handleDeleteChatConfirmed}
+        onCancel={handleDeleteModalClosed}
       >
         <p className="text-slate-700">
           Are you sure you want to delete this public chat? This action cannot
