@@ -12,7 +12,7 @@ async function TrainingPage() {
   invariant(session, "Session must exist");
   const sets = await ServerData.fetchUserTrainingSets();
   return (
-    <div className="h-full w-full rounded-lg border-2 border-dashed border-gray-700 p-4">
+    <div className="h-full w-full rounded-lg border-2  border-gray-700 p-4">
       {sets.length === 0 && (
         <InfoBox
           title="Getting Started with Training Sets"
@@ -21,7 +21,7 @@ async function TrainingPage() {
           dismissableId={"info-box-training-sets"}
         />
       )}
-      <header className="flex justify-between border-b border-dashed border-gray-600 pb-2">
+      <header className="flex justify-between border-b  border-gray-600 pb-2">
         <h1 className="text-2xl">Training Sets</h1>
         {/* @ts-expect-error RSC */}
         <NewTrainingSetButton user={session.user} />

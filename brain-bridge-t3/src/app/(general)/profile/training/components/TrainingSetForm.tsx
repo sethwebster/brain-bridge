@@ -8,13 +8,18 @@ import { useRouter } from "next/navigation";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
 import Input from "~/app/components/Input";
 import ErrorBox from "~/app/components/ErrorBox";
-import { type QuestionAndAnswer, type TrainingSource } from "@prisma/client";
+import {
+  MissedQuestions,
+  type QuestionAndAnswer,
+  type TrainingSource,
+} from "@prisma/client";
 import {
   type QuestionAndAnswerPartial,
   type TrainingSetWithRelations,
 } from "~/server/interfaces/types";
 import { InfoBoxDisplay } from "~/app/components/InfoBox";
 import replaceTokens from "~/utils/replace-tokens";
+import MissedQuestionsList from "./MissedQuestionsList";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -54,7 +59,7 @@ function TrainingSetForm({
       setTrainingSetData({ ...trainingSetData, name: e.target.value });
     },
     [trainingSetData]
-  );  
+  );
 
   const handleQnAChange = useCallback(
     (questionsAndTokens: QuestionAndAnswerPartial[]) => {
@@ -97,7 +102,6 @@ function TrainingSetForm({
         if (onUpdate) onUpdate(newSet);
         setTrainingSetData(newSet);
         router.refresh();
-
       }
     } catch (err) {
       const error = err as Error;
@@ -106,6 +110,16 @@ function TrainingSetForm({
       setIsSaving(false);
     }
   }, [onUpdate, router, trainingSetData]);
+
+  const handleMissedQuestionsUpdate = useCallback(
+    (missedQuestions: MissedQuestions[]) => {
+      setTrainingSetData({
+        ...trainingSetData,
+        missedQuestions,
+      });
+    },
+    [trainingSetData]
+  );
 
   const handleTrain = useCallback(async () => {
     try {
@@ -212,6 +226,7 @@ function TrainingSetForm({
         sources={trainingSetData.trainingSources}
         onSourcesChanged={handleSourcesChanged}
       />
+      <MissedQuestionsList trainingSet={trainingSetData} onUpdate={handleMissedQuestionsUpdate} />
       <div className="flex flex-row">
         <button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -219,7 +234,7 @@ function TrainingSetForm({
           disabled={!isDirty || isSaving || !canSave}
           className="w-full p-2 mt-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
         >
-          {isSaving ? "Saving..." :"Save"}
+          {isSaving ? "Saving..." : "Save"}
         </button>
         {!isNew && (
           <button

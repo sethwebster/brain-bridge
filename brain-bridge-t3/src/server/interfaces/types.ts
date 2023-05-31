@@ -5,6 +5,7 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
     trainingSources: true,
     questionsAndAnswers: true,
     conversations: true,
+    missedQuestions: true,
   }
 })
 

@@ -42,6 +42,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           }
         }),
       },
+      missedQuestions: {
+        deleteMany: {},
+        create: payload.missedQuestions.map(qa => {
+          return {
+            question: qa.question,
+            llmAnswer: qa.llmAnswer,
+            correctAnswer: qa.correctAnswer,
+          }
+        })
+      },
       updatedAt: new Date(),
       version: existing.version + 1,
     },

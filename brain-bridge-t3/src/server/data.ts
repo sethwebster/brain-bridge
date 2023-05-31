@@ -35,6 +35,7 @@ async function fetchUserTrainingSet(trainingSetId: string) {
       trainingSources: true,
       questionsAndAnswers: true,
       conversations: true,
+      missedQuestions: true,
     }
   });
   return set;

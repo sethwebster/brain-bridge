@@ -151,7 +151,7 @@ export default function Sources({
         Training sources are external data you would like to use in model
         training. They can be text, markdown, or external urls.
       </small>
-      <div className="p-2 border border-dashed rounded-lg">
+      <div className="p-2 border  rounded-lg">
         <header className="flex flex-row justify-between border-b border-dotted">
           <div>{sources.length} Sources</div>
           <div className="">

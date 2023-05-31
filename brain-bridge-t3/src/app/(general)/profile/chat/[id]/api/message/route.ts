@@ -6,7 +6,7 @@ import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
 import { prisma } from '~/server/db';
 import ServerData from '~/server/data';
-import { BrainBridgeLangChain, BrainBridgeStorage } from '~/lib/llm';
+import { BrainBridgeLangChain, BrainBridgeStorage, type LLMBrainBridgeResponse } from '~/lib/llm';
 import { promptFooter, promptHeader } from "~/app/(general)/profile/training/PromptTemplate";
 import replaceTokens from "~/utils/replace-tokens";
 
@@ -23,7 +23,24 @@ export async function POST(req: NextRequest) {
 
   const userMessage = await storeUserMessage(conversation, message, session);
   const questionsAndAnswers = conversation.trainingSet.questionsAndAnswers;
-  const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (answer) => console.log("answer", answer));
+
+  const handleMissedQuestion = async (questionAndAnswer: LLMBrainBridgeResponse) => {
+    const missedQuestion = await prisma.missedQuestions.create({
+      data: {
+        question: questionAndAnswer.question,
+        llmAnswer: questionAndAnswer.answer,
+        trainingSet: {
+          connect: {
+            id: conversation.trainingSetId,
+          }
+        }
+      }
+    });
+    return missedQuestion;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)))
   const fullPrompt = promptHeader + "\n\n" + conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers)
 
   const response = await llm.getLangChainResponse(
@@ -33,7 +50,7 @@ export async function POST(req: NextRequest) {
     conversation.messages.map(m => `${m.sender.name}: ${m.text}`),
     mode
   )
-  
+
   const newMessage: MessageWithRelations = {
     id: "",
     conversationId: conversation.id,

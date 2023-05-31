@@ -31,6 +31,7 @@ model TrainingSet {
   trainingIndexId     String?
   trainingIndex       TrainingIndex?
   publicChats         PublicChat[]
+  missedQuestions     MissedQuestions[]
 }
 
 model TrainingIndex {
@@ -68,6 +69,15 @@ model QuestionAndAnswer {
   question      String
   answer        String
   token         String
+  trainingSetId String
+  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+}
+
+model MissedQuestions {
+  id            String      @id @default(cuid())
+  question      String
+  llmAnswer     String
+  correctAnswer String?      
   trainingSetId String
   trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }

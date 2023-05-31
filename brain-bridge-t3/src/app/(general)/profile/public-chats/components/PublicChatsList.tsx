@@ -39,7 +39,7 @@ export default function PublicChatsList({
   );
   const firstTrainingSet = trainingSets[0] || null;
   return (
-    <div className="h-full w-full rounded-lg border-2 border-dashed border-gray-700 p-4">
+    <div className="h-full w-full rounded-lg border-2  border-gray-700 p-4">
       <InfoBox
         title="Public Chats"
         body="Public chats expose your chat bot to an external link so that people can chat without signing up for an account on Brain Bridge."
@@ -55,7 +55,7 @@ export default function PublicChatsList({
       )}
       {trainingSets.length > 0 && (
         <>
-          <header className="flex justify-between border-b border-dashed border-gray-600 pb-2">
+          <header className="flex justify-between border-b  border-gray-600 pb-2">
             <h1 className="text-2xl">Public Chats</h1>
             <NewButton onClick={() => setAddItem(!addItem)} />
           </header>
