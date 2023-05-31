@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import PublicChatsList from "./components/PublicChatsList";
-import ServerData from "~/server/data";
+import ServerData from "~/server/server-data";
 
 export default async function PublicChatsPage() {
   const session = await getServerSession();

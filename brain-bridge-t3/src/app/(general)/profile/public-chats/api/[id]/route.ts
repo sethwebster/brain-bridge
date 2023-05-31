@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import invariant from "tiny-invariant";
 import { type PublicChatWithRelations } from "~/server/interfaces/types";
 import { getServerSession } from "~/server/auth";
-import ServerData from "~/server/data";
+import ServerData from "~/server/server-data";
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;

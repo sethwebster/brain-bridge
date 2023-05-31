@@ -2,7 +2,7 @@ import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
 import Chat from "../components/PrivateChat";
 import { Suspense } from "react";
-import ServerData from "~/server/data";
+import ServerData from "~/server/server-data";
 
 async function PageContent({ id }: { id: string }) {
   const session = await getServerSession();

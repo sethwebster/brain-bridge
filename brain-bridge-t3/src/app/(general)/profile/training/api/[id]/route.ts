@@ -3,7 +3,7 @@ import { type TrainingSetWithRelations } from "~/server/interfaces/types";
 import { type NextRequest, NextResponse } from "next/server";
 import invariant from "tiny-invariant";
 import { prisma } from "~/server/db";
-import ServerData from "~/server/data";
+import ServerData from "~/server/server-data";
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;

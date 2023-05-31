@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
-import ServerData from "~/server/data";
+import ServerData from "~/server/server-data";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession();

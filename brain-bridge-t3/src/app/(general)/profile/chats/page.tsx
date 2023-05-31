@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import invariant from "tiny-invariant";
 import { ChatListing } from "./components/ChatListing";
-import ServerData from "~/server/data";
+import ServerData from "~/server/server-data";
 
 export default async function Page() {
   const session = await getServerSession();

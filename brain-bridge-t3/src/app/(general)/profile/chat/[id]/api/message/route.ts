@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
 import { prisma } from '~/server/db';
-import ServerData from '~/server/data';
+import ServerData from '~/server/server-data';
 import { BrainBridgeLangChain, BrainBridgeStorage, type LLMBrainBridgeResponse } from '~/lib/llm';
 import { promptFooter, promptHeader } from "~/app/(general)/profile/training/PromptTemplate";
 import replaceTokens from "~/utils/replace-tokens";

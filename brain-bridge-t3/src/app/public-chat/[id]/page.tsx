@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import invariant from "tiny-invariant";
 
 import { type Metadata } from "next";
-import ServerData from "~/server/data";
+import ServerData from "~/server/server-data";
 import generateId from "~/utils/generate-id";
 import { safeGetJSONCookieServer } from "~/utils/safe-get-json-cookie-server";
 import { type PublicChatInstanceWithRelations } from "~/server/interfaces/types";

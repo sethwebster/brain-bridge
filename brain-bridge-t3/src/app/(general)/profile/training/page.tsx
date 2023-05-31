@@ -4,7 +4,7 @@ import { NewTrainingSetButton } from "./NewTrainingSetButton";
 import Link from "next/link";
 import { DeleteTrainingSet } from "./DeleteTrainingSet";
 import InfoBox from "~/app/components/InfoBox";
-import ServerData from "~/server/data";
+import ServerData from "~/server/server-data";
 import { Suspense } from "react";
 
 async function TrainingPage() {

@@ -6,7 +6,7 @@ import path from 'path';
 import jsdom from 'jsdom';
 import { type TrainingIndex, type TrainingSource } from '@prisma/client';
 import { type TrainingSetWithRelations } from '~/server/interfaces/types';
-import ServerData from '~/server/data';
+import ServerData from '~/server/server-data';
 import { cleanUpHtml } from '~/utils/html-to-markdown';
 import { getTempFilePath } from '~/utils/files';
 import { getServerSession } from '~/server/auth';

@@ -32,6 +32,24 @@ model TrainingSet {
   trainingIndex       TrainingIndex?
   publicChats         PublicChat[]
   missedQuestions     MissedQuestions[]
+  trainingSetShares   TrainingSetShares[]
+
+}
+
+
+model TrainingSetShares {
+  id             String      @id @default(cuid())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  trainingSet    TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  trainingSetId  String
+  user           User        @relation(name: "owner", fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  toUserEmail    String
+  acceptedByUser Boolean     @default(false)
+  acceptedAt     DateTime?
+  acceptedUserId String?
+  acceptedUser   User?       @relation(name: "acceptedUser", fields: [acceptedUserId], references: [id])
 }
 
 model TrainingIndex {
@@ -190,6 +208,9 @@ model User {
   trainingSets  TrainingSet[]
   conversation  Conversation[]
   publicChats   PublicChat[]
+    trainingSetSharesOutgoing TrainingSetShares[] @relation(name: "owner")
+  trainingSetSharesAccepted TrainingSetShares[] @relation(name: "acceptedUser")
+
 }
 
 model VerificationToken {
