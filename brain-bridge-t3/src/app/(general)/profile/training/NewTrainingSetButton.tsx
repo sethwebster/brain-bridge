@@ -38,6 +38,7 @@ export function NewTrainingSetButton({
       version: 0,
       userId: "",
       trainingIndexId: "",
+      missedQuestions: [],
     });
     router.push("/profile/training/" + result.id);
   }, [inputValue, router]);

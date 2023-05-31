@@ -61,6 +61,7 @@ Use the following pieces of MemoryContext to answer the human. ConversationHisto
 ConversationHistory: {history}
 MemoryContext: {context}
 Human: {prompt}
+{name}:
 The JSON Response:`;
 
 export default promptTemplate;

@@ -1,3 +1,4 @@
+import { type TrainingSet } from "@prisma/client";
 import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 import { env } from "~/env.mjs";
@@ -11,9 +12,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const set = await ServerData.fetchUserTrainingSet(id);
   invariant(set, "Training set must exist")
   // const result = await createTrainingIndex({ name: set.name, trainingSet: set });
-  const result = await fetch(`${env.API_ENDPOINT}/train/${id}`, {
+  const response = await fetch(`${env.API_ENDPOINT}/train/${id}`, {
     method: "POST"
   })
-  
-  return NextResponse.json({result})
+  const result = await response.json() as TrainingSet;
+  return NextResponse.json(result)
 }

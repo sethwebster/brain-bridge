@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import invariant from "tiny-invariant";
 import { type MessageWithRelations, messageWithRelations, type ChatResponseMode } from "~/server/interfaces/types";
-import { BrainBridgeLangChain } from "~/lib/llm";
+import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "~/lib/llm";
 import ServerData from "~/server/data";
 import { prisma } from "~/server/db";
 
@@ -34,8 +34,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
   });
 
+  const handleMissedQuestion = async (questionAndAnswer: LLMBrainBridgeResponse) => {
+    const missedQuestion = await prisma.missedQuestions.create({
+      data: {
+        question: questionAndAnswer.question,
+        llmAnswer: questionAndAnswer.answer,
+        trainingSet: {
+          connect: {
+            id: chat.trainingSetId,
+          }
+        }
+      }
+    });
+    return missedQuestion;
+  }
+
   // Respond with bot message
-  const llm = new BrainBridgeLangChain();
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)))
   const response = await llm.getLangChainResponse(chat.trainingSetId, text, chat.trainingSet.prompt, instance.messages.map(m => `${m.sender.name}: ${m.text}`), mode);
   const sender = instance.participants.find(p => p.type === "BOT");
   let responseMessage: MessageWithRelations;

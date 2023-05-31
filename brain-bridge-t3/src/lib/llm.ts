@@ -17,7 +17,7 @@ export interface LangChainStore {
 }
 
 const model = new OpenAIChat({
-  temperature: 0.2,
+  temperature: 0,
   openAIApiKey: process.env.OPENAI_API_KEY,
   modelName: 'gpt-3.5-turbo'
 });
@@ -119,9 +119,15 @@ export class BrainBridgeLangChain implements LangChainStore {
 
     let response = this.tryParseResponse(userPrompt, rawResponse);
 
+    // Failed to parse response, try again
     if (response.confidence === -1) {
       rawResponse = await this.makeLangChainCall(llmChain, userPrompt, context, history);
       response = this.tryParseResponse(userPrompt, rawResponse);
+    }
+
+    if (response.confidence === -1) {
+      console.warn("FAILED TO PARSE RESPONSE", response);
+      return "I'm sorry, I had some trouble figuring out how to respond.";
     }
 
     console.log(response.confidence)
