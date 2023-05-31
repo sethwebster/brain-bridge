@@ -6,7 +6,21 @@ import { type MissedQuestions } from "@prisma/client";
 import { CheckMark } from "~/app/components/SvgIcons";
 
 function MissedQuestion({ missed }: { missed: MissedQuestions }) {
-  return <div className="truncate">{missed.question}</div>;
+  return (
+    <div className="grid justify-between w-full grid-cols-2 border-b">
+      <div className="col-span-1 p-2 text-left truncate">
+        {missed.correctAnswer ? (
+          <span className="inline-block mr-2 text-green-300">✓</span>
+        ) : (
+          <></>
+        )}
+        {missed.question}
+      </div>
+      <div className="flex-1 col-span-1 p-2 text-left truncate ">
+        {missed.correctAnswer ?? missed.llmAnswer}
+      </div>
+    </div>
+  );
 }
 
 export default function MissedQuestionsList({
@@ -49,11 +63,13 @@ export default function MissedQuestionsList({
           {trainingSet.missedQuestions.length === 0 && (
             <small>No missed questions yet.</small>
           )}
-          <ul>
+          <ul className="w-full">
             {trainingSet.missedQuestions.map((missedQuestion) => (
               <li key={missedQuestion.id}>
-                <button onClick={() => setSelectedMissed(missedQuestion)} className="flex flex-row">
-                  {missedQuestion.correctAnswer ? <div className="mr-2 text-green-300">✓</div> : <></>}
+                <button
+                  onClick={() => setSelectedMissed(missedQuestion)}
+                  className="flex flex-row"
+                >
                   <MissedQuestion missed={missedQuestion} />
                 </button>
               </li>
