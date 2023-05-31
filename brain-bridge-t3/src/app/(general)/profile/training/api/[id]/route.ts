@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import invariant from "tiny-invariant";
 import { prisma } from "~/server/db";
 import ServerData from "~/server/server-data";
+import { getServerSession } from "~/server/auth";
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const { id } = params;
@@ -12,6 +13,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       id,
     }
   });
+  const session = await getServerSession();
+  invariant(session, "Session must exist to update")
   invariant(existing, "Training set must exist to update")
   const payload = (await request.json()) as TrainingSetWithRelations;
   await prisma.trainingSet.update({
@@ -51,6 +54,21 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             correctAnswer: qa.correctAnswer,
           }
         })
+      },
+      trainingSetShares: {
+        deleteMany: {},
+        create: payload.trainingSetShares.map(s => {
+          return {
+            user: {
+              connect: {
+                id: session.user.id,
+              }
+            },
+            toUserEmail: s.toUserEmail,
+            createdAt: new Date(),
+            
+          }
+        }),
       },
       updatedAt: new Date(),
       version: existing.version + 1,

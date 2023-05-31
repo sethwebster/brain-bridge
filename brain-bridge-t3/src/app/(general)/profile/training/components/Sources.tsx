@@ -157,7 +157,7 @@ export default function Sources({
   }, [newUrlText]);
 
   return (
-    <div className="p-4 mt-2 rounded-lg">
+    <div className="py-4 mt-2 rounded-lg">
       <h1 className="text-lg">Training Data Sources</h1>
       <div className="flex flex-row justify-between">
       <small>

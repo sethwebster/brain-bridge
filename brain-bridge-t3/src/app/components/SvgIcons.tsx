@@ -1,6 +1,6 @@
 export const UrlIcon = ({ color }: { color?: string }) => (
   <svg
-    className="h-4 w-4"
+    className="w-4 h-4"
     fill={color ?? "#fff"}
     height="200px"
     width="200px"
@@ -25,7 +25,7 @@ export const UrlIcon = ({ color }: { color?: string }) => (
 
 export const PlusAddIcon = () => (
   <svg
-    className="h-4 w-4 "
+    className="w-4 h-4 "
     viewBox="0 0 24 24"
     xmlns="http://www.w3.org/2000/svg"
     stroke="white"
@@ -91,7 +91,7 @@ export function TrashCan() {
     <svg
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
+      className="w-4 h-4"
       stroke="white"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
@@ -119,7 +119,7 @@ export function CheckMark() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 bg-red-200"
+      className="w-4 h-4 bg-red-200"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -146,7 +146,7 @@ export function CheckMark() {
 export function SpeakerIcon() {
   return (
     <svg
-      className="h-4 w-4"
+      className="w-4 h-4"
       fill="#000000"
       viewBox="0 0 1920 1920"
       xmlns="http://www.w3.org/2000/svg"
@@ -170,7 +170,7 @@ export function SpeakerIcon() {
 export function PencilIcon() {
   return (
     <svg
-      className="h-4 w-4"
+      className="w-4 h-4"
       fill="#000000"
       viewBox="0 0 32 32"
       version="1.1"
@@ -195,7 +195,7 @@ export function SaveIcon() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
+      className="w-4 h-4"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -225,7 +225,7 @@ export function EraseIcon() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
+      className="w-4 h-4"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -241,6 +241,33 @@ export function EraseIcon() {
           d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z"
           fill="#1F2328"
         ></path>{" "}
+      </g>
+    </svg>
+  );
+}
+
+export function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4">
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+      <g
+        id="SVGRepo_tracerCarrier"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      ></g>
+      <g id="SVGRepo_iconCarrier">
+        {" "}
+        <g id="Communication / Share_iOS_Export">
+          {" "}
+          <path
+            id="Vector"
+            d="M9 6L12 3M12 3L15 6M12 3V13M7.00023 10C6.06835 10 5.60241 10 5.23486 10.1522C4.74481 10.3552 4.35523 10.7448 4.15224 11.2349C4 11.6024 4 12.0681 4 13V17.8C4 18.9201 4 19.4798 4.21799 19.9076C4.40973 20.2839 4.71547 20.5905 5.0918 20.7822C5.5192 21 6.07899 21 7.19691 21H16.8036C17.9215 21 18.4805 21 18.9079 20.7822C19.2842 20.5905 19.5905 20.2839 19.7822 19.9076C20 19.4802 20 18.921 20 17.8031V13C20 12.0681 19.9999 11.6024 19.8477 11.2349C19.6447 10.7448 19.2554 10.3552 18.7654 10.1522C18.3978 10 17.9319 10 17 10"
+            stroke="#000000"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          ></path>{" "}
+        </g>{" "}
       </g>
     </svg>
   );

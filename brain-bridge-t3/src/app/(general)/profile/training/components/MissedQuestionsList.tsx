@@ -52,7 +52,7 @@ export default function MissedQuestionsList({
 
   return (
     <>
-      <div className="p-4 mt-2 rounded-lg">
+      <div className="py-4 mt-2 rounded-lg">
         <h1 className="text-lg">Missed Questions</h1>
         <small>
           Missed questions are questions asked by users for which the model only
@@ -63,16 +63,18 @@ export default function MissedQuestionsList({
             <small>No missed questions yet.</small>
           )}
           <ul className="w-full">
-            {trainingSet.missedQuestions.map((missedQuestion) => (
-              <li key={missedQuestion.id}>
-                <button
-                  onClick={() => setSelectedMissed(missedQuestion)}
-                  className="flex flex-row"
-                >
-                  <MissedQuestion missed={missedQuestion} />
-                </button>
-              </li>
-            ))}
+            {trainingSet.missedQuestions
+              .filter((q) => q.question.trim().length > 0)
+              .map((missedQuestion) => (
+                <li key={missedQuestion.id}>
+                  <button
+                    onClick={() => setSelectedMissed(missedQuestion)}
+                    className="flex flex-row"
+                  >
+                    <MissedQuestion missed={missedQuestion} />
+                  </button>
+                </li>
+              ))}
           </ul>
         </div>
       </div>

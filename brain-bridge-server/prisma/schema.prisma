@@ -23,6 +23,7 @@ model TrainingSet {
   questionsAndAnswers QuestionAndAnswer[]
   trainingIndex       TrainingIndex?
   user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  TrainingSetShares   TrainingSetShares[]
   trainingSources     TrainingSource[]
 }
 
@@ -151,16 +152,18 @@ model Session {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  name          String?
-  email         String?        @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  conversation  Conversation[]
-  publicChats   PublicChat[]
-  sessions      Session[]
-  trainingSets  TrainingSet[]
+  id                                                       String              @id @default(cuid())
+  name                                                     String?
+  email                                                    String?             @unique
+  emailVerified                                            DateTime?
+  image                                                    String?
+  accounts                                                 Account[]
+  conversation                                             Conversation[]
+  publicChats                                              PublicChat[]
+  sessions                                                 Session[]
+  trainingSets                                             TrainingSet[]
+  TrainingSetShares_TrainingSetShares_acceptedUserIdToUser TrainingSetShares[] @relation("TrainingSetShares_acceptedUserIdToUser")
+  TrainingSetShares_TrainingSetShares_userIdToUser         TrainingSetShares[] @relation("TrainingSetShares_userIdToUser")
 }
 
 model VerificationToken {
@@ -178,6 +181,21 @@ model MissedQuestions {
   correctAnswer String?
   trainingSetId String
   TrainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+}
+
+model TrainingSetShares {
+  id                                          String      @id
+  createdAt                                   DateTime    @default(now())
+  updatedAt                                   DateTime
+  trainingSetId                               String
+  userId                                      String
+  toUserEmail                                 String
+  acceptedByUser                              Boolean     @default(false)
+  acceptedAt                                  DateTime?
+  acceptedUserId                              String?
+  User_TrainingSetShares_acceptedUserIdToUser User?       @relation("TrainingSetShares_acceptedUserIdToUser", fields: [acceptedUserId], references: [id])
+  TrainingSet                                 TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  User_TrainingSetShares_userIdToUser         User        @relation("TrainingSetShares_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum TrainingSourceType {

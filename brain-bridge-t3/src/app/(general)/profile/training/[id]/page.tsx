@@ -6,6 +6,7 @@ import { removeFooter } from "~/utils/prompts";
 import TrainingSetPage from "../components/TrainingSetForm";
 import promptTemplate from "../PromptTemplate";
 import ServerData from "~/server/server-data";
+import Shares from "../components/Shares";
 
 export default async function TrainingPage({
   params: { id },
@@ -16,16 +17,13 @@ export default async function TrainingPage({
   invariant(session, "Session must exist");
   invariant(session.user, "User must exist");
   const set = await ServerData.fetchUserTrainingSet(id);
-  
+
   if (!set) {
     notFound();
   }
   return (
     <PaddedContainer>
-      <div className="w-full h-auto p-4 border-2 border-gray-700 rounded-lg">
-        <header className="flex justify-between pb-2 border-b border-gray-600 ">
-          <h1 className="text-2xl">Set:{set.name}</h1>
-        </header>
+      <div className="w-full h-auto px-4 rounded-lg">
         <TrainingSetPage
           trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
           user={session.user}

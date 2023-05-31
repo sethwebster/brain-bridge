@@ -9,6 +9,7 @@ import { AutoSizingTextArea } from "./AutoSizingTextArea";
 import Input from "~/app/components/Input";
 import ErrorBox from "~/app/components/ErrorBox";
 import {
+  TrainingSetShares,
   type MissedQuestions,
   type QuestionAndAnswer,
   type TrainingSource,
@@ -20,6 +21,7 @@ import {
 import { InfoBoxDisplay } from "~/app/components/InfoBox";
 import replaceTokens from "~/utils/replace-tokens";
 import MissedQuestionsList from "./MissedQuestionsList";
+import Shares from "./Shares";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -164,10 +166,28 @@ function TrainingSetForm({
     [trainingSetData.questionsAndAnswers]
   );
 
+  const handleConfirmShareChanges = useCallback(
+    (shares: TrainingSetShares[]) => {
+      setTrainingSetData({
+        ...trainingSetData,
+        trainingSetShares: shares,
+      });
+    },
+    [trainingSetData]
+  );
+
   return (
     <div>
+      <header className="flex justify-between border-b border-gray-400 pb-2 ">
+        <h1 className="text-2xl">{trainingSet.name}</h1>
+        <Shares
+          trainingSet={trainingSetData}
+          onConfirmChanges={handleConfirmShareChanges}
+        />
+      </header>
+
       <Input
-        className="w-full p-2 mt-2 border rounded-md"
+        className="mt-2 w-full rounded-md border p-2"
         alt="Training Set Name"
         placeholder="Training Set Name"
         type="text"
@@ -214,7 +234,7 @@ function TrainingSetForm({
       )}
       {showPrompt && (
         <AutoSizingTextArea
-          className="w-full p-2 mt-2 border rounded-md dark:border-slate-600 dark:bg-slate-700"
+          className="mt-2 w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
           placeholder="Prompt"
           name="prompt"
           value={trainingSetData.prompt}
@@ -226,13 +246,16 @@ function TrainingSetForm({
         sources={trainingSetData.trainingSources}
         onSourcesChanged={handleSourcesChanged}
       />
-      <MissedQuestionsList trainingSet={trainingSetData} onUpdate={handleMissedQuestionsUpdate} />
+      <MissedQuestionsList
+        trainingSet={trainingSetData}
+        onUpdate={handleMissedQuestionsUpdate}
+      />
       <div className="flex flex-row">
         <button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onClick={handleSave}
           disabled={!isDirty || isSaving || !canSave}
-          className="w-full p-2 mt-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
+          className="mt-2 w-full rounded-md border bg-blue-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
         >
           {isSaving ? "Saving..." : "Save"}
         </button>
@@ -241,7 +264,7 @@ function TrainingSetForm({
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onClick={handleTrain}
             disabled={isDirty || isTraining}
-            className="w-full p-2 mt-2 text-white bg-green-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400"
+            className="mt-2 w-full rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400"
           >
             Train
           </button>
