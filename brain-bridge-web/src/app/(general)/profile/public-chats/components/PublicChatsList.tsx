@@ -37,14 +37,14 @@ export default function PublicChatsList({
   );
 
   return (
-    <div className="w-full h-full p-4 border-2 border-gray-700 border-dashed rounded-lg">
+    <div className="w-full h-full p-4 border-2 border-gray-700  rounded-lg">
       <InfoBox
         title="Public Chats"
         body="Public chats expose your chat bot to an external link so that people can chat without signing up for an account on Brain Bridge."
         dismissable={true}
         dismissableId={"info-box-public-chats"}
       />
-      <header className="flex justify-between pb-2 border-b border-gray-600 border-dashed">
+      <header className="flex justify-between pb-2 border-b border-gray-600 ">
         <h1 className="text-2xl">Public Chats</h1>
         <NewButton onClick={() => setAddItem(!addItem)} />
       </header>

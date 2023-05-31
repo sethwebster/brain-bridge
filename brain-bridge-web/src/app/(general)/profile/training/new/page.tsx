@@ -11,8 +11,8 @@ export default async function NewTrainingSetPage() {
   invariant(session.user, "User must exist");
   return (
     <PaddedContainer>
-      <div className="w-full h-auto p-4 border-2 border-gray-700 border-dashed rounded-lg">
-        <header className="flex justify-between pb-2 border-b border-gray-600 border-dashed">
+      <div className="w-full h-auto p-4 border-2 border-gray-700  rounded-lg">
+        <header className="flex justify-between pb-2 border-b border-gray-600 ">
           <h1 className="text-2xl">New Training Set</h1>
         </header>
         <TrainingSetForm

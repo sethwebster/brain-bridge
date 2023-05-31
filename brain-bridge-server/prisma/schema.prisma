@@ -18,6 +18,7 @@ model TrainingSet {
   prompt              String              @default("")
   trainingIndexId     String?
   conversations       Conversation[]
+  missedQuestions     MissedQuestions[]
   publicChats         PublicChat[]
   questionsAndAnswers QuestionAndAnswer[]
   trainingIndex       TrainingIndex?
@@ -168,6 +169,15 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model MissedQuestions {
+  id            String      @id
+  question      String
+  llmAnswer     String
+  correctAnswer String?
+  trainingSetId String
+  TrainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }
 
 enum TrainingSourceType {

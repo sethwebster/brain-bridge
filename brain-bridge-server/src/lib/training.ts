@@ -15,6 +15,7 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
     trainingSources: true,
     questionsAndAnswers: true,
     conversations: true,
+    missedQuestions: true,
   }
 })
 
@@ -73,8 +74,11 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
 export async function createTrainingIndex({ name, trainingSet }: { name: string, trainingSet: TrainingSetWithRelations }): Promise<TrainingIndex> {
   const { trainingSources } = trainingSet;
   const promises = trainingSources.map((source) => getSourceText(trainingSet.userId, source));
+  const answeredQuestions = trainingSet.missedQuestions.filter(q => (q.correctAnswer || "").trim().length > 0).map((q) => `Question: ${q.question}\nIdeas: ${q.correctAnswer}`).join("\n");
+  const answeredQuestionText = `Additional possible Questions and Ideas:\n${answeredQuestions}\n`;
+  console.log(answeredQuestionText);
   const allContent = await Promise.all(promises);
-  const splitContent = await splitFileData(allContent);
+  const splitContent = await splitFileData([...allContent, answeredQuestionText]);
   const tempFilePath = getTempFilePath(name)
   const store = await vectorize(splitContent);
   await store.save(tempFilePath)

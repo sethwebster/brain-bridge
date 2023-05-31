@@ -1,6 +1,6 @@
 //import * as bcrypt from 'bcrypt';
 import { Request, Response } from "express";
-import { PrismaClient, Prisma, TrainingSet } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { createTrainingIndex } from "../../lib/training";
 import invariant from "tiny-invariant";
 
@@ -14,11 +14,15 @@ export default class TrainingController {
         conversations: true,
         trainingSources: true,
         questionsAndAnswers: true,
+        missedQuestions: true,
       }
     });
     invariant(set, "Training set not found");
     try {
     const result = await createTrainingIndex({ name: set.name, trainingSet: set });
+    delete result.vectors
+    delete result.docStore
+    console.log("RESULT", result)
     res.json(result)
     } catch (error: any) {
       console.log("ERROR", error)

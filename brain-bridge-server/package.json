@@ -5,10 +5,10 @@
   "main": "index.ts",
   "scripts": {
     "sync-prisma": "npx prisma db pull && npx prisma generate",
-    "build": "npm run sync-prisma && tsc",
+    "build": "npx prisma generate && tsc",
     "start": "nodemon ./dist/index.js",
-    "dev": "npx prisma db pull && npx prisma generate && nodemon --exec ts-node -- ./src/index.ts",
-    "prod": "npm run build && npm run start",
+    "dev": "npx prisma migrate deploy && npx prisma db pull && nodemon --exec ts-node -- ./src/index.ts",
+    "prod": "npx prisma db pull && npm run build && npm run start",
     "clean": "rm -rf node_modules coverage dist .nyc_output",
     "lint": "tslint -t stylish --project \"tsconfig.json\""
   },

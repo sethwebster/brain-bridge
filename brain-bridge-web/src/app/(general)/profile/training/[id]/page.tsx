@@ -20,8 +20,8 @@ export default async function TrainingPage({
   );
   return (
     <PaddedContainer>
-      <div className="w-full h-auto p-4 border-2 border-gray-700 border-dashed rounded-lg">
-        <header className="flex justify-between pb-2 border-b border-gray-600 border-dashed">
+      <div className="w-full h-auto p-4 border-2 border-gray-700  rounded-lg">
+        <header className="flex justify-between pb-2 border-b border-gray-600 ">
           <h1 className="text-2xl">Set:{set.name}</h1>
         </header>
         <NewTrainingSetForm
