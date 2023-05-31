@@ -1,6 +1,6 @@
 import { useFilePicker } from "use-file-picker";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PlusAddIcon, UrlIcon } from "./SvgIcons";
+import { PlusAddIcon, TrashCan, UrlIcon } from "./SvgIcons";
 import { isValidURL } from "~/utils/validation";
 import htmlToMarkdown from "~/utils/html-to-markdown";
 import { type TrainingSource } from "@prisma/client";
@@ -23,6 +23,9 @@ export default function Sources({
   const [inProcessFiles, setInProcessFiles] = useState<
     { file: File; status: "pending" | "complete" }[]
   >([]);
+
+  const [showClearSourcesModal, setShowClearSourcesModal] = useState(false);
+
   const handleFileAdded = useCallback(
     async (file: File) => {
       setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);
@@ -140,6 +143,15 @@ export default function Sources({
     [onSourcesChanged, sources]
   );
 
+  const handleClearSources = useCallback(() => {
+    onSourcesChanged([]);
+    setShowClearSourcesModal(false);
+  }, [onSourcesChanged]);
+
+  const handleShowClearSourcesModal = useCallback(() => {
+    setShowClearSourcesModal(!showClearSourcesModal);
+  }, [showClearSourcesModal]);
+
   const isNewUrlValid = useMemo(() => {
     return isValidURL(newUrlText);
   }, [newUrlText]);
@@ -147,11 +159,16 @@ export default function Sources({
   return (
     <div className="p-4 mt-2 rounded-lg">
       <h1 className="text-lg">Training Data Sources</h1>
+      <div className="flex flex-row justify-between">
       <small>
         Training sources are external data you would like to use in model
         training. They can be text, markdown, or external urls.
       </small>
-      <div className="p-2 border  rounded-lg">
+      <div>
+        <button onClick={handleShowClearSourcesModal} className="text-blue-400">Clear all</button>
+      </div>
+      </div>
+      <div className="p-2 border rounded-lg">
         <header className="flex flex-row justify-between border-b border-dotted">
           <div>{sources.length} Sources</div>
           <div className="">
@@ -247,6 +264,16 @@ export default function Sources({
           ))}
         </ul> */}
       </div>
+      <Modal title="Confirm clear all sources"
+        closeText="Cancel"
+        confirmText="Clear"
+        icon={<TrashCan />}
+        show={showClearSourcesModal}
+        onCancel={handleShowClearSourcesModal}
+        onConfirm={handleClearSources}
+      >
+        <p>Are you sure you want to clear all sources? This is permanent.</p>
+        </Modal>
       <Modal
         title="Add an external source"
         closeText="Cancel"
