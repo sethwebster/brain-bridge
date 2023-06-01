@@ -118,7 +118,7 @@ export class BrainBridgeLangChain implements LangChainStore {
     let rawResponse = await this.makeLangChainCall(llmChain, userPrompt, context, history);
     console.log("RAW RESPONSE", rawResponse)
     let response = this.tryParseResponse(userPrompt, rawResponse);
-
+    let usedMode = mode;
     // Failed to parse response, try again
     if (response.confidence === -1) {
       rawResponse = await this.makeLangChainCall(llmChain, userPrompt, context, history);
@@ -127,7 +127,8 @@ export class BrainBridgeLangChain implements LangChainStore {
 
     if (response.confidence === -1) {
       console.warn("FAILED TO PARSE RESPONSE", response);
-      return "I'm sorry, I had some trouble figuring out how to respond.";
+      usedMode = "refine";
+      // return "I'm sorry, I had some trouble figuring out how to respond.";
     }
 
     console.log(response.confidence)

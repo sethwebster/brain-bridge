@@ -52,7 +52,9 @@ Do not contradict {name}'s Principles to live & {topic} by:
 `;
 
 export const promptFooter = `
--- do not edit below this line --
+
+You will see some training data called "Questions and thoughts" or "Questions and ideas". This information is not meant to be used as direct answers but to inform your thinking.
+
 Remember what you've already talked about and the details shared.
 
 When you format your answer in Markdown format: If you share a domain name, make sure to share it as a markdown link. If you share a link to an image, render the correct markdown to display it.
