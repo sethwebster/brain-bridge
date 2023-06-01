@@ -22,6 +22,7 @@ import { InfoBoxDisplay } from "~/app/components/InfoBox";
 import replaceTokens from "~/utils/replace-tokens";
 import MissedQuestionsList from "./MissedQuestionsList";
 import Shares from "./Shares";
+import { useSession } from "next-auth/react";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -38,6 +39,7 @@ function TrainingSetForm({
   promptTemplate,
   onUpdate,
 }: TrainingSetFormProps) {
+  const session = useSession();
   const router = useRouter();
   const [showQuestionsPrompts, setShowQuestionsPrompts] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -176,10 +178,17 @@ function TrainingSetForm({
     [trainingSetData]
   );
 
+  const shared = trainingSetData.trainingSetShares.find(
+    (s) => s.acceptedUserId === session.data?.user.id
+  );
+  const isShared = shared !== undefined;
   return (
     <div>
       <header className="flex justify-between border-b border-gray-400 pb-2 ">
-        <h1 className="text-2xl">{trainingSet.name}</h1>
+        <div>
+          <h1 className="text-2xl">{trainingSet.name}</h1>
+          {isShared ? <small>Shared with you</small> : <></>}
+        </div>
         <Shares
           trainingSet={trainingSetData}
           onConfirmChanges={handleConfirmShareChanges}

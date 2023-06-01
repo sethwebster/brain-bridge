@@ -6,7 +6,8 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
     questionsAndAnswers: true,
     conversations: true,
     missedQuestions: true,
-    trainingSetShares: true,
+    trainingSetShares: true
+
   }
 })
 
@@ -34,7 +35,7 @@ export const conversationWithRelations = Prisma.validator<Prisma.ConversationArg
   include: {
     messages: messageWithRelations,
     participants: true,
-    trainingSet: { 
+    trainingSet: {
       include: {
         questionsAndAnswers: true,
       }

@@ -27,6 +27,14 @@ async function fetchUserTrainingSets() {
   return sets;
 }
 
+async function fetchTrainingSet(trainingSetId: string) {
+  const set = await prisma.trainingSet.findFirst({
+    where: { id: trainingSetId },
+    ...trainingSetWithRelations
+  });
+  return set;
+}
+
 async function fetchUserTrainingSet(trainingSetId: string) {
   const user = await getServerSession();
   invariant(user, "User must be logged in to fetch training sets");
@@ -40,14 +48,37 @@ async function fetchUserTrainingSet(trainingSetId: string) {
       trainingSetShares: true
     }
   });
-  return set;
+  console.log("UTS")
+  if (set) return set;
+  console.log("UTS2", user.user.id, trainingSetId)
+  const share = await prisma.trainingSetShares.findFirst({
+    where: {
+      trainingSetId: trainingSetId,
+      acceptedUserId: user.user.id,
+    }
+  });
+  console.log("share", share)
+  if (share) {
+    const set = await prisma.trainingSet.findFirst({
+      where: { id: trainingSetId, trainingSetShares: { some: { acceptedUserId: user.user.id } } },
+      include: {
+        trainingSources: true,
+        questionsAndAnswers: true,
+        conversations: true,
+        missedQuestions: true,
+        trainingSetShares: true
+      }
+    });
+    return set;
+  }
+
 }
 
 async function acceptInvitation(trainingSetId: string) {
   const user = await getServerSession();
   invariant(user, "User must be logged in to accept invitation");
   invariant(user.user.email, "User must have an email to accept invitation")
-  const trainingSet = await fetchUserTrainingSet(trainingSetId);
+  const trainingSet = await fetchTrainingSet(trainingSetId);
   invariant(trainingSet, "Training set must exist to accept invitation");
   const userTrainingShare = await prisma.trainingSetShares.findFirst({
     where: {
@@ -62,6 +93,11 @@ async function acceptInvitation(trainingSetId: string) {
       },
       data: {
         acceptedAt: new Date(),
+        acceptedUser: {
+          connect: {
+            id: user.user.id,
+          }
+        }
       }
     });
     return result;

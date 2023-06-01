@@ -11,11 +11,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (acceptance) {
       return NextResponse.redirect(`${env.NEXT_PUBLIC_BASE_URL}/profile/training/${params.id}`);
     } else {
+      //TODO: Redirect to a better error page
       return NextResponse.json({ error: "Could not accept invitation" })
     }
   } else {
-    // http://localhost:3000
-
     const redirect = `${env.NEXTAUTH_URL}/api/auth/signin?callbackUrl=${req.nextUrl.href}`;
     return NextResponse.redirect(redirect);
   }
