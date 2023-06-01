@@ -13,6 +13,7 @@ import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";
 import { prisma } from "./db";
 import { type Participant } from "@prisma/client";
+import Mail from "~/lib/mail";
 
 ///////////////////
 // Training Sets //
@@ -36,10 +37,166 @@ async function fetchUserTrainingSet(trainingSetId: string) {
       questionsAndAnswers: true,
       conversations: true,
       missedQuestions: true,
-      trainingSetShares: true,
+      trainingSetShares: true
     }
   });
   return set;
+}
+
+async function acceptInvitation(trainingSetId: string) {
+  const user = await getServerSession();
+  invariant(user, "User must be logged in to accept invitation");
+  invariant(user.user.email, "User must have an email to accept invitation")
+  const trainingSet = await fetchUserTrainingSet(trainingSetId);
+  invariant(trainingSet, "Training set must exist to accept invitation");
+  const userTrainingShare = await prisma.trainingSetShares.findFirst({
+    where: {
+      trainingSetId: trainingSetId,
+      toUserEmail: user.user.email,
+    }
+  });
+  if (userTrainingShare) {
+    const result = await prisma.trainingSetShares.update({
+      where: {
+        id: userTrainingShare.id,
+      },
+      data: {
+        acceptedAt: new Date(),
+      }
+    });
+    return result;
+  } else {
+    notFound();
+  }
+}
+
+async function sendTrainingSetInvitationEmail(email: string, trainingSetName: string, trainingSetId: string) {
+  const user = await getServerSession();
+  invariant(user, "User must be logged in to send invitation emails");
+  const trainingSet = await fetchUserTrainingSet(trainingSetId);
+  invariant(trainingSet, "Training set must exist to send invitation emails");
+  const loadedUser = await prisma.user.findUnique({
+    where: {
+      id: trainingSet.userId,
+    }
+  });
+  invariant(loadedUser, "User must exist to send invitation emails");
+  invariant(loadedUser.email, "User must have an email to send invitation emails");
+  const result = await Mail.sendTrainingSetInvitation('info@brainbridge.app', 'info@brainbridge.app', {
+    invite_sender_name: user.user.name ?? user.user.email ?? "Someone",
+    training_set_name: trainingSetName,
+    training_set_id: trainingSetId,
+  });
+  console.log("Seinding email", email, loadedUser.email)
+  return result;
+}
+
+async function sendInvitationEmails(trainingSet: TrainingSetWithRelations) {
+  const invitationsToSend = trainingSet.trainingSetShares.filter(s => {
+    return !!!s.invitationSentAt
+  });
+  console.log("Will need to send invitations", invitationsToSend)
+  const results = await Promise.all(invitationsToSend.map(async s => {
+    console.log("Sending invitation email", s.toUserEmail, trainingSet.id)
+    const emailResult = await sendTrainingSetInvitationEmail(s.toUserEmail, trainingSet.name, trainingSet.id);
+    return {
+      share: s, emailResult
+    }
+  }));
+  await Promise.all(results.map(async (r) => {
+    if (r.emailResult.ErrorCode === 0) {
+      return await prisma.trainingSetShares.update({
+        where: {
+          id: r.share.id,
+        },
+        data: {
+          invitationSentAt: new Date(),
+        }
+      });
+    }
+  }))
+}
+
+async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to update training sets");
+  const existing = await fetchUserTrainingSet(trainingSet.id);
+  invariant(existing, "Training set must exist to update");
+  invariant(existing.userId === session.user.id, "User must own training set to update");
+  await prisma.trainingSet.update({
+    where: {
+      id: trainingSet.id,
+    },
+    data: {
+      name: trainingSet.name,
+      prompt: trainingSet.prompt,
+      questionsAndAnswers: {
+        deleteMany: {},
+        create: trainingSet.questionsAndAnswers.map(qa => {
+          return {
+            question: qa.question,
+            answer: qa.answer,
+            token: qa.token,
+          }
+        })
+      },
+      trainingSources: {
+        deleteMany: {},
+        create: trainingSet.trainingSources.map(s => {
+          return {
+            type: s.type,
+            name: s.name,
+            content: s.content,
+            pending: false,
+          }
+        }),
+      },
+      missedQuestions: {
+        deleteMany: {},
+        create: trainingSet.missedQuestions.map(qa => {
+          return {
+            question: qa.question,
+            llmAnswer: qa.llmAnswer,
+            correctAnswer: qa.correctAnswer,
+          }
+        })
+      },
+      trainingSetShares: {
+        deleteMany: {},
+        create: trainingSet.trainingSetShares.map(s => {
+          return {
+            user: {
+              connect: {
+                id: session.user.id,
+              }
+            },
+            // trainingSet: {
+            //   connect: {
+            //     id: trainingSet.id,
+            //   }
+            // },
+            role: s.role,
+            createdAt: s.createdAt,
+            updatedAt: s.updatedAt,
+            toUserEmail: s.toUserEmail,
+            acceptedByUser: s.acceptedByUser,
+            acceptedUser: s.acceptedUserId ? {
+              connect: {
+                id: s.acceptedUserId
+              }
+            } : undefined,
+            acceptedAt: s.acceptedAt,
+          }
+        }),
+      },
+      updatedAt: new Date(),
+      version: existing.version + 1,
+    },
+  })
+  const updated = await fetchUserTrainingSet(trainingSet.id);
+  invariant(updated, "Training set must exist to update");
+  await sendInvitationEmails(updated);
+  return updated;
 }
 
 async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
@@ -166,7 +323,7 @@ async function fetchChat(id: string): Promise<ConversationWithRelations> {
         },
       },
       participants: true,
-      trainingSet: { 
+      trainingSet: {
         include: {
           questionsAndAnswers: true,
         }
@@ -420,6 +577,7 @@ const ServerData = {
   fetchUserTrainingSets,
   fetchUserTrainingSet,
   createTrainingIndex,
+  updateUserTrainingSet,
   /* Conversations */
   newChat,
   fetchChats,
@@ -434,7 +592,8 @@ const ServerData = {
   sendMessage,
   newPublicChatInstance,
   fetchPublicChatInstance,
-  fetchPublicChatInstanceForViewer
+  fetchPublicChatInstanceForViewer,
+  acceptInvitation
 }
 
 export default ServerData;

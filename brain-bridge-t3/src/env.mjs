@@ -36,6 +36,7 @@ export const env = createEnv({
     R2_API_KEY: z.string().min(1),
     R2_API_SECRET: z.string().min(1),
     R2_USER_FILES_BUCKET: z.string().min(1),
+    POSTMARK_API_KEY: z.string().min(1),
   },
 
   /**
@@ -71,6 +72,7 @@ export const env = createEnv({
     R2_API_SECRET: process.env.R2_API_SECRET,
     R2_USER_FILES_BUCKET: process.env.R2_USER_FILES_BUCKET,
     API_ENDPOINT: process.env.API_ENDPOINT,
+    POSTMARK_API_KEY: process.env.POSTMARK_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation.

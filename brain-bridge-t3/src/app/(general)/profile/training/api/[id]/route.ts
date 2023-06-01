@@ -17,63 +17,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   invariant(session, "Session must exist to update")
   invariant(existing, "Training set must exist to update")
   const payload = (await request.json()) as TrainingSetWithRelations;
-  await prisma.trainingSet.update({
-    where: {
-      id,
-    },
-    data: {
-      name: payload.name,
-      prompt: payload.prompt,
-      questionsAndAnswers: {
-        deleteMany: {},
-        create: payload.questionsAndAnswers.map(qa => {
-          return {
-            question: qa.question,
-            answer: qa.answer,
-            token: qa.token,
-          }
-        })
-      },
-      trainingSources: {
-        deleteMany: {},
-        create: payload.trainingSources.map(s => {
-          return {
-            type: s.type,
-            name: s.name,
-            content: s.content,
-            pending: false,
-          }
-        }),
-      },
-      missedQuestions: {
-        deleteMany: {},
-        create: payload.missedQuestions.map(qa => {
-          return {
-            question: qa.question,
-            llmAnswer: qa.llmAnswer,
-            correctAnswer: qa.correctAnswer,
-          }
-        })
-      },
-      trainingSetShares: {
-        deleteMany: {},
-        create: payload.trainingSetShares.map(s => {
-          return {
-            user: {
-              connect: {
-                id: session.user.id,
-              }
-            },
-            toUserEmail: s.toUserEmail,
-            createdAt: new Date(),
-            
-          }
-        }),
-      },
-      updatedAt: new Date(),
-      version: existing.version + 1,
-    },
-  })
+  
+  await ServerData.updateUserTrainingSet(payload);
 
   const trainingSet = await ServerData.fetchUserTrainingSet(id);
 

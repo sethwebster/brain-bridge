@@ -6,6 +6,7 @@ import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
 import { type TrainingSetWithRelations } from "~/server/interfaces/types";
 import { SaveIcon } from "./SvgIcons";
+import Select from "~/app/components/Select";
 import invariant from "tiny-invariant";
 
 export default function Shares({
@@ -22,6 +23,7 @@ export default function Shares({
   const [newEmailText, setNewEmailText] = useState("");
 
   const isDirty = useMemo(() => {
+    console.log("isDirtyCheck")
     return (
       JSON.stringify(shareData) !==
       JSON.stringify(trainingSet.trainingSetShares)
@@ -58,6 +60,7 @@ export default function Shares({
       acceptedByUser: false,
       acceptedUserId: null,
       id: "",
+      role: "VIEWER",
     });
 
     setShareData(updated);
@@ -79,6 +82,22 @@ export default function Shares({
     onConfirmChanges(shareData);
     setModalOpen(false);
   }, [onConfirmChanges, shareData]);
+
+  const handleShareRoleChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>, share: TrainingSetShares) => {
+     
+      const updated = shareData.map((s) => {
+        if (s.toUserEmail === share.toUserEmail) {
+          return {...s, role: event.target.value as "EDITOR" | "VIEWER"}
+        }
+        return s;
+      });
+      setShareData(updated);
+    },
+    [shareData]
+  );
+
+  console.log("SHARED DATA", shareData, isDirty)
 
   return (
     <>
@@ -118,7 +137,18 @@ export default function Shares({
                 {share.acceptedByUser ? "✔" : "🕥"}
               </div>
               <div className="col-span-6 text-left">{share.toUserEmail}</div>
-              <div className="col-span-4 text-right">Viewer</div>
+              <div className="col-span-4 text-right">
+                <Select
+                  value={share.role}
+                  className="p-1 focus:border-0"
+                  onChange={(e) => {
+                    handleShareRoleChange(e, share);
+                  }}
+                >
+                  <option value={"VIEWER"}>Viewer</option>
+                  <option value="EDITOR">Editor</option>
+                </Select>
+              </div>
             </li>
           ))}
         </ul>
