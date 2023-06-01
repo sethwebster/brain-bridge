@@ -9,6 +9,7 @@ import R2 from './R2';
 import { prisma } from './db';
 import cleanUpHtml from './clean-up-html';
 import { getTempFilePath } from './get-temp-file';
+import PDFToText from './pdf-to-text';
 
 export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>()({
   include: {
@@ -30,17 +31,19 @@ async function loadFile(file: string): Promise<string> {
   });
 }
 
-async function loadUrl(url: string): Promise<string> {
+async function loadUrl(url: string): Promise<string | Blob> {
   console.log("Loading url", url)
   const response = await fetch(url);
   if (response.status !== 200) throw new Error(`Failed to load url: ${url}`);
   console.log("file retrieved");
-  const data = await response.text();
-  console.log("file length", data.length);
   const headerRaw = response.headers.get('content-type') ?? "text/html";
   const contentType = headerRaw.split(';')[0];
+  let data: string | Blob;
   switch (contentType) {
     case "text/html":
+      data = await response.text();
+      console.log("file length", data.length);
+
       console.log("Processing html")
       const doc = new jsdom.JSDOM(data).window.document;
 
@@ -50,7 +53,18 @@ async function loadUrl(url: string): Promise<string> {
       console.log("html processed")
       return markdown;
     case "application/json":
+      data = await response.text();
+      console.log("file length", data.length);
+
+      return data;
+    case "application/pdf":
+      data = await response.blob();
+      console.log("PDF file length", data.size)
+      return data;
     case "text/plain":
+      data = await response.text();
+      console.log("file length", data.length);
+
       return data;
     default:
       throw new Error(`Unsupported content type: ${contentType ?? ""}`);
@@ -60,12 +74,37 @@ async function loadUrl(url: string): Promise<string> {
 async function getSourceText(userId: string, source: TrainingSource): Promise<string> {
   switch (source.type) {
     case "FILE":
-      if (source.content.length > 0) return source.content;
-      return await loadFile(source.name);
+      switch (source.mimeType) {
+        case "application/pdf":
+          const pdfToText = new PDFToText(source.name);
+          const text = await pdfToText.convert();
+          return text;
+          break;
+          default:
+            if (source.content.length > 0) return source.content;
+            return await loadFile(source.name);
+      }
     case "URL":
       const key = `${userId}/${source.content}`;
       const url = await R2.getSignedUrlForRetrieval(key)
-      return await loadUrl(url);
+      console.log("Will retrieve for", source.content, url)
+      console.log("MIME", source.mimeType)
+      switch (source.mimeType) {
+        case "application/pdf":
+          const content = await loadUrl(url);
+          const buffer = await (content as Blob).arrayBuffer();
+          const tempFilePath = getTempFilePath(source.name);
+          console.log("Saved to", tempFilePath)
+
+          fs.writeFileSync(tempFilePath, Buffer.from(buffer));
+          const pdfToText = new PDFToText(tempFilePath);
+          const text = await pdfToText.convert();
+          console.log("CONVERTED PDF TO TEXT", text)
+          return text;
+          break;
+          default:
+            return await loadUrl(url) as string;
+      }
     default:
       throw new Error(`Unsupported source type`);
   }
@@ -75,7 +114,7 @@ export async function createTrainingIndex({ name, trainingSet }: { name: string,
   const { trainingSources } = trainingSet;
   const promises = trainingSources.map((source) => getSourceText(trainingSet.userId, source));
   const answeredQuestions = trainingSet.missedQuestions.filter(q => (q.correctAnswer || "").trim().length > 0).map((q) => `Question: ${q.question}\nIdeas: ${q.correctAnswer}`).join("\n");
-  const answeredQuestionText = `Additional possible Questions and Ideas:\n${answeredQuestions}\n`;
+  const answeredQuestionText = `Additional possible Questions and Ideas:\n${JSON.stringify(trainingSet.missedQuestions || {})}\n`;
   console.log(answeredQuestionText);
   const allContent = await Promise.all(promises);
   const splitContent = await splitFileData([...allContent, answeredQuestionText]);
