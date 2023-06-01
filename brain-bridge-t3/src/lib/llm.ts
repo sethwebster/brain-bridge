@@ -139,13 +139,13 @@ export class BrainBridgeLangChain implements LangChainStore {
       }
     }
 
-    if (mode === "one-shot") {
+    if (usedMode === "one-shot") {
       return response.answer;
     }
 
 
     const critiqued = await this.critique(response.answer, userPrompt, history);
-    if (mode === "critique") {
+    if (usedMode === "critique") {
       const responseTemplate = `
         ### Original Request
         >>>
