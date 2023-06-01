@@ -47,7 +47,7 @@ export default function Sources({
   );
 
   const [openFileSelector, { filesContent, clear }] = useFilePicker({
-    accept: [".txt", ".md", ".csv", ".json", ".html"],
+    accept: [".txt", ".md", ".csv", ".json", ".html", ".pdf"],
     multiple: true,
     readFilesContent: false,
     onFilesSelected(data: { plainFiles: File[] }) {
@@ -69,7 +69,7 @@ export default function Sources({
               updatedAt: new Date(),
               id: "",
               pending: true,
-              mimeType: file.file.type,
+              mimeType: file.file.type
             });
           });
 

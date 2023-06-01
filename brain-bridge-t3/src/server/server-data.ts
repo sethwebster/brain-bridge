@@ -185,6 +185,7 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
             name: s.name,
             content: s.content,
             pending: false,
+            mimeType: s.mimeType
           }
         }),
       },
