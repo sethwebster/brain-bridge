@@ -61,6 +61,7 @@ export default function Shares({
       acceptedUserId: null,
       id: "",
       role: "VIEWER",
+      invitationSentAt: null,
     });
 
     setShareData(updated);
