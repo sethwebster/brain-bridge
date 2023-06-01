@@ -118,18 +118,19 @@ async function sendTrainingSetInvitationEmail(email: string, trainingSetName: st
   });
   invariant(loadedUser, "User must exist to send invitation emails");
   invariant(loadedUser.email, "User must have an email to send invitation emails");
-  const result = await Mail.sendTrainingSetInvitation('info@brainbridge.app', 'info@brainbridge.app', {
-    invite_sender_name: user.user.name ?? user.user.email ?? "Someone",
+  const result = await Mail.sendTrainingSetInvitation(`${loadedUser.email}`, email, {
+    invite_sender_name: loadedUser.name ?? loadedUser.email ?? "Someone",
     training_set_name: trainingSetName,
     training_set_id: trainingSetId,
   });
-  console.log("Seinding email", email, loadedUser.email)
+  
+  console.log("Sending email", email, loadedUser.email)
   return result;
 }
 
 async function sendInvitationEmails(trainingSet: TrainingSetWithRelations) {
   const invitationsToSend = trainingSet.trainingSetShares.filter(s => {
-    return !!!s.invitationSentAt
+    return s.invitationSentAt === null && s.acceptedAt === null;
   });
   console.log("Will need to send invitations", invitationsToSend)
   const results = await Promise.all(invitationsToSend.map(async s => {

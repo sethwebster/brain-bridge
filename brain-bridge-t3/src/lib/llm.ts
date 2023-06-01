@@ -116,7 +116,7 @@ export class BrainBridgeLangChain implements LangChainStore {
 
 
     let rawResponse = await this.makeLangChainCall(llmChain, userPrompt, context, history);
-
+    console.log("RAW RESPONSE", rawResponse)
     let response = this.tryParseResponse(userPrompt, rawResponse);
 
     // Failed to parse response, try again
@@ -137,7 +137,7 @@ export class BrainBridgeLangChain implements LangChainStore {
         this._lowConfidenceAnswerHandler(response);
       }
     }
-    
+
     if (mode === "one-shot") {
       return response.answer;
     }
@@ -168,8 +168,9 @@ export class BrainBridgeLangChain implements LangChainStore {
   }
 
   private async makeLangChainCall(llmChain: LLMChain<string>, userPrompt: string, context: string[], history: string[]) {
+    console.log("CALLING LLM CHAIN", userPrompt, context, history)
     try {
-    return await llmChain.call({ prompt: userPrompt, context: context.join('\n\n'), history }) as LLMResponse;
+      return await llmChain.call({ prompt: userPrompt, context: context.join('\n\n'), history }) as LLMResponse;
     } catch (err: unknown) {
       console.error("THIS IS THE", JSON.stringify(err, null, 2))
       throw err;

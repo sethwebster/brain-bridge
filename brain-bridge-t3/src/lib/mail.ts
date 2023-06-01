@@ -37,7 +37,8 @@ async function sendTemplated(From: string, To: string, templateAlias: string, te
   const result = await client.sendEmailWithTemplate({
     TemplateAlias: templateAlias,
     TemplateModel: templateModel,
-    From,
+    From: `info@brainbridge.app`,
+    ReplyTo: From,
     To,
     MessageStream: "outbound",
   });
@@ -50,7 +51,7 @@ interface TemplateModelTrainingSetInvitation {
   training_set_id: string;
 }
 async function sendTrainingSetInvitation(From: string, To: string, templateModel: TemplateModelTrainingSetInvitation) {
-  return sendTemplated(From, To, "user-invitation", {...templateModel, action_url: `${env.NEXT_PUBLIC_BASE_URL}/api/invitations/training/${templateModel.training_set_id}?action=accept`});
+  return sendTemplated(From, To, "user-invitation", { ...templateModel, action_url: `${env.NEXT_PUBLIC_BASE_URL}/api/invitations/training/${templateModel.training_set_id}?action=accept` });
 }
 
 const Mail = {
