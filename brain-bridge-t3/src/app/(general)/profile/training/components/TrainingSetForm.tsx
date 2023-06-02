@@ -25,6 +25,7 @@ import Shares from "./Shares";
 import { useSession } from "next-auth/react";
 import Toggle from "~/app/components/toggle";
 import Modal from "~/app/components/ModalDialog";
+import { ShareIcon } from "~/app/components/SvgIcons";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -180,14 +181,13 @@ function TrainingSetForm({
     [trainingSetData]
   );
 
-  const handleUseOwnPromptConfirm = useCallback(
-    () => {
-      setTrainingSetData({
-        ...trainingSetData,
-        useOwnPrompt: true,
-      });
-      setShowUseOwnPromptModal(false)
-    },[trainingSetData])
+  const handleUseOwnPromptConfirm = useCallback(() => {
+    setTrainingSetData({
+      ...trainingSetData,
+      useOwnPrompt: true,
+    });
+    setShowUseOwnPromptModal(false);
+  }, [trainingSetData]);
 
   const handleUseOwnPromptToggle = useCallback(
     (useOwnPrompt: boolean) => {
@@ -197,7 +197,7 @@ function TrainingSetForm({
         setTrainingSetData({
           ...trainingSetData,
           useOwnPrompt: false,
-        })
+        });
       }
     },
     [trainingSetData]
@@ -212,7 +212,19 @@ function TrainingSetForm({
       <header className="flex justify-between border-b border-gray-400 pb-2 ">
         <div>
           <h1 className="text-2xl">{trainingSet.name}</h1>
-          {isShared ? <small>Shared with you</small> : <></>}
+          {isShared ? (
+            <div  className="flex flex-row">
+              <div className=" flex h-4 w-12 mr-1  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
+                <ShareIcon
+                  fillColor="white"
+                  className="h-4 w-4 border-red-800"
+                />
+              </div>
+              <small>Shared with you</small>
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
         <Shares
           trainingSet={trainingSetData}
@@ -316,7 +328,7 @@ function TrainingSetForm({
       {/* {isSaving ? <p>Saving...</p> : <p>Saved</p>}
       {isTraining ? <p>Training...</p> : <p>Trained</p>}*/}
       {error && <ErrorBox message={error} title="An error has occurred" />}
-      <Modal 
+      <Modal
         title="Use your own prompt"
         show={showUseOwnPromptModal}
         onCancel={() => setShowUseOwnPromptModal(false)}
@@ -324,14 +336,14 @@ function TrainingSetForm({
         onConfirm={handleUseOwnPromptConfirm}
         closeText="Use default prompt"
       >
-        <p>
-          Use your own prompt, but some things to keep in mind:
-        </p>
-        <ul className="list-disc ml-4">
+        <p>Use your own prompt, but some things to keep in mind:</p>
+        <ul className="ml-4 list-disc">
           <li>The prompt used dramatically influences your results.</li>
-          <li>We prepend front and back matter to control the output which may interfere with your desired results.</li>
+          <li>
+            We prepend front and back matter to control the output which may
+            interfere with your desired results.
+          </li>
         </ul>
-
       </Modal>
     </div>
   );
