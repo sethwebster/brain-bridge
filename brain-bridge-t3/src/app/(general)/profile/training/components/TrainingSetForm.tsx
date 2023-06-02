@@ -23,6 +23,8 @@ import replaceTokens from "~/utils/replace-tokens";
 import MissedQuestionsList from "./MissedQuestionsList";
 import Shares from "./Shares";
 import { useSession } from "next-auth/react";
+import Toggle from "~/app/components/toggle";
+import Modal from "~/app/components/ModalDialog";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -48,7 +50,7 @@ function TrainingSetForm({
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [showUseOwnPromptModal, setShowUseOwnPromptModal] = useState(false);
   const handlePromptChange = useCallback(
     (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
       const val = evt.target?.value;
@@ -178,6 +180,29 @@ function TrainingSetForm({
     [trainingSetData]
   );
 
+  const handleUseOwnPromptConfirm = useCallback(
+    () => {
+      setTrainingSetData({
+        ...trainingSetData,
+        useOwnPrompt: true,
+      });
+      setShowUseOwnPromptModal(false)
+    },[trainingSetData])
+
+  const handleUseOwnPromptToggle = useCallback(
+    (useOwnPrompt: boolean) => {
+      if (useOwnPrompt) {
+        setShowUseOwnPromptModal(true);
+      } else {
+        setTrainingSetData({
+          ...trainingSetData,
+          useOwnPrompt: false,
+        })
+      }
+    },
+    [trainingSetData]
+  );
+
   const shared = trainingSetData.trainingSetShares.find(
     (s) => s.acceptedUserId === session.data?.user.id
   );
@@ -215,7 +240,14 @@ function TrainingSetForm({
           dismissable={false}
         />
       )}
-      {!isNew && (
+      <div className="mt-2">
+        <Toggle
+          value={trainingSetData.useOwnPrompt}
+          label="Use custom prompt"
+          onChange={handleUseOwnPromptToggle}
+        />
+      </div>
+      {!trainingSetData.useOwnPrompt && !isNew && (
         <div>
           <button
             onClick={() => setShowQuestionsPrompts(!showQuestionsPrompts)}
@@ -225,13 +257,13 @@ function TrainingSetForm({
           </button>
         </div>
       )}
-      {(showQuestionsPrompts || isNew) && (
+      {!trainingSetData.useOwnPrompt && (showQuestionsPrompts || isNew) && (
         <QuestionsWizard
           onStateChange={handleQnAChange}
           questionsAndTokens={trainingSetData.questionsAndAnswers}
         />
       )}
-      {!isNew && (
+      {trainingSetData.useOwnPrompt && !isNew && (
         <div>
           <button
             onClick={() => setShowPrompt(!showPrompt)}
@@ -241,13 +273,14 @@ function TrainingSetForm({
           </button>
         </div>
       )}
-      {showPrompt && (
+      {trainingSetData.useOwnPrompt && showPrompt && (
         <AutoSizingTextArea
           className="mt-2 w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
           placeholder="Prompt"
           name="prompt"
           value={trainingSetData.prompt}
           onChange={handlePromptChange}
+          disabled={!trainingSetData.useOwnPrompt}
         />
       )}
       <Sources
@@ -283,6 +316,23 @@ function TrainingSetForm({
       {/* {isSaving ? <p>Saving...</p> : <p>Saved</p>}
       {isTraining ? <p>Training...</p> : <p>Trained</p>}*/}
       {error && <ErrorBox message={error} title="An error has occurred" />}
+      <Modal 
+        title="Use your own prompt"
+        show={showUseOwnPromptModal}
+        onCancel={() => setShowUseOwnPromptModal(false)}
+        confirmText="Use my own prompt"
+        onConfirm={handleUseOwnPromptConfirm}
+        closeText="Use default prompt"
+      >
+        <p>
+          Use your own prompt, but some things to keep in mind:
+        </p>
+        <ul className="list-disc ml-4">
+          <li>The prompt used dramatically influences your results.</li>
+          <li>We prepend front and back matter to control the output which may interfere with your desired results.</li>
+        </ul>
+
+      </Modal>
     </div>
   );
 }

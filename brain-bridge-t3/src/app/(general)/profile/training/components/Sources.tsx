@@ -59,8 +59,13 @@ export default function Sources({
       )
         .then((files) => {
           console.log("files", files);
+          
           const updated: Omit<TrainingSource, "trainingSetId">[] = [...sources];
           files.forEach((file) => {
+            let mimeType = file.file.type;
+            if (file.file.name.endsWith(".md")) {
+              mimeType = "text/markdown";
+            }
             updated.push({
               name: file.file.name,
               content: file.url,
@@ -69,7 +74,7 @@ export default function Sources({
               updatedAt: new Date(),
               id: "",
               pending: true,
-              mimeType: file.file.type
+              mimeType: mimeType
             });
           });
 

@@ -167,6 +167,7 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
     data: {
       name: trainingSet.name,
       prompt: trainingSet.prompt,
+      useOwnPrompt: trainingSet.useOwnPrompt,
       questionsAndAnswers: {
         deleteMany: {},
         create: trainingSet.questionsAndAnswers.map(qa => {
@@ -196,6 +197,7 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
             question: qa.question,
             llmAnswer: qa.llmAnswer,
             correctAnswer: qa.correctAnswer,
+            ignored: qa.ignored,
           }
         })
       },
@@ -244,6 +246,7 @@ async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
     data: {
       name: trainingSet.name,
       prompt: trainingSet.prompt,
+      useOwnPrompt: trainingSet.useOwnPrompt,
       conversations: {
         create: [],
       },

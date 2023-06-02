@@ -1,6 +1,7 @@
 export const promptHeader = `
 -- system --
-Do not include any explanations, only provide a RFC8259 compliant JSON response with the keys "question", "answer" (your answer formatted as markdown), and "confidence" (as a decimal).
+Do not include any explanations, only provide a RFC8259 compliant JSON response with the keys "question" (always the most recent prompt from the human), "answer" (your answer formatted as markdown), and "confidence" (as a decimal).
+
 `
 const promptTemplate = `
 -- rules of engagement --

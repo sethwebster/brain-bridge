@@ -116,7 +116,7 @@ export class BrainBridgeLangChain implements LangChainStore {
 
 
     let rawResponse = await this.makeLangChainCall(llmChain, userPrompt, context, history);
-    console.log("RAW RESPONSE", rawResponse)
+    console.log("RAW RESPONSE", userPrompt, rawResponse)
     let response = this.tryParseResponse(userPrompt, rawResponse);
     let usedMode = mode;
     // Failed to parse response, try again

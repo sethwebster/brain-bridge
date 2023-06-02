@@ -33,6 +33,7 @@ model TrainingSet {
   publicChats         PublicChat[]
   missedQuestions     MissedQuestions[]
   trainingSetShares   TrainingSetShares[]
+  useOwnPrompt        Boolean             @default(false)
 }
 
 enum TrainingSetRoles {
@@ -103,6 +104,7 @@ model MissedQuestions {
   llmAnswer     String
   correctAnswer String?
   trainingSetId String
+  ignored       Boolean     @default(false) 
   trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }
 

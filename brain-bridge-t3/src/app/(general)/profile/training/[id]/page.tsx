@@ -6,7 +6,6 @@ import { removeFooter } from "~/utils/prompts";
 import TrainingSetPage from "../components/TrainingSetForm";
 import promptTemplate from "../PromptTemplate";
 import ServerData from "~/server/server-data";
-import Shares from "../components/Shares";
 
 export default async function TrainingPage({
   params: { id },

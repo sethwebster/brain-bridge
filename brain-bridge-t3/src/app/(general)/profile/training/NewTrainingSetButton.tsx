@@ -10,8 +10,7 @@ import { useRouter } from "next/navigation";
 interface NewTrainingSetButtonProps {
   empty?: boolean;
 }
-export function NewTrainingSetButton({
-}: NewTrainingSetButtonProps) {
+export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string>("");
   const router = useRouter();
@@ -37,6 +36,7 @@ export function NewTrainingSetButton({
       trainingIndexId: "",
       missedQuestions: [],
       trainingSetShares: [],
+      useOwnPrompt: false,
     });
     router.push("/profile/training/" + result.id);
   }, [inputValue, router]);

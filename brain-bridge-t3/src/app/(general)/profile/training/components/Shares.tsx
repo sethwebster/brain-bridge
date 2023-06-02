@@ -7,7 +7,6 @@ import { ShareIcon } from "~/app/components/SvgIcons";
 import { type TrainingSetWithRelations } from "~/server/interfaces/types";
 import { SaveIcon } from "./SvgIcons";
 import Select from "~/app/components/Select";
-import invariant from "tiny-invariant";
 
 export default function Shares({
   trainingSet,

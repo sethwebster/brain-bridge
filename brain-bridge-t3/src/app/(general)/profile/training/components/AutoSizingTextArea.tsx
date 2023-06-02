@@ -15,5 +15,6 @@ export function AutoSizingTextArea(
     }
   }, []);
   useAutosizeTextArea(ref.current, deferred ? props.value : "", 500);
-  return <textarea {...props} ref={ref} />;
+  const additionalClassNames = props.disabled ? "bg-gray-200" : "";
+  return <textarea {...props} className={`${props.className || ""} ${additionalClassNames}`} ref={ref} />;
 }
