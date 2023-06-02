@@ -6,8 +6,9 @@ import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
 import { type TrainingSetWithRelations } from "~/server/interfaces/types";
-import { SaveIcon } from "./SvgIcons";
+import { SaveIcon, TrashCan } from "./SvgIcons";
 import Select from "~/app/components/Select";
+import DeleteButton from "../../components/DeleteButton";
 
 function Shares({
   trainingSet,
@@ -40,8 +41,8 @@ function Shares({
     },
     []
   );
-  
-  console.log("shareData", shareData)
+
+  console.log("shareData", shareData);
 
   const handleAddButtonClick = useCallback(() => {
     if (!newEmailText || newEmailText.trim().length === 0) {
@@ -99,6 +100,17 @@ function Shares({
     [shareData]
   );
 
+  const handleRemoveShare = useCallback(
+    (share: TrainingSetShares) => {
+      const updated = shareData.filter(
+        (s) => s.toUserEmail !== share.toUserEmail
+      );
+      setShareData(updated);
+    },
+
+    [shareData]
+  );
+
   return (
     <>
       <button onClick={handleShareButtonClick}>
@@ -114,11 +126,11 @@ function Shares({
         onCancel={() => setModalOpen(false)}
       >
         <h2>Share with</h2>
-        <div className="flex w-full flex-row ">
+        <div className="flex flex-row w-full ">
           <Input
             type="email"
             placeholder="User email"
-            className="mr-2 w-full flex-grow p-2"
+            className="flex-grow w-full p-2 mr-2"
             value={newEmailText}
             onChange={handleNewEmailTextChange}
             onKeyUp={handleKeyUp}
@@ -127,17 +139,17 @@ function Shares({
             <SaveIcon />
           </button>
         </div>
-        <ul className="max-h-48 w-full overflow-scroll">
+        <ul className="w-full overflow-scroll max-h-48">
           {shareData.map((share) => (
             <li
               key={share.toUserEmail}
-              className="mt-1 grid w-full grid-cols-12"
+              className="grid w-full grid-cols-12 mt-1"
             >
               <div className="col-span-1">
                 {share.acceptedByUser ? "✔" : "🕥"}
               </div>
-              <div className="col-span-6 text-left">{share.toUserEmail}</div>
-              <div className="col-span-4 text-right">
+              <div className="col-span-4 text-left">{share.toUserEmail}</div>
+              <div className="col-span-5 text-right">
                 <Select
                   value={share.role}
                   className="p-1 focus:border-0"
@@ -145,10 +157,17 @@ function Shares({
                     handleShareRoleChange(e, share);
                   }}
                 >
-                  <option value={"VIEWER"}>Viewer</option>
+                  <option value="VIEWER">Viewer</option>
                   <option value="EDITOR">Editor</option>
                 </Select>
               </div>
+              <DeleteButton
+                onConfirmed={() => handleRemoveShare(share)}
+                className="flex flex-row items-center justify-center w-8 h-8 bg-blue-400 bg-opacity-50 border-green-800 rounded hover:bg-opacity-90 "
+                confirmingClassName="flex flex-row items-center justify-center w-8 h-8 bg-red-400 bg-opacity-50 border-green-800 rounded hover:bg-opacity-90 "
+              >
+                <TrashCan />
+              </DeleteButton>
             </li>
           ))}
         </ul>

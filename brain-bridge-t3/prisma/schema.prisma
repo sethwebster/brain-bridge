@@ -43,20 +43,20 @@ enum TrainingSetRoles {
 }
 
 model TrainingSetShares {
-  id              String           @id @default(cuid())
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id               String           @id @default(cuid())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   invitationSentAt DateTime?
-  trainingSet     TrainingSet      @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
-  trainingSetId   String
-  user            User             @relation(name: "owner", fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
-  toUserEmail     String
-  acceptedByUser  Boolean          @default(false)
-  acceptedAt      DateTime?
-  acceptedUserId  String?
-  acceptedUser    User?            @relation(name: "acceptedUser", fields: [acceptedUserId], references: [id])
-  role            TrainingSetRoles @default(VIEWER)
+  trainingSet      TrainingSet      @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  trainingSetId    String
+  user             User             @relation(name: "owner", fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  toUserEmail      String
+  acceptedByUser   Boolean          @default(false)
+  acceptedAt       DateTime?
+  acceptedUserId   String?
+  acceptedUser     User?            @relation(name: "acceptedUser", fields: [acceptedUserId], references: [id])
+  role             TrainingSetRoles @default(VIEWER)
 }
 
 model TrainingIndex {
@@ -100,11 +100,11 @@ model QuestionAndAnswer {
 
 model MissedQuestions {
   id            String      @id @default(cuid())
-  question      String
+  question      String      @unique
   llmAnswer     String
   correctAnswer String?
   trainingSetId String
-  ignored       Boolean     @default(false) 
+  ignored       Boolean     @default(false)
   trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }
 
