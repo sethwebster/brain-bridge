@@ -112,11 +112,18 @@ function Shares({
   );
 
   return (
-    <>
-      <button onClick={handleShareButtonClick}>
-        <ShareIcon />
-      </button>
-
+    <div>
+      <div>
+        <button
+          onClick={handleShareButtonClick}
+          className="relative rounded bg-blue-400 p-2 shadow"
+        >
+          <ShareIcon />
+          <div className="absolute -right-2 -top-2 inline-flex h-4 w-4 items-center justify-center rounded-full   bg-red-500 text-xs font-bold text-white dark:border-gray-900">
+            {shareData.length}
+          </div>
+        </button>
+      </div>
       <Modal
         show={modalOpen}
         title="Sharing"
@@ -126,11 +133,11 @@ function Shares({
         onCancel={() => setModalOpen(false)}
       >
         <h2>Share with</h2>
-        <div className="flex flex-row w-full ">
+        <div className="flex w-full flex-row ">
           <Input
             type="email"
             placeholder="User email"
-            className="flex-grow w-full p-2 mr-2"
+            className="mr-2 w-full flex-grow p-2"
             value={newEmailText}
             onChange={handleNewEmailTextChange}
             onKeyUp={handleKeyUp}
@@ -139,11 +146,11 @@ function Shares({
             <SaveIcon />
           </button>
         </div>
-        <ul className="w-full overflow-scroll max-h-48">
+        <ul className="max-h-48 w-full overflow-scroll">
           {shareData.map((share) => (
             <li
               key={share.toUserEmail}
-              className="grid w-full grid-cols-12 mt-1"
+              className="mt-1 grid w-full grid-cols-12"
             >
               <div className="col-span-1">
                 {share.acceptedByUser ? "✔" : "🕥"}
@@ -163,7 +170,7 @@ function Shares({
               </div>
               <DeleteButton
                 onConfirmed={() => handleRemoveShare(share)}
-                className="flex flex-row items-center justify-center w-8 h-8 bg-blue-400 bg-opacity-50 border-green-800 rounded hover:bg-opacity-90 "
+                className="flex h-8 w-8 flex-row items-center justify-center rounded border-green-800 bg-blue-400 bg-opacity-50 hover:bg-opacity-90 "
                 confirmingClassName="flex flex-row items-center justify-center w-8 h-8 bg-red-400 bg-opacity-50 border-green-800 rounded hover:bg-opacity-90 "
               >
                 <TrashCan />
@@ -172,7 +179,7 @@ function Shares({
           ))}
         </ul>
       </Modal>
-    </>
+    </div>
   );
 }
 

@@ -16,6 +16,7 @@ import {
 import path from "path";
 import delay from "~/utils/delay";
 import { FolderIcon } from "~/app/components/SvgIcons";
+import DeleteButton from "../../components/DeleteButton";
 
 export default function Sources({
   sources,
@@ -204,23 +205,27 @@ export default function Sources({
   }, [showClearSourcesModal, sources.length]);
 
   const handleFolderOpenClick = useCallback(async () => {
-    const blobsInDir = (await directoryOpen({
-      recursive: true,
-    })) as FileWithDirectoryAndFileHandle[];
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/ban-ts-comment
-    const filtered = blobsInDir.filter(
-      (blob: FileWithDirectoryAndFileHandle) => {
-        console.log("blob", blob);
-        if (!Array.isArray(blob)) {
-          const ext = path.extname(blob.name);
-          return [".md", ".pdf", ".txt", ".html"].includes(ext);
+    try {
+      const blobsInDir = (await directoryOpen({
+        recursive: true,
+      })) as FileWithDirectoryAndFileHandle[];
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/ban-ts-comment
+      const filtered = blobsInDir.filter(
+        (blob: FileWithDirectoryAndFileHandle) => {
+          console.log("blob", blob);
+          if (!Array.isArray(blob)) {
+            const ext = path.extname(blob.name);
+            return [".md", ".pdf", ".txt", ".html"].includes(ext);
+          }
         }
-      }
-    );
+      );
 
-    onFilesSelected({
-      plainFiles: filtered,
-    });
+      onFilesSelected({
+        plainFiles: filtered,
+      });
+    } catch (err) {
+      
+    }
   }, [onFilesSelected]);
 
   const isNewUrlValid = useMemo(() => {
@@ -312,7 +317,7 @@ export default function Sources({
             .map((source, index) => (
               <li
                 key={index}
-                className={`flex flex-row justify-between ${
+                className={`mt-1 flex flex-row justify-between ${
                   !source.id || source.id.length === 0 ? "text-gray-500" : ""
                 }`}
               >
@@ -346,7 +351,13 @@ export default function Sources({
                       </>
                     ))}
                 </div>
-                <button onClick={() => handleDelete(index)}>delete</button>
+                <DeleteButton
+                  onConfirmed={() => handleDelete(index)}
+                  className="flex h-8 w-8 flex-row items-center justify-center rounded border-green-800 bg-blue-400 bg-opacity-50 hover:bg-opacity-90 "
+                  confirmingClassName="flex flex-row items-center justify-center w-8 h-8 bg-red-400 bg-opacity-50 border-green-800 rounded hover:bg-opacity-90 "
+                >
+                  <TrashCan />
+                </DeleteButton>
               </li>
             ))}
         </ul>
@@ -366,7 +377,10 @@ export default function Sources({
         onCancel={handleShowClearSourcesModal}
         onConfirm={handleClearSources}
       >
-        <p>Are you sure you want to clear all sources? This is permanent.</p>
+        <p>
+          Are you sure you want to clear all sources? This cannot be undone,
+          once saved.
+        </p>
       </Modal>
       <Modal
         title="Add an external source"

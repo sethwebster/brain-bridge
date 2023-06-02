@@ -177,7 +177,7 @@ model VerificationToken {
 
 model MissedQuestions {
   id            String      @id
-  question      String
+  question      String      @unique
   llmAnswer     String
   correctAnswer String?
   trainingSetId String
