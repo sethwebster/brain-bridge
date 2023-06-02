@@ -6,6 +6,7 @@ import { DeleteTrainingSet } from "./DeleteTrainingSet";
 import InfoBox from "~/app/components/InfoBox";
 import ServerData from "~/server/server-data";
 import { Suspense } from "react";
+import { ShareIcon } from "~/app/components/SvgIcons";
 
 async function TrainingPage() {
   const session = await getServerSession();
@@ -33,7 +34,7 @@ async function TrainingPage() {
               href={`/profile/training/${set.id}`}
               className="text-blue-400"
             >
-              {set.name || `Set ${index + 1}`} {set.userId !== session.user.id && "(shared)"}
+              {set.name || `Set ${index + 1}`} {set.userId !== session.user.id && <ShareIcon />}
             </Link>
             <DeleteTrainingSet id={set.id} user={session.user} />
           </li>
