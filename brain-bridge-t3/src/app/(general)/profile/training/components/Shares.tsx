@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import { type TrainingSetShares } from "@prisma/client";
 import { useCallback, useMemo, useState } from "react";
 import Input from "~/app/components/Input";
@@ -8,7 +9,7 @@ import { type TrainingSetWithRelations } from "~/server/interfaces/types";
 import { SaveIcon } from "./SvgIcons";
 import Select from "~/app/components/Select";
 
-export default function Shares({
+function Shares({
   trainingSet,
   onConfirmChanges,
 }: {
@@ -22,7 +23,7 @@ export default function Shares({
   const [newEmailText, setNewEmailText] = useState("");
 
   const isDirty = useMemo(() => {
-    console.log("isDirtyCheck")
+    console.log("isDirtyCheck");
     return (
       JSON.stringify(shareData) !==
       JSON.stringify(trainingSet.trainingSetShares)
@@ -39,6 +40,8 @@ export default function Shares({
     },
     []
   );
+  
+  console.log("shareData", shareData)
 
   const handleAddButtonClick = useCallback(() => {
     if (!newEmailText || newEmailText.trim().length === 0) {
@@ -85,10 +88,9 @@ export default function Shares({
 
   const handleShareRoleChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>, share: TrainingSetShares) => {
-     
       const updated = shareData.map((s) => {
         if (s.toUserEmail === share.toUserEmail) {
-          return {...s, role: event.target.value as "EDITOR" | "VIEWER"}
+          return { ...s, role: event.target.value as "EDITOR" | "VIEWER" };
         }
         return s;
       });
@@ -96,8 +98,6 @@ export default function Shares({
     },
     [shareData]
   );
-
-  console.log("SHARED DATA", shareData, isDirty)
 
   return (
     <>
@@ -156,3 +156,5 @@ export default function Shares({
     </>
   );
 }
+
+export default memo(Shares);

@@ -26,6 +26,7 @@
     "@types/mime-types": "^2.1.1",
     "@types/node-fetch": "^2.6.4",
     "aws-crt": "^1.15.17",
+    "browser-fs-access": "^0.34.1",
     "chromadb": "^1.5.0",
     "cohere-ai": "^5.1.0",
     "cookies-next": "^2.1.1",

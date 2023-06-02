@@ -9,6 +9,12 @@ import DataClient from "~/utils/data-client";
 import R2Client from "~/lib/R2Client";
 import invariant from "tiny-invariant";
 import Input from "~/app/components/Input";
+import {
+  FileWithDirectoryAndFileHandle,
+  directoryOpen,
+} from "browser-fs-access";
+import path from "path";
+import delay from "~/utils/delay";
 
 export default function Sources({
   sources,
@@ -21,22 +27,42 @@ export default function Sources({
 }) {
   invariant(process.env.NEXT_PUBLIC_BASE_URL, "NEXT_PUBLIC_BASE_URL");
   const [inProcessFiles, setInProcessFiles] = useState<
-    { file: File; status: "pending" | "complete" }[]
+    {
+      file: FileWithDirectoryAndFileHandle;
+      status: "pending" | "complete" | "error";
+    }[]
   >([]);
 
   const [showClearSourcesModal, setShowClearSourcesModal] = useState(false);
 
   const handleFileAdded = useCallback(
-    async (file: File) => {
-      setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);
-      const fileKey = `${trainingSetId}/${file.name}`;
+    async (file: FileWithDirectoryAndFileHandle) => {
+      console.log("WKRP", file.webkitRelativePath)
+      setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);      
+      const parts = [trainingSetId, file.webkitRelativePath].filter((p) => p.length > 0);
+      const fileKey = parts.join("/");
       const { url } = await DataClient.getSignedUrl(fileKey);
       const final = `${fileKey}`;
-      await R2Client.uploadFile(url, file);
+      let response = await R2Client.uploadFile(url, file);
+      let status: "pending" | "complete" | "error" = "pending";
+      if (response.status > 201) {
+        // Try again
+        console.log("retrying", file);
+        await delay(1000);
+        response = await R2Client.uploadFile(url, file);
+      }
+      if (response.status > 201) {
+        status = "error";
+      } else {
+        status = "complete";
+      }
       setInProcessFiles((prev) =>
         prev.map((item) => {
-          if (item.file.name === file.name) {
-            return { file, status: "complete" };
+          if (
+            item.file.name === file.name &&
+            item.file.directoryHandle?.name === file.directoryHandle?.name
+          ) {
+            return { file, status };
           }
           return item;
         })
@@ -46,35 +72,61 @@ export default function Sources({
     [trainingSetId]
   );
 
-  const [openFileSelector, { filesContent, clear }] = useFilePicker({
-    accept: [".txt", ".md", ".csv", ".json", ".html", ".pdf"],
-    multiple: true,
-    readFilesContent: false,
-    onFilesSelected(data: { plainFiles: File[] }) {
+  const onFilesSelected = useCallback(
+    (data: { plainFiles: FileWithDirectoryAndFileHandle[] }) => {
       const { plainFiles } = data;
+      const chunked = plainFiles.reduce(
+        (acc, file) => {
+          const last = acc[acc.length - 1];
+          if (last && last.length < 10) {
+            last.push(file);
+          } else {
+            acc.push([file]);
+          }
+          return acc;
+        },
+        [[]] as FileWithDirectoryAndFileHandle[][]
+      );
       Promise.all(
-        plainFiles.map(async (file) => {
-          return handleFileAdded(file);
+        // Use a timeout approach with the chunked files to avoid rate limiting
+        chunked.map((chunk, index) => {
+          return new Promise<
+            { url: string; file: FileWithDirectoryAndFileHandle }[]
+          >((resolve) => {
+            setTimeout(() => {
+              Promise.all(chunk.map(handleFileAdded))
+                .then((files) => {
+                  resolve(files);
+                })
+                .catch((err) => {
+                  console.log("err", err);
+                });
+            }, index * 100);
+          });
         })
       )
-        .then((files) => {
+        .then((completedFiles) => {
+          const files = completedFiles.flat();
           console.log("files", files);
-          
+
           const updated: Omit<TrainingSource, "trainingSetId">[] = [...sources];
+
           files.forEach((file) => {
+            const parts = [file.file.webkitRelativePath].filter((p) => p.length > 0);
+            const name = parts.join("/");
             let mimeType = file.file.type;
             if (file.file.name.endsWith(".md")) {
               mimeType = "text/markdown";
             }
             updated.push({
-              name: file.file.name,
+              name: name,
               content: file.url,
               type: "URL",
               createdAt: new Date(),
               updatedAt: new Date(),
               id: "",
               pending: true,
-              mimeType: mimeType
+              mimeType: mimeType,
             });
           });
 
@@ -86,6 +138,14 @@ export default function Sources({
         });
       return true;
     },
+    [handleFileAdded, onSourcesChanged, sources]
+  );
+
+  const [openFileSelector, { clear }] = useFilePicker({
+    accept: [".txt", ".md", ".csv", ".json", ".html", ".pdf"],
+    multiple: true,
+    readFilesContent: false,
+    onFilesSelected,
   }) as [
     () => void,
     { filesContent: { name: string; content: string }[]; clear: () => void }
@@ -113,27 +173,6 @@ export default function Sources({
     ]);
   }, [newUrlText, onSourcesChanged, sources]);
 
-  useEffect(() => {
-    if (filesContent.length > 0) {
-      console.log("filesContent", filesContent);
-      const newSources: Omit<TrainingSource, "trainingSetId">[] =
-        filesContent.map((fileContent) => {
-          return {
-            id: "",
-            type: "URL",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            name: fileContent.name,
-            content: htmlToMarkdown(fileContent.content),
-            pending: true,
-            mimeType: "text/markdown",
-          };
-        });
-      clear();
-      onSourcesChanged([...sources, ...newSources]);
-    }
-  }, [clear, filesContent, onSourcesChanged, sources]);
-
   const handleCancelNewUrl = useCallback(() => {
     setIsAddingUrl(false);
     setNewUrlText("");
@@ -154,113 +193,159 @@ export default function Sources({
   }, [onSourcesChanged]);
 
   const handleShowClearSourcesModal = useCallback(() => {
-    setShowClearSourcesModal(!showClearSourcesModal);
-  }, [showClearSourcesModal]);
+    if (sources.length > 0) {
+      setShowClearSourcesModal(!showClearSourcesModal);
+    }
+  }, [showClearSourcesModal, sources.length]);
+
+  const handleFolderOpenClick = useCallback(async () => {
+    const blobsInDir = await directoryOpen({ recursive: true }) as FileWithDirectoryAndFileHandle[];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/ban-ts-comment
+    const filtered = blobsInDir.filter(
+      (
+        blob: FileWithDirectoryAndFileHandle
+      ) => {
+        console.log("blob", blob);
+        if (!Array.isArray(blob)) {
+          const ext = path.extname(
+            (blob ).name
+          );
+          return [".md", ".pdf", ".txt", ".html"].includes(ext);
+        }
+      }
+    );
+
+    onFilesSelected({
+      plainFiles: filtered ,
+    });
+  }, [onFilesSelected]);
 
   const isNewUrlValid = useMemo(() => {
     return isValidURL(newUrlText);
   }, [newUrlText]);
 
   return (
-    <div className="py-4 mt-2 rounded-lg">
+    <div className="mt-2 rounded-lg py-4">
       <h1 className="text-lg">Training Data Sources</h1>
       <div className="flex flex-row justify-between">
-      <small>
-        Training sources are external data you would like to use in model
-        training. They can be text, markdown, or external urls.
-      </small>
-      <div>
-        <button onClick={handleShowClearSourcesModal} className="text-blue-400">Clear all</button>
+        <small>
+          Training sources are external data you would like to use in model
+          training. They can be text, markdown, or external urls.
+        </small>
+        <div>
+          <button
+            onClick={handleShowClearSourcesModal}
+            className="text-blue-400"
+          >
+            Clear all
+          </button>
+        </div>
       </div>
-      </div>
-      <div className="p-2 border rounded-lg">
+      <div className="rounded-lg border p-2">
         <header className="flex flex-row justify-between border-b border-dotted">
           <div>{sources.length} Sources</div>
           <div className="">
             <button
-              className="p-2 mr-2 bg-blue-400 rounded shadow-md"
+              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
               onClick={openFileSelector}
             >
               <PlusAddIcon />
             </button>
             <button
-              className="p-2 bg-blue-400 rounded shadow-md"
+              className="rounded bg-blue-400 p-2 shadow-md"
               onClick={handleAddUrlClick}
             >
               <UrlIcon />
             </button>
+            <button
+              className="rounded bg-blue-400 p-2 shadow-md"
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
+              onClick={handleFolderOpenClick}
+            >
+              Folder
+            </button>
           </div>
         </header>
         <ul>
-          {inProcessFiles.map((file, index) => (
-            <li key={index} className="flex flex-row justify-between">
-              <div
-                className={`mt-1 flex flex-row ${
-                  file.status === "pending"
-                    ? "text-slate-400"
-                    : "text-green-400"
+          {inProcessFiles
+            .sort((a, b) => {
+              return a.file.name.localeCompare(b.file.name);
+            })
+            .map((file, index) => (
+              <li key={index} className="flex flex-row justify-between">
+                <div
+                  className={`mt-1 flex flex-row ${
+                    file.status === "pending"
+                      ? "text-slate-400"
+                      : file.status === "complete"
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="mr-2 h-4 w-4 animate-spin fill-blue-600 text-gray-200 dark:text-gray-600"
+                    viewBox="0 0 100 101"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                      fill="currentFill"
+                    />
+                  </svg>
+                  {file.file.directoryHandle?.name}/{file.file.name}
+                </div>
+              </li>
+            ))}
+          {sources
+            .sort((a, b) => {
+              return a.name.localeCompare(b.name);
+            })
+            .map((source, index) => (
+              <li
+                key={index}
+                className={`flex flex-row justify-between ${
+                  !source.id || source.id.length === 0 ? "text-gray-500" : ""
                 }`}
               >
-                <svg
-                  aria-hidden="true"
-                  className="w-4 h-4 mr-2 text-gray-200 animate-spin fill-blue-600 dark:text-gray-600"
-                  viewBox="0 0 100 101"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                    fill="currentFill"
-                  />
-                </svg>
-                {file.file.name}
-              </div>
-            </li>
-          ))}
-          {sources.map((source, index) => (
-            <li
-              key={index}
-              className={`flex flex-row justify-between ${
-                !source.id || source.id.length === 0 ? "text-gray-500" : ""
-              }`}
-            >
-              <div className="flex flex-row mt-1">
-                {source.type === "URL" && (
-                  <>
-                    <div className="p-1 mr-2 border rounded border-slate-200 bg-slate-400">
-                      <div className="w-4 h-4">
-                        <UrlIcon />
-                      </div>
-                    </div>
-                    <a
-                      href={`${
-                        process.env.NEXT_PUBLIC_BASE_URL || ""
-                      }/api/files/${source.content}`}
-                      className="text-blue-500"
-                      target="_blank"
-                      referrerPolicy="no-referrer"
-                    >
-                      {source.name}
-                    </a>
-                  </>
-                )}
-                {source.type === "FILE" && (
-                  <a href={source.name}>{source.name}</a>
-                )}
-                {!source.id ||
-                  (source.id.length === 0 && (
+                <div className="mt-1 flex flex-row">
+                  {source.type === "URL" && (
                     <>
-                      <small> (pending)</small>
+                      <div className="mr-2 rounded border border-slate-200 bg-slate-400 p-1">
+                        <div className="h-4 w-4">
+                          <UrlIcon />
+                        </div>
+                      </div>
+                      <a
+                        href={`${
+                          process.env.NEXT_PUBLIC_BASE_URL || ""
+                        }/api/files/${source.content}`}
+                        className="text-blue-500"
+                        target="_blank"
+                        referrerPolicy="no-referrer"
+                      >
+                        {source.name}
+                      </a>
                     </>
-                  ))}
-              </div>
-              <button onClick={() => handleDelete(index)}>delete</button>
-            </li>
-          ))}
+                  )}
+                  {source.type === "FILE" && (
+                    <a href={source.name}>{source.name}</a>
+                  )}
+                  {!source.id ||
+                    (source.id.length === 0 && (
+                      <>
+                        <small> (pending)</small>
+                      </>
+                    ))}
+                </div>
+                <button onClick={() => handleDelete(index)}>delete</button>
+              </li>
+            ))}
         </ul>
         {/* <small>Pending {filesContent.length} sources</small>
         <ul>
@@ -269,7 +354,8 @@ export default function Sources({
           ))}
         </ul> */}
       </div>
-      <Modal title="Confirm clear all sources"
+      <Modal
+        title="Confirm clear all sources"
         closeText="Cancel"
         confirmText="Clear"
         icon={<TrashCan />}
@@ -278,7 +364,7 @@ export default function Sources({
         onConfirm={handleClearSources}
       >
         <p>Are you sure you want to clear all sources? This is permanent.</p>
-        </Modal>
+      </Modal>
       <Modal
         title="Add an external source"
         closeText="Cancel"
