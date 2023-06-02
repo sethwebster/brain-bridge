@@ -33,7 +33,7 @@ async function TrainingPage() {
               href={`/profile/training/${set.id}`}
               className="text-blue-400"
             >
-              {set.name || `Set ${index + 1}`}
+              {set.name || `Set ${index + 1}`} {set.userId !== session.user.id && "(shared)"}
             </Link>
             <DeleteTrainingSet id={set.id} user={session.user} />
           </li>

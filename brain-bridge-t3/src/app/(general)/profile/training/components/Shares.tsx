@@ -1,6 +1,6 @@
 "use client";
 import { memo } from "react";
-import { type TrainingSetShares } from "@prisma/client";
+import { TrainingSetRoles, type TrainingSetShares } from "@prisma/client";
 import { useCallback, useMemo, useState } from "react";
 import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
@@ -91,7 +91,7 @@ function Shares({
     (event: React.ChangeEvent<HTMLSelectElement>, share: TrainingSetShares) => {
       const updated = shareData.map((s) => {
         if (s.toUserEmail === share.toUserEmail) {
-          return { ...s, role: event.target.value as "EDITOR" | "VIEWER" };
+          return { ...s, role: event.target.value as TrainingSetRoles };
         }
         return s;
       });

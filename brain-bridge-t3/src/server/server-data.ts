@@ -103,7 +103,7 @@ async function acceptInvitation(trainingSetId: string) {
     });
     return result;
   } else {
-    notFound();
+    throw new Error("Could not find invitation to accept")
   }
 }
 

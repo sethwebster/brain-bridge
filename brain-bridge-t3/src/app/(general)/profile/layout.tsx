@@ -3,6 +3,7 @@ import { getServerSession } from "~/server/auth";
 import SideBar from "./components/SideBar";
 import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
 import { prisma } from "~/server/db";
+import ServerData from "~/server/server-data";
 
 export default async function Layout({
   children,
@@ -11,18 +12,11 @@ export default async function Layout({
 }) {
   const session = await getServerSession();
   invariant(session, "Session must exist");
-  const setsRequest = prisma.trainingSet.findMany({
-    where: { userId: session.user.id },
-  });
-  const chatsRequest = prisma.conversation.findMany({
-    where: { userId: session.user.id },
-  });
+  const setsRequest = ServerData.fetchUserTrainingSets();
+  const chatsRequest = ServerData.fetchChats();
+  const publicChatsRequest = ServerData.fetchPublicChats();
 
-  const publicChats = await prisma.publicChat.findMany({
-    where: { userId: session.user.id },
-  });
-
-  const [sets, chats] = await Promise.all([setsRequest, chatsRequest, publicChats]);
+  const [sets, chats, publicChats] = await Promise.all([setsRequest, chatsRequest, publicChatsRequest]);
   // invariant(session, "Session must exist");
   // invariant(session.user, "User must exist");
   // const sets = await Data.fetchTrainingSets({ email: session.user.email! });
