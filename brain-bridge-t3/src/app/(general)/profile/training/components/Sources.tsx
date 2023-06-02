@@ -1,8 +1,7 @@
 import { useFilePicker } from "use-file-picker";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { PlusAddIcon, TrashCan, UrlIcon } from "./SvgIcons";
 import { isValidURL } from "~/utils/validation";
-import htmlToMarkdown from "~/utils/html-to-markdown";
 import { type TrainingSource } from "@prisma/client";
 import Modal from "~/app/components/ModalDialog";
 import DataClient from "~/utils/data-client";
@@ -10,7 +9,7 @@ import R2Client from "~/lib/R2Client";
 import invariant from "tiny-invariant";
 import Input from "~/app/components/Input";
 import {
-  FileWithDirectoryAndFileHandle,
+  type FileWithDirectoryAndFileHandle,
   directoryOpen,
 } from "browser-fs-access";
 import path from "path";
@@ -147,7 +146,7 @@ export default function Sources({
     [handleFileAdded, onSourcesChanged, sources]
   );
 
-  const [openFileSelector, { clear }] = useFilePicker({
+  const [openFileSelector] = useFilePicker({
     accept: [".txt", ".md", ".csv", ".json", ".html", ".pdf"],
     multiple: true,
     readFilesContent: false,

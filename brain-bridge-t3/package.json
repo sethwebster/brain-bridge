@@ -58,7 +58,6 @@
     "@types/eslint": "^8.37.0",
     "@types/glob": "^8.1.0",
     "@types/node": "^18.16.0",
-    "@types/pdfjs-dist": "^2.10.378",
     "@types/prettier": "^2.7.2",
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
