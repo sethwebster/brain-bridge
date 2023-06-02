@@ -17,7 +17,7 @@ import Mail from "~/lib/mail";
 
 ///////////////////
 // Training Sets //
-async function fetchUserTrainingSets() {
+async function fetchUserTrainingSets(): Promise<TrainingSetWithRelations[]> {
   const user = await getServerSession();
   invariant(user, "User must be logged in to fetch training sets");
   console.log("fetchUserTrainingSets", user.user.id)

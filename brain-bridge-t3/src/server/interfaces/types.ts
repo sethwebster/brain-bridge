@@ -6,9 +6,8 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
     questionsAndAnswers: true,
     conversations: true,
     missedQuestions: true,
-    trainingSetShares: true
-
-  }
+    trainingSetShares: true,
+  },
 })
 
 export type TrainingSetWithRelations = Prisma.TrainingSetGetPayload<typeof trainingSetWithRelations>
