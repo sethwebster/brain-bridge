@@ -206,15 +206,17 @@ function TrainingSetForm({
   const shared = trainingSetData.trainingSetShares.find(
     (s) => s.acceptedUserId === session.data?.user.id
   );
+  const role = shared?.role ?? "OWNER";
   const isShared = shared !== undefined;
+  const canEdit = role === "OWNER" || role === "EDITOR";
   return (
     <div>
       <header className="flex justify-between border-b border-gray-400 pb-2 ">
         <div>
           <h1 className="text-2xl">{trainingSet.name}</h1>
           {isShared ? (
-            <div  className="flex flex-row">
-              <div className=" flex h-4 w-12 mr-1  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
+            <div className="flex flex-row">
+              <div className=" mr-1 flex h-4 w-12  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
                 <ShareIcon
                   fillColor="white"
                   className="h-4 w-4 border-red-800"
@@ -233,6 +235,7 @@ function TrainingSetForm({
       </header>
 
       <Input
+        disabled={!canEdit}
         className="mt-2 w-full rounded-md border p-2"
         alt="Training Set Name"
         placeholder="Training Set Name"
@@ -254,6 +257,7 @@ function TrainingSetForm({
       )}
       <div className="mt-2">
         <Toggle
+          disabled={!canEdit}
           value={trainingSetData.useOwnPrompt}
           label="Use custom prompt"
           onChange={handleUseOwnPromptToggle}
@@ -271,6 +275,7 @@ function TrainingSetForm({
       )}
       {!trainingSetData.useOwnPrompt && (showQuestionsPrompts || isNew) && (
         <QuestionsWizard
+          disabled={!canEdit}
           onStateChange={handleQnAChange}
           questionsAndTokens={trainingSetData.questionsAndAnswers}
         />
@@ -296,11 +301,13 @@ function TrainingSetForm({
         />
       )}
       <Sources
+        disabled={!canEdit}
         trainingSetId={trainingSetData.id}
         sources={trainingSetData.trainingSources}
         onSourcesChanged={handleSourcesChanged}
       />
       <MissedQuestionsList
+        disabled={!canEdit}
         trainingSet={trainingSetData}
         onUpdate={handleMissedQuestionsUpdate}
       />

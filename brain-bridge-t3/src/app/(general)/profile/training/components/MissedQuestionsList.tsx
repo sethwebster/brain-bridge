@@ -31,9 +31,11 @@ function MissedQuestion({ missed }: { missed: MissedQuestions }) {
 export default function MissedQuestionsList({
   trainingSet,
   onUpdate,
+  disabled,
 }: {
   trainingSet: TrainingSetWithRelations;
   onUpdate?: (missedQuestions: MissedQuestions[]) => void;
+  disabled?: boolean;
 }) {
   const [selectedMissed, setSelectedMissed] =
     useState<MissedQuestions | null>();
@@ -86,6 +88,7 @@ export default function MissedQuestionsList({
               .map((missedQuestion) => (
                 <li key={missedQuestion.id}>
                   <button
+                    disabled={disabled}
                     onClick={() => setSelectedMissed(missedQuestion)}
                     className="flex flex-row"
                   >

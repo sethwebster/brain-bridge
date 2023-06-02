@@ -80,9 +80,11 @@ export const QuestionsAndTokens: QuestionAndAnswerPartial[] = [
 export function QuestionsWizard({
   onStateChange,
   questionsAndTokens,
+  disabled
 }: {
   questionsAndTokens: QuestionAndAnswer[];
   onStateChange: (QuestionsAndTokens: QuestionAndAnswerPartial[]) => void;
+  disabled?: boolean;
 }) {
   const [questionsState, setQuestionsState] = useState(
     (questionsAndTokens &&
@@ -156,6 +158,7 @@ export function QuestionsWizard({
               value={currentAnswer}
               onChange={handleQuestionChange}
               onKeyUp={handleKeyDown}
+              disabled={disabled}
             />
           </div>
         </div>

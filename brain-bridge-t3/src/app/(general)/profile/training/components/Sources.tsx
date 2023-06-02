@@ -21,10 +21,12 @@ export default function Sources({
   sources,
   trainingSetId,
   onSourcesChanged,
+  disabled,
 }: {
   trainingSetId: string;
   sources: TrainingSource[];
   onSourcesChanged: (sources: Omit<TrainingSource, "trainingSetId">[]) => void;
+  disabled?: boolean;
 }) {
   invariant(process.env.NEXT_PUBLIC_BASE_URL, "NEXT_PUBLIC_BASE_URL");
   const [inProcessFiles, setInProcessFiles] = useState<
@@ -222,9 +224,7 @@ export default function Sources({
       onFilesSelected({
         plainFiles: filtered,
       });
-    } catch (err) {
-      
-    }
+    } catch (err) {}
   }, [onFilesSelected]);
 
   const isNewUrlValid = useMemo(() => {
@@ -241,6 +241,7 @@ export default function Sources({
         </small>
         <div>
           <button
+            disabled={disabled}
             onClick={handleShowClearSourcesModal}
             className="text-blue-400"
           >
@@ -253,12 +254,14 @@ export default function Sources({
           <div>{sources.length} Sources</div>
           <div className="flex w-auto flex-row justify-between" role="toolbar">
             <button
+              disabled={disabled}
               className="mr-2 rounded bg-blue-400 p-2 shadow-md"
               onClick={openFileSelector}
             >
               <PlusAddIcon />
             </button>
             <button
+              disabled={disabled}
               className="mr-2 rounded bg-blue-400 p-2 shadow-md"
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onClick={handleFolderOpenClick}
@@ -266,6 +269,7 @@ export default function Sources({
               <FolderIcon />
             </button>
             <button
+              disabled={disabled}
               className="rounded bg-blue-400 p-2 shadow-md"
               onClick={handleAddUrlClick}
             >
@@ -351,6 +355,7 @@ export default function Sources({
                     ))}
                 </div>
                 <DeleteButton
+                  disabled={disabled}
                   onConfirmed={() => handleDelete(index)}
                   className="flex h-8 w-8 flex-row items-center justify-center rounded border-green-800 bg-blue-400 bg-opacity-50 hover:bg-opacity-90 "
                   confirmingClassName="flex flex-row items-center justify-center w-8 h-8 bg-red-400 bg-opacity-50 border-green-800 rounded hover:bg-opacity-90 "

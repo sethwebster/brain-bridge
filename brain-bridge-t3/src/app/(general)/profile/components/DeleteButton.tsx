@@ -7,11 +7,13 @@ export default function DeleteButton({
   className,
   confirmingClassName,
   onConfirmed,
+  disabled,
 }: {
   className?: string;
   confirmingClassName?: string;
   children: React.ReactNode | React.ReactNode[];
   onConfirmed: () => void;
+  disabled?: boolean;
 }) {
   const [confirming, setConfirming] = useState(false);
 
@@ -29,6 +31,7 @@ export default function DeleteButton({
 
   return (
     <button
+      disabled={disabled}
       className={confirming ? confirmingClassName : className}
       onClick={handleClick}
       onBlur={handleBlur}
