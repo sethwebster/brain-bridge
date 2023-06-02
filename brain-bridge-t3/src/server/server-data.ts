@@ -20,7 +20,7 @@ import Mail from "~/lib/mail";
 async function fetchUserTrainingSets() {
   const user = await getServerSession();
   invariant(user, "User must be logged in to fetch training sets");
-  console.log ("fetchUserTrainingSets", user.user.id)
+  console.log("fetchUserTrainingSets", user.user.id)
   const sets = await prisma.trainingSet.findMany({
     where: { OR: [{ userId: user.user.id }, { trainingSetShares: { some: { acceptedUserId: user.user.id } } }] },
     ...trainingSetWithRelations
@@ -124,7 +124,7 @@ async function sendTrainingSetInvitationEmail(email: string, trainingSetName: st
     training_set_name: trainingSetName,
     training_set_id: trainingSetId,
   });
-  
+
   console.log("Sending email", email, loadedUser.email)
   return result;
 }
@@ -160,7 +160,13 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
   invariant(session, "User must be logged in to update training sets");
   const existing = await fetchUserTrainingSet(trainingSet.id);
   invariant(existing, "Training set must exist to update");
-  const authorizedToUpdate =( existing.userId === session.user.id || existing.trainingSetShares.some(s => s.acceptedUserId === session.user.id));
+  const authorizedToUpdate = (
+    existing.userId === session.user.id ||
+    (
+      existing.trainingSetShares.some(s => s.acceptedUserId === session.user.id)
+      && existing.trainingSetShares.find(s => s.acceptedUserId === session.user.id)?.role === "EDITOR"
+    )
+  );
   invariant(authorizedToUpdate, "User is not authorized to make this update");
   await prisma.trainingSet.update({
     where: {
