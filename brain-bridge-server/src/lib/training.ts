@@ -68,6 +68,8 @@ async function loadUrl(url: string, knownMimeType: string): Promise<string | Blo
 
       return data;
     default:
+      data = await response.text();
+      return data;
       throw new Error(`Unsupported content type: ${knownMimeType ?? ""}`);
   }
 }
@@ -86,8 +88,14 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
           return await loadFile(source.name);
       }
     case "URL":
+      console.log("CONTENT", source)
       const key = `${userId}/${source.content}`;
-      const url = await R2.getSignedUrlForRetrieval(key)
+      let url: string = "";
+      if (source.name.startsWith("http")) {
+        url = source.name;
+      } else {
+        url = await R2.getSignedUrlForRetrieval(key)
+      }
       console.log("Will retrieve for", source.content, url)
       console.log("STORED SOURCE MIME", source.mimeType)
       switch (source.mimeType) {

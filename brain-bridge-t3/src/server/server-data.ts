@@ -20,8 +20,9 @@ import Mail from "~/lib/mail";
 async function fetchUserTrainingSets() {
   const user = await getServerSession();
   invariant(user, "User must be logged in to fetch training sets");
+  console.log ("fetchUserTrainingSets", user.user.id)
   const sets = await prisma.trainingSet.findMany({
-    where: { userId: user.user.id },
+    where: { OR: [{ userId: user.user.id }, { trainingSetShares: { some: { acceptedUserId: user.user.id } } }] },
     ...trainingSetWithRelations
   });
   return sets;
@@ -159,7 +160,8 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
   invariant(session, "User must be logged in to update training sets");
   const existing = await fetchUserTrainingSet(trainingSet.id);
   invariant(existing, "Training set must exist to update");
-  invariant(existing.userId === session.user.id, "User must own training set to update");
+  const authorizedToUpdate =( existing.userId === session.user.id || existing.trainingSetShares.some(s => s.acceptedUserId === session.user.id));
+  invariant(authorizedToUpdate, "User is not authorized to make this update");
   await prisma.trainingSet.update({
     where: {
       id: trainingSet.id,
