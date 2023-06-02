@@ -4,7 +4,7 @@ import { CharacterTextSplitter, RecursiveCharacterTextSplitter } from 'langchain
 import { OpenAIEmbeddings } from 'langchain/embeddings';
 import path from 'path';
 import jsdom from 'jsdom';
-import { Prisma, type TrainingIndex, type TrainingSource } from '@prisma/client';
+import { MissedQuestions, Prisma, type TrainingIndex, type TrainingSource } from '@prisma/client';
 import R2 from './R2';
 import { prisma } from './db';
 import cleanUpHtml from './clean-up-html';
@@ -31,15 +31,16 @@ async function loadFile(file: string): Promise<string> {
   });
 }
 
-async function loadUrl(url: string): Promise<string | Blob> {
+async function loadUrl(url: string, knownMimeType: string): Promise<string | Blob> {
   console.log("Loading url", url)
   const response = await fetch(url);
   if (response.status !== 200) throw new Error(`Failed to load url: ${url}`);
   console.log("file retrieved");
-  const headerRaw = response.headers.get('content-type') ?? "text/html";
-  const contentType = headerRaw.split(';')[0];
   let data: string | Blob;
-  switch (contentType) {
+  switch (knownMimeType) {
+    case "text/markdown":
+      data = await response.text();
+      return data;
     case "text/html":
       data = await response.text();
       console.log("file length", data.length);
@@ -67,7 +68,7 @@ async function loadUrl(url: string): Promise<string | Blob> {
 
       return data;
     default:
-      throw new Error(`Unsupported content type: ${contentType ?? ""}`);
+      throw new Error(`Unsupported content type: ${knownMimeType ?? ""}`);
   }
 }
 
@@ -80,18 +81,22 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
           const text = await pdfToText.convert();
           return text;
           break;
-          default:
-            if (source.content.length > 0) return source.content;
-            return await loadFile(source.name);
+        default:
+          if (source.content.length > 0) return source.content;
+          return await loadFile(source.name);
       }
     case "URL":
       const key = `${userId}/${source.content}`;
       const url = await R2.getSignedUrlForRetrieval(key)
       console.log("Will retrieve for", source.content, url)
-      console.log("MIME", source.mimeType)
+      console.log("STORED SOURCE MIME", source.mimeType)
       switch (source.mimeType) {
+        // markdown
+        case "text/markdown":
+          const markdownContent = await loadUrl(url, source.mimeType);
+          return markdownContent as string;
         case "application/pdf":
-          const content = await loadUrl(url);
+          const content = await loadUrl(url, source.mimeType);
           const buffer = await (content as Blob).arrayBuffer();
           const tempFilePath = getTempFilePath(source.name);
           console.log("Saved to", tempFilePath)
@@ -99,25 +104,36 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
           fs.writeFileSync(tempFilePath, Buffer.from(buffer));
           const pdfToText = new PDFToText(tempFilePath);
           const text = await pdfToText.convert();
-          console.log("CONVERTED PDF TO TEXT", text)
+          console.log("Successfully converted PDF to text. Length:", text.length)
           return text;
-          break;
-          default:
-            return await loadUrl(url) as string;
+        default:
+          return await loadUrl(url, source.mimeType) as string;
       }
     default:
       throw new Error(`Unsupported source type`);
   }
 }
 
+function turnQuestionsIntoText(questions: MissedQuestions[]): string {
+  const template = `
+
+  ## Things a user might ask about and ideas of how to respond:
+
+  {questions}
+
+  `
+  const mapped = questions.filter(q => !q.ignored).map((q) => `* ${q.question} - ${q.correctAnswer ?? "make something up"}`).join("\n");
+  return template.replace("{questions}", mapped);
+}
+
 export async function createTrainingIndex({ name, trainingSet }: { name: string, trainingSet: TrainingSetWithRelations }): Promise<TrainingIndex> {
   const { trainingSources } = trainingSet;
   const promises = trainingSources.map((source) => getSourceText(trainingSet.userId, source));
   const answeredQuestions = trainingSet.missedQuestions.filter(q => (q.correctAnswer || "").trim().length > 0).map((q) => `Question: ${q.question}\nIdeas: ${q.correctAnswer}`).join("\n");
-  const answeredQuestionText = `Additional possible Questions and Ideas:\n${JSON.stringify(trainingSet.missedQuestions || {})}\n`;
+  const answeredQuestionText = `\n${turnQuestionsIntoText(trainingSet.missedQuestions)}\n`;
   console.log(answeredQuestionText);
   const allContent = await Promise.all(promises);
-  const splitContent = await splitFileData([...allContent, answeredQuestionText]);
+  const splitContent = await splitFileData([...allContent]);
   const tempFilePath = getTempFilePath(name)
   const store = await vectorize(splitContent);
   await store.save(tempFilePath)
@@ -181,12 +197,13 @@ const textSplitter = new CharacterTextSplitter({
 });
 
 function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, separator: string[] = [" ", ",", "\n"]) {
+  console.log("Splitting a string of ", str.length, "Characters");
   let chunks: string[] = [str];
   const maxLen = (chunks: string[]) => {
     const lengths = chunks.map((c) => c.length);
     const maxLen = Math.max(...lengths);
-    console.log("maxLen", maxLen)
-    return Math.max(...lengths);
+    console.log("Max length", maxLen);
+    return maxLen;
   }
   let lastChunkMaxLen = maxLen(chunks);
   let timesSeenSameMaxLen = 0;
@@ -196,9 +213,11 @@ function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, 
     }
     if (timesSeenSameMaxLen > 2) {
       console.log("Max length stuck. Breaking.")
+      lastChunkMaxLen = 0;
       break;
     }
     const newStart: string[] = [];
+    // Split into chunks of chunkSize
     for (const s of chunks) {
       if (s.length > chunkSize) {
         const approxMiddle = Math.floor(s.length / 2);
@@ -206,8 +225,8 @@ function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, 
         while (!separator.includes(s[index]) && index < s.length) {
           index++;
         }
-        const firstHalf = s.slice(0, index);
-        const secondHalf = s.slice(index);
+        const firstHalf = s.slice(0, index + chunkOverlap);
+        const secondHalf = s.slice(index - chunkOverlap);
         newStart.push(firstHalf);
         newStart.push(secondHalf);
       } else {
@@ -217,19 +236,20 @@ function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, 
     lastChunkMaxLen = maxLen(chunks);
     chunks = newStart;
   }
-  return chunks.filter((c) => c && c.length > 0);
+  const filtered = chunks.filter((c) => c && c.length > 0);
+  console.log("Split into", filtered.length, "chunks", Array.isArray(filtered))
+  return filtered;
 }
 
 const text_splitter = new RecursiveCharacterTextSplitter({
-  chunkSize: 2000, chunkOverlap: 200, separators: [" ", ",", "\n"]
+  chunkSize: 4000, chunkOverlap: 200, separators: [" ", ",", "\n"]
 })
 async function splitFileData(data: string[]): Promise<string[]> {
 
   console.log("Splitting text into chunks...")
   let docs: string[] = [];
   for (const d of data) {
-    const docOutput = await textSplitterMine(d, 2000, 200, [" ", ",", "\n"])
-    console.log("docOutput", docOutput)
+    const docOutput = await textSplitterMine(d, 4000, 200, [" ", ",", "\n"])
     docs = [...docs, ...docOutput];
   }
   return docs;

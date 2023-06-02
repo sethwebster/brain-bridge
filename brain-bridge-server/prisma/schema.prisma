@@ -17,6 +17,7 @@ model TrainingSet {
   version             Int                 @default(0)
   prompt              String              @default("")
   trainingIndexId     String?
+  useOwnPrompt        Boolean             @default(false)
   conversations       Conversation[]
   missedQuestions     MissedQuestions[]
   publicChats         PublicChat[]
@@ -180,6 +181,7 @@ model MissedQuestions {
   llmAnswer     String
   correctAnswer String?
   trainingSetId String
+  ignored       Boolean     @default(false)
   TrainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }
 
