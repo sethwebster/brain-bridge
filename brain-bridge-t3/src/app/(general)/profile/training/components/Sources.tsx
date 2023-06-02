@@ -15,6 +15,7 @@ import {
 } from "browser-fs-access";
 import path from "path";
 import delay from "~/utils/delay";
+import { FolderIcon } from "~/app/components/SvgIcons";
 
 export default function Sources({
   sources,
@@ -37,9 +38,11 @@ export default function Sources({
 
   const handleFileAdded = useCallback(
     async (file: FileWithDirectoryAndFileHandle) => {
-      console.log("WKRP", file.webkitRelativePath)
-      setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);      
-      const parts = [trainingSetId, file.webkitRelativePath].filter((p) => p.length > 0);
+      console.log("WKRP", file.webkitRelativePath);
+      setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);
+      const parts = [trainingSetId, file.webkitRelativePath].filter(
+        (p) => p.length > 0
+      );
       const fileKey = parts.join("/");
       const { url } = await DataClient.getSignedUrl(fileKey);
       const final = `${fileKey}`;
@@ -112,7 +115,9 @@ export default function Sources({
           const updated: Omit<TrainingSource, "trainingSetId">[] = [...sources];
 
           files.forEach((file) => {
-            const parts = [file.file.webkitRelativePath].filter((p) => p.length > 0);
+            const parts = [file.file.webkitRelativePath].filter(
+              (p) => p.length > 0
+            );
             const name = parts.join("/");
             let mimeType = file.file.type;
             if (file.file.name.endsWith(".md")) {
@@ -199,24 +204,22 @@ export default function Sources({
   }, [showClearSourcesModal, sources.length]);
 
   const handleFolderOpenClick = useCallback(async () => {
-    const blobsInDir = await directoryOpen({ recursive: true }) as FileWithDirectoryAndFileHandle[];
+    const blobsInDir = (await directoryOpen({
+      recursive: true,
+    })) as FileWithDirectoryAndFileHandle[];
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/ban-ts-comment
     const filtered = blobsInDir.filter(
-      (
-        blob: FileWithDirectoryAndFileHandle
-      ) => {
+      (blob: FileWithDirectoryAndFileHandle) => {
         console.log("blob", blob);
         if (!Array.isArray(blob)) {
-          const ext = path.extname(
-            (blob ).name
-          );
+          const ext = path.extname(blob.name);
           return [".md", ".pdf", ".txt", ".html"].includes(ext);
         }
       }
     );
 
     onFilesSelected({
-      plainFiles: filtered ,
+      plainFiles: filtered,
     });
   }, [onFilesSelected]);
 
@@ -237,14 +240,14 @@ export default function Sources({
             onClick={handleShowClearSourcesModal}
             className="text-blue-400"
           >
-            Clear all
+            <small>Clear</small>
           </button>
         </div>
       </div>
       <div className="rounded-lg border p-2">
         <header className="flex flex-row justify-between border-b border-dotted">
           <div>{sources.length} Sources</div>
-          <div className="">
+          <div className="flex w-auto flex-row justify-between" role="toolbar">
             <button
               className="mr-2 rounded bg-blue-400 p-2 shadow-md"
               onClick={openFileSelector}
@@ -252,17 +255,17 @@ export default function Sources({
               <PlusAddIcon />
             </button>
             <button
+              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
+              onClick={handleFolderOpenClick}
+            >
+              <FolderIcon />
+            </button>
+            <button
               className="rounded bg-blue-400 p-2 shadow-md"
               onClick={handleAddUrlClick}
             >
               <UrlIcon />
-            </button>
-            <button
-              className="rounded bg-blue-400 p-2 shadow-md"
-              // eslint-disable-next-line @typescript-eslint/no-misused-promises
-              onClick={handleFolderOpenClick}
-            >
-              Folder
             </button>
           </div>
         </header>
