@@ -1,9 +1,11 @@
 import * as dotenv from "dotenv";
+
 dotenv.config();
+
+import { PrismaClient } from "@prisma/client";
 
 import server from "./api";
 
-import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const port = parseInt(process.env.API_PORT || "4141", 10);
