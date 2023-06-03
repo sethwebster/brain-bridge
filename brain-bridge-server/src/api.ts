@@ -6,16 +6,22 @@ import morgan from "morgan";
 import apiV1 from "./api-v1/index";
 import * as errorHandler from "./helpers/errorHandler";
 import home from "./home";
-
+import http from 'http';
+import { Server } from "socket.io";
+import { messageRouter } from "./api-v1/sockets";
 class App {
   public express: express.Application;
-
+  public io: Server;
+  public server: http.Server;
   constructor() {
     this.express = express();
+    this.server = http.createServer(this.express);
     this.setMiddlewares();
     this.setRoutes();
     this.catchErrors();
+    this.setUpSockets();
   }
+
 
   private setMiddlewares(): void {
     this.express.use(cors());
@@ -25,6 +31,24 @@ class App {
     this.express.use(express.urlencoded({ extended: true }));
     this.express.use(helmet());
     this.express.use(express.static("public"));
+  }
+
+  private setUpSockets() {
+    console.log("Setting up sockets...")
+    this.io = new Server(this.server, {
+      cors: {
+        origin: "*",
+      }
+    });
+    this.io.on('connection', (socket) => {
+      console.log('a user connected');
+      messageRouter(socket)
+      socket.on('disconnect', () => {
+        console.log('user disconnected');
+      });
+    });
+
+
   }
 
   private setRoutes(): void {
@@ -38,4 +62,12 @@ class App {
   }
 }
 
-export default new App().express;
+const app = new App();
+
+
+
+export default {
+  express: app.express,
+  socket: app.io,
+  server: app.server
+}

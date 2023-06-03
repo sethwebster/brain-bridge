@@ -2,7 +2,6 @@ import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
 import SideBar from "./components/SideBar";
 import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
-import { prisma } from "~/server/db";
 import ServerData from "~/server/server-data";
 
 export default async function Layout({

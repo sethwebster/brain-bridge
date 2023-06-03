@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { QuestionsWizard } from "./QuestionsWizard";
 import Sources from "./Sources";
 import Data from "~/utils/data-client";
@@ -26,6 +26,7 @@ import { useSession } from "next-auth/react";
 import Toggle from "~/app/components/toggle";
 import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
+import useSocket from "~/hooks/use-socket";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -52,6 +53,26 @@ function TrainingSetForm({
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUseOwnPromptModal, setShowUseOwnPromptModal] = useState(false);
+  const socket = useSocket();
+
+  socket.connect();
+
+  useEffect(() => {
+    if (socket.isConnected) {
+      socket.onMessage("training-started", () => {
+        setIsTraining(true);
+      });
+      socket.onMessage<TrainingSetWithRelations>("training-complete", () => {
+        setIsTraining(false);
+        router.refresh();
+      });
+      socket.onMessage<{ error: string }>("training-error", (data) => {
+        setIsTraining(false);
+        setError(data.error);
+      });
+    }
+  }, [router, socket, socket.isConnected]);
+
   const handlePromptChange = useCallback(
     (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
       const val = evt.target?.value;
@@ -128,26 +149,27 @@ function TrainingSetForm({
     [trainingSetData]
   );
 
-  const handleTrain = useCallback(async () => {
+  const handleTrain = useCallback(() => {
     try {
       setError(null);
-      setIsTraining(true);
-      const newSet = await Data.trainTrainingSet(trainingSetData.id);
-      console.log("newSet", newSet);
-      if (newSet && newSet.id) {
-        router.refresh();
-      } else {
-        setError(
-          "😥 Something went wrong. Typically this error results from one or more of your documents being too big. Documents should each be 500kb or smaller."
-        );
-      }
+      socket.sendMessage("train", { trainingSetId: trainingSetData.id });
+      // setIsTraining(true);
+      // const newSet = await Data.trainTrainingSet(trainingSetData.id);
+      // console.log("newSet", newSet);
+      // if (newSet && newSet.id) {
+      //   router.refresh();
+      // } else {
+      //   setError(
+      //     "😥 Something went wrong. Typically this error results from one or more of your documents being too big. Documents should each be 500kb or smaller."
+      //   );
+      // }
     } catch (err) {
       const error = err as Error;
       setError(error.message);
     } finally {
       setIsTraining(false);
     }
-  }, [router, trainingSetData]);
+  }, [socket, trainingSetData.id]);
 
   const isDirty = useMemo(() => {
     const areDifferent =

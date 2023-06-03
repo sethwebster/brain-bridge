@@ -70,7 +70,7 @@ export default async function PublicChatPage({ params: { id } }: PageProps) {
           conversation = existing;
         }
       } catch (e) {
-        console.log("Unable to fetch existing conversation", e);
+        console.log("Unable to fetch existing conversation [expected if new]", e);
       }
       if (!conversation) {
         console.log("creating new convo");

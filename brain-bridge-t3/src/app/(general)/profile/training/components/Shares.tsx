@@ -1,6 +1,6 @@
 "use client";
 import { memo } from "react";
-import { TrainingSetRoles, type TrainingSetShares } from "@prisma/client";
+import { type TrainingSetRoles, type TrainingSetShares } from "@prisma/client";
 import { useCallback, useMemo, useState } from "react";
 import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
