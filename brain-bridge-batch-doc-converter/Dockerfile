@@ -6,20 +6,11 @@ RUN apt-get update
 RUN apt-get install -y pandoc python3 poppler-utils python3-pip git
 RUN rm -rf /var/lib/apt/lists/*
 
-RUN mkdir apps
-WORKDIR /apps
-#
-# Clone the pdf-to-markdown repository
-#RUN git clone https://github.com/jpollard-cs/pdf-to-markdown.git /apps/pdf-to-markdown
-
-# Install pdf-to-markdown package from the cloned repository
-# RUN cd /apps/pdf-to-markdown && \
-#    npm install
-
 RUN pip install pptx2md
 RUN pip install pandas
 RUN pip install openpyxl
 RUN pip install tabulate
+RUN pip install xlrd
 
 # Copy the startup script into the Docker image and make it executable
 COPY startup.sh /startup.sh
