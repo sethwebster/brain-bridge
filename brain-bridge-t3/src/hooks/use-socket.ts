@@ -1,5 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
-import { type User } from "next-auth";
+import { useContext, useEffect, useState } from "react";
 import ms from 'ms';
 
 import DataClient from "~/utils/data-client";

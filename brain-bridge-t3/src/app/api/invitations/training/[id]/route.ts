@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "~/env.mjs";
 import { getServerSession } from "~/server/auth";

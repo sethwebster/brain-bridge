@@ -2,7 +2,6 @@ import "../globals.css";
 import AuthProvider from "../components/AuthProvider";
 import NavBar from "../components/NavBar";
 import SocketProvider from "../components/SocketProvider";
-import { IoProvider } from 'socket.io-react-hook';
 // import { Inter } from "next/font/google";
 
 // const inter = Inter({ subsets: ["latin"] });

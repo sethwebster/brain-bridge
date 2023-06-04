@@ -26,8 +26,7 @@ import { useSession } from "next-auth/react";
 import Toggle from "~/app/components/toggle";
 import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
-import useSocket, { useAuthenticatedSocket } from "~/hooks/use-socket";
-import DataClient from "~/utils/data-client";
+import { useAuthenticatedSocket } from "~/hooks/use-socket";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -38,7 +37,7 @@ interface TrainingSetFormProps {
   };
   onUpdate?: (trainingSet: TrainingSetWithRelations) => void;
 }
-let times = 0;
+
 function TrainingSetForm({
   trainingSet,
   promptTemplate,
@@ -92,7 +91,14 @@ function TrainingSetForm({
         }
       };
     }
-  }, [handleTrainingComplete, handleTrainingError, handleTrainingStarted, router, socketRef, socketRef.socket]);
+  }, [
+    handleTrainingComplete,
+    handleTrainingError,
+    handleTrainingStarted,
+    router,
+    socketRef,
+    socketRef.socket,
+  ]);
   const handlePromptChange = useCallback(
     (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
       const val = evt.target?.value;
@@ -194,7 +200,7 @@ function TrainingSetForm({
     } finally {
       setIsTraining(false);
     }
-  }, [socketRef.socket, trainingSetData.id]);
+  }, [socketRef, trainingSetData.id]);
 
   const isDirty = useMemo(() => {
     const areDifferent =

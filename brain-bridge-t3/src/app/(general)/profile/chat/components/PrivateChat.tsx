@@ -14,7 +14,7 @@ import ChatDisplay, {
 // import useAudioPlayer from "~/hooks/useAudioPlayer";
 import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
-import useSocket, { useAuthenticatedSocket } from "~/hooks/use-socket";
+import { useAuthenticatedSocket } from "~/hooks/use-socket";
 
 export default function PrivateChat({
   selectedChat,
@@ -46,14 +46,17 @@ export default function PrivateChat({
         }
       );
 
-      const removeTypingIndicatorListener = socket.onMessage("llm-response-started", () => {
-        setAnswerPending(true);
-      });
+      const removeTypingIndicatorListener = socket.onMessage(
+        "llm-response-started",
+        () => {
+          setAnswerPending(true);
+        }
+      );
 
       return () => {
         removeMessageListener();
         removeTypingIndicatorListener();
-      }
+      };
     }
   }, [socket]);
   // const playVoice = useCallback(
