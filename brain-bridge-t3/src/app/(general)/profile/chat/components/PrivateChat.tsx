@@ -32,8 +32,16 @@ export default function PrivateChat({
     selectedChat.messages
   );
   const bottomRef = useRef<HTMLDivElement>(null);
-
   const socket = useAuthenticatedSocket();
+
+  useEffect(() => {
+    if (socket) {
+      socket.sendMessage("join-private-room", { room: selectedChat.id });
+    }
+    // return () => {
+    //   socket.sendMessage("leave-private-room", { room: selectedChat.id });
+    // };
+  }, [selectedChat.id, socket]);
 
   useEffect(() => {
     if (socket) {
@@ -58,7 +66,7 @@ export default function PrivateChat({
         removeTypingIndicatorListener();
       };
     }
-  }, [socket]);
+  }, [selectedChat.id, socket]);
   // const playVoice = useCallback(
   //   (fileUrl: string) => {
   //     player.play(fileUrl);

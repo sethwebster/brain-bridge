@@ -1,7 +1,7 @@
 "use client";
 import { type PublicChat, type TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type TrainingIndexWithRelations, type PublicChatWithRelations, type ChatResponseMode } from "~/server/interfaces/types";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type PublicChatWithRelations, type ChatResponseMode } from "~/server/interfaces/types";
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_BASE_URL
@@ -49,17 +49,6 @@ async function updateTrainingSet(trainingSet: TrainingSet) {
   })
   const data = await response.json() as TrainingSetWithRelations;
   return data
-}
-
-async function trainTrainingSet(trainingSetId: string): Promise<TrainingIndexWithRelations> {
-  const response = await fetch(makeApiUrl(`/profile/training/api/${trainingSetId}/train`), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  const data = await response.json() as TrainingIndexWithRelations;
-  return data;
 }
 
 async function fetchChats(): Promise<ConversationWithRelations[]> {
@@ -231,7 +220,6 @@ const DataClient = {
   createTrainingSet,
   updateTrainingSet,
   deleteTrainingSet,
-  trainTrainingSet,
   fetchChats,
   clearChat,
   clearPublicChatMessages,

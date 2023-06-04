@@ -11,6 +11,25 @@ export function messageRouter(socket: Socket) {
     console.log("[received]", event, ...args)
   });
 
+  socket.on("join-private-room", async ({ data: { room } }) => {
+    try {
+      console.log('joining room', room)
+      socket.join(room);
+      socket.to(room).emit("user-joined", { room });
+    } catch (error: any) {
+      console.error(error)
+    }
+  });
+
+  socket.on("leave-private-room", async ({ data: { room } }) => {
+    try {
+      socket.leave(room);
+      socket.to(room).emit("user-left", { room });
+    } catch (error: any) {
+      console.error(error)
+    }
+  });
+
   socket.on("train", async (data) => {
     const { data: { trainingSetId: id }, token } = data;
     invariant(id, "trainingSetId is required");
@@ -30,6 +49,7 @@ export function messageRouter(socket: Socket) {
         missedQuestions: true,
       }
     });
+
     console.log("set", set)
     if (!set) {
       socket.emit("training-error", { error: "Training set not found" });
@@ -80,7 +100,7 @@ export function messageRouter(socket: Socket) {
 
       invariant(publicChatInstance, "Conversation must exist");
       const bot = publicChatInstance.participants.find(p => p.type === "BOT");
-      invariant(bot, "Bot must exist");
+
       const userMessage = await prisma.message.create({
         data: {
           text: message.text,
@@ -105,7 +125,7 @@ export function messageRouter(socket: Socket) {
           data: {
             question: questionAndAnswer.question,
             llmAnswer: questionAndAnswer.answer,
-            TrainingSet: {
+            trainingSet: {
               connect: {
                 id: publicChatInstance.publicChat.trainingSet.id,
               }
@@ -135,7 +155,7 @@ export function messageRouter(socket: Socket) {
         text: response,
         createdAt: new Date(),
         sender: bot,
-        participantId: bot.id,
+        participantId: undefined,
         conversationId: undefined,
         conversation: undefined,
         publicChatInstance: publicChatInstance,
@@ -195,15 +215,14 @@ export function messageRouter(socket: Socket) {
           data: {
             question: questionAndAnswer.question,
             llmAnswer: questionAndAnswer.answer,
-            TrainingSet: {
+            trainingSet: {
               connect: {
-                id: conversation.trainingSetId,
+                id: conversation.trainingSet.id,
               }
             },
             correctAnswer: "",
             ignored: false,
-            id: "",
-          }
+          } as WithoutId<Prisma.MissedQuestionsCreateInput>
         });
         return missedQuestion;
       }
@@ -211,7 +230,8 @@ export function messageRouter(socket: Socket) {
       const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)))
       const fullPrompt = promptHeader + "\n\n" + conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers)
 
-      socket.emit('llm-response-started')
+      console.log(conversation.id, 'llm-response-started')
+      socket.emit('llm-response-started', {});
       const response = await llm.getLangChainResponse(
         conversation.trainingSetId,
         userMessage.text,
@@ -325,6 +345,7 @@ async function storeUserMessage(conversation: (Conversation & {
 import { Prisma, type QuestionAndAnswer } from '@prisma/client';
 import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse, promptFooter, promptHeader } from "../lib/llm";
 import replaceTokens from "../lib/replace-tokens";
+import { WithoutId } from "typeorm";
 
 export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>()({
   include: {
@@ -332,7 +353,7 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
     questionsAndAnswers: true,
     conversations: true,
     missedQuestions: true,
-    TrainingSetShares: true,
+    trainingSetShares: true,
   },
 })
 

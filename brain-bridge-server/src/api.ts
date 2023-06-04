@@ -40,11 +40,12 @@ class App {
         origin: "*",
       }
     });
-    this.io.use((socket, next) => {
-      const token = socket.handshake.auth.token;
-      console.log("middleware token", token)
-      next();
-    });
+    // TODO: Add authentication correctly
+    // this.io.use((socket, next) => {
+    //   const token = socket.handshake.auth.token;
+    //   console.log("middleware token", token)
+    //   next();
+    // });
     this.io.on('connection', (socket) => {
       console.log('a user connected');
       messageRouter(socket)

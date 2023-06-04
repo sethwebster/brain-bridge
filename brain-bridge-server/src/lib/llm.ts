@@ -115,6 +115,7 @@ export class BrainBridgeLangChain implements LangChainStore {
     });
 
 
+    console.log("[llm-request]", userPrompt, context, history, mode);
     let rawResponse = await this.makeLangChainCall(llmChain, userPrompt, context, history);
     console.log("RAW RESPONSE", userPrompt, rawResponse)
     let response = this.tryParseResponse(userPrompt, rawResponse);
@@ -169,7 +170,7 @@ export class BrainBridgeLangChain implements LangChainStore {
   }
 
   private async makeLangChainCall(llmChain: LLMChain<string>, userPrompt: string, context: string[], history: string[]) {
-    console.log("CALLING LLM CHAIN", userPrompt, context, history)
+    // console.log("CALLING LLM CHAIN", userPrompt, context, history)
     try {
       return await llmChain.call({ prompt: userPrompt, context: context.join('\n\n'), history }) as LLMResponse;
     } catch (err: unknown) {

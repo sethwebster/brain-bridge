@@ -24,8 +24,25 @@ model TrainingSet {
   questionsAndAnswers QuestionAndAnswer[]
   trainingIndex       TrainingIndex?
   user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  TrainingSetShares   TrainingSetShares[]
+  trainingSetShares   TrainingSetShares[]
   trainingSources     TrainingSource[]
+}
+
+model TrainingSetShares {
+  id               String           @id @default(cuid())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  trainingSetId    String
+  userId           String
+  toUserEmail      String
+  acceptedByUser   Boolean          @default(false)
+  acceptedAt       DateTime?
+  acceptedUserId   String?
+  role             TrainingSetRoles @default(VIEWER)
+  invitationSentAt DateTime?
+  acceptedUser     User?            @relation("acceptedUser", fields: [acceptedUserId], references: [id])
+  trainingSet      TrainingSet      @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  user             User             @relation("owner", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model TrainingIndex {
@@ -59,6 +76,16 @@ model QuestionAndAnswer {
   answer        String
   token         String
   trainingSetId String
+  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+}
+
+model MissedQuestions {
+  id            String      @id @default(cuid())
+  question      String      @unique
+  llmAnswer     String
+  correctAnswer String?
+  trainingSetId String
+  ignored       Boolean     @default(false)
   trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }
 
@@ -153,18 +180,18 @@ model Session {
 }
 
 model User {
-  id                                                       String              @id @default(cuid())
-  name                                                     String?
-  email                                                    String?             @unique
-  emailVerified                                            DateTime?
-  image                                                    String?
-  accounts                                                 Account[]
-  conversation                                             Conversation[]
-  publicChats                                              PublicChat[]
-  sessions                                                 Session[]
-  trainingSets                                             TrainingSet[]
-  TrainingSetShares_TrainingSetShares_acceptedUserIdToUser TrainingSetShares[] @relation("TrainingSetShares_acceptedUserIdToUser")
-  TrainingSetShares_TrainingSetShares_userIdToUser         TrainingSetShares[] @relation("TrainingSetShares_userIdToUser")
+  id                        String              @id @default(cuid())
+  name                      String?
+  email                     String?             @unique
+  emailVerified             DateTime?
+  image                     String?
+  accounts                  Account[]
+  conversation              Conversation[]
+  publicChats               PublicChat[]
+  sessions                  Session[]
+  trainingSets              TrainingSet[]
+  trainingSetSharesAccepted TrainingSetShares[] @relation("acceptedUser")
+  trainingSetSharesOutgoing TrainingSetShares[] @relation("owner")
 }
 
 model VerificationToken {
@@ -175,31 +202,10 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model MissedQuestions {
-  id            String      @id
-  question      String      @unique
-  llmAnswer     String
-  correctAnswer String?
-  trainingSetId String
-  ignored       Boolean     @default(false)
-  TrainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
-}
-
-model TrainingSetShares {
-  id                                          String           @id
-  createdAt                                   DateTime         @default(now())
-  updatedAt                                   DateTime
-  trainingSetId                               String
-  userId                                      String
-  toUserEmail                                 String
-  acceptedByUser                              Boolean          @default(false)
-  acceptedAt                                  DateTime?
-  acceptedUserId                              String?
-  role                                        TrainingSetRoles @default(VIEWER)
-  invitationSentAt                            DateTime?
-  User_TrainingSetShares_acceptedUserIdToUser User?            @relation("TrainingSetShares_acceptedUserIdToUser", fields: [acceptedUserId], references: [id])
-  TrainingSet                                 TrainingSet      @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
-  User_TrainingSetShares_userIdToUser         User             @relation("TrainingSetShares_userIdToUser", fields: [userId], references: [id], onDelete: Cascade)
+enum TrainingSetRoles {
+  OWNER
+  EDITOR
+  VIEWER
 }
 
 enum TrainingSourceType {
@@ -210,10 +216,4 @@ enum TrainingSourceType {
 enum ParticipantType {
   BOT
   HUMAN
-}
-
-enum TrainingSetRoles {
-  OWNER
-  EDITOR
-  VIEWER
 }
