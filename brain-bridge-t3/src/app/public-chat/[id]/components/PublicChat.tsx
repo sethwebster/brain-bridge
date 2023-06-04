@@ -12,6 +12,7 @@ import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
 import { safeGetJSONCookieClient } from "~/utils/safe-get-json-cookie-client";
 import useSocket from "~/hooks/use-socket";
+import generateChatErrorMessage from "~/utils/error-chat-message-generator";
 
 interface PublicChatProps {
   viewer: Participant;
@@ -60,9 +61,25 @@ export default function PublicChat({
         }
       );
 
+      const removeErrorListener = socket.onMessage(
+        "message-error",
+        (payload: { error?: string }) => {
+          console.log("message error received", payload);
+          setAnswerPending(false);
+          console.log("payload.error", payload.error);
+          if (payload.error) {
+            setLoadedMessages((messages) => [
+              ...messages,
+              generateChatErrorMessage(payload.error ?? "Unknown error"),
+            ]);
+          }
+        }
+      );
+
       return () => {
         removeMessageListener();
         removeTypingIndicatorListener();
+        removeErrorListener();
       };
     }
   }, [socket]);
@@ -73,59 +90,6 @@ export default function PublicChat({
   //   },
   //   [player]
   // );
-
-  // const getLLMResponse = useCallback(
-  //   async (message: MessageWithRelations, mode: ChatResponseMode) => {
-  //     setAnswerPending(true);
-  //     console.log("NEW MESSAGE", message);
-  //     const llmResponse = await DataClient.sendPublicInstanceChatMessage(
-  //       message,
-  //       mode
-  //     );
-  //     setAnswerPending(false);
-  //     console.log("llmResponse", llmResponse);
-  //     if (llmResponse) {
-  //       const message = llmResponse;
-  //       setLoadedMessages((messages) => [...messages, message]);
-  //       // if (soundEnabled) {
-  //       //   setSoundPending(true);
-  //       //   const voice = await Data.getVoiceMessage(
-  //       //     conversation.id,
-  //       //     llmResponse.data
-  //       //   );
-  //       //   setSoundPending(false);
-
-  //       //   playVoice(voice.file);
-  //       // }
-  //     } else {
-  //       setLoadedMessages((messages) => [
-  //         ...messages,
-  //         {
-  //           id: Date.now().toString(),
-  //           text: "⛔️ So sorry! I've failed to get a response for this message. This is likely due to an error on the server. We are working on fixing this.",
-  //           createdAt: new Date(),
-  //           conversationId: "",
-  //           participantId: "system",
-  //           publicChatInstanceId: "",
-  //           conversation: null,
-  //           publicChatInstance: null,
-  //           sender: {
-  //             id: "system",
-  //             name: "System",
-  //             conversationId: "",
-  //             createdAt: new Date(),
-  //             updatedAt: new Date(),
-  //             publicChatInstanceId: "",
-  //             type: "BOT",
-  //           },
-  //         },
-  //       ]);
-  //     }
-  //     // bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  //   },
-  //   []
-  // );
-
   const handleNewMessage = useCallback(
     (newMessage: NewMessage, mode: ChatResponseMode) => {
       setAnswerPending(true);

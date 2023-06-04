@@ -15,6 +15,7 @@ import ChatDisplay, {
 import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
 import { useAuthenticatedSocket } from "~/hooks/use-socket";
+import generateChatErrorMessage from "~/utils/error-chat-message-generator";
 
 export default function PrivateChat({
   selectedChat,
@@ -61,12 +62,28 @@ export default function PrivateChat({
         }
       );
 
+      const removeErrorListener = socket.onMessage(
+        "message-error",
+        (payload: { error?: string }) => {
+          console.log("message error received", payload);
+          setAnswerPending(false);
+          console.log("payload.error", payload.error);
+          if (payload.error) {
+            setSelectedChatMessages((messages) => [
+              ...messages,
+              generateChatErrorMessage(payload.error ?? "Unknown error"),
+            ]);
+          }
+        }
+      );
+
       return () => {
         removeMessageListener();
         removeTypingIndicatorListener();
+        removeErrorListener();
       };
     }
-  }, [selectedChat.id, socket]);
+  }, [selectedChat, selectedChat.id, session.user.id, socket]);
   // const playVoice = useCallback(
   //   (fileUrl: string) => {
   //     player.play(fileUrl);

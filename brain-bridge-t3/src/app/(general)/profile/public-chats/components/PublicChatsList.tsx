@@ -59,9 +59,10 @@ export default function PublicChatsList({
             <h1 className="text-2xl">Public Chats</h1>
             <NewButton onClick={() => setAddItem(!addItem)} />
           </header>
-          <div className="grid w-full grid-cols-8 gap-4 text-center text-sm text-slate-500 dark:text-gray-300">
+          <div className="grid w-full grid-cols-10 gap-4 text-center text-sm text-slate-500 dark:text-gray-300">
             <div className="border-b"></div>
             <div className="col-span-3 border-b">Name</div>
+            <div className="col-span-2 border-b">Training Set</div>
             <div className="col-span-2 border-b">ID</div>
             <div className="border-b text-center">Published</div>
             <div className="border-b"></div>

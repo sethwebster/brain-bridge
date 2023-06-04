@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to create public chats");
   const payload = await req.json() as PublicChat;
+  console.log("payload", payload);
   const chat = await prisma.publicChat.create({
     data: {
       name: payload.name,

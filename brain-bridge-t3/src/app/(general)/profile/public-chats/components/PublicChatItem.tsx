@@ -79,7 +79,7 @@ export default function PublicChatItem({
     );
   return (
     <>
-      <div className="grid w-full grid-cols-8 gap-4">
+      <div className="grid w-full grid-cols-10 gap-4">
         <div>
           <button
             className="rounded-md bg-blue-100 p-1.5 shadow hover:bg-blue-200"
@@ -89,6 +89,7 @@ export default function PublicChatItem({
           </button>
         </div>
         <div className="col-span-3 truncate">{publicChat.name}</div>
+        <div className="col-span-2 truncate">{publicChat.trainingSet.name}</div>
         <div className="col-span-2">
           <Link href={url} className="text-blue-300">
             {publicChat.id}

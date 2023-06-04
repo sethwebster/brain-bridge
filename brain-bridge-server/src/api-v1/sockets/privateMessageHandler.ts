@@ -96,7 +96,7 @@ export function privateMessageHandler(socket) {
       socket.emit("message", { message: result });
     } catch (error: any) {
       console.error(error);
-      socket.emit("message-error", { error });
+      socket.emit("message-error", { error: error.message });
     }
   });
 }

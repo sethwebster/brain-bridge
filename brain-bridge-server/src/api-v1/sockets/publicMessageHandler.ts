@@ -8,7 +8,6 @@ import { MessageWithRelations, PublicChatInstanceWithRelations } from "./types";
 
 export async function publicMessageHandler(socket: Socket) {
   socket.on("message-public", async (data) => {
-
     try {
       const { data: { message, mode } } = data as { token: string; data: { message: MessageWithRelations; mode: "one-shot" | "critique" | "refine"; }; };
       const publicChatInstance = (await prisma.publicChatInstance.findUnique({
@@ -105,7 +104,7 @@ export async function publicMessageHandler(socket: Socket) {
       socket.emit("message", { message: result });
     } catch (error: any) {
       console.error(error);
-      socket.emit("message-error", { error });
+      socket.emit("message-error", { error: error.message });
     }
   });
 
