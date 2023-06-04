@@ -136,9 +136,7 @@ function turnQuestionsIntoText(questions: MissedQuestions[]): string {
 export async function createTrainingIndex({ name, trainingSet }: { name: string, trainingSet: TrainingSetWithRelations }): Promise<TrainingIndex> {
   const { trainingSources } = trainingSet;
   const promises = trainingSources.map((source) => getSourceText(trainingSet.userId, source));
-  const answeredQuestions = trainingSet.missedQuestions.filter(q => (q.correctAnswer || "").trim().length > 0).map((q) => `Question: ${q.question}\nIdeas: ${q.correctAnswer}`).join("\n");
   const answeredQuestionText = `\n${turnQuestionsIntoText(trainingSet.missedQuestions)}\n`;
-  console.log(answeredQuestionText);
   const allContent = await Promise.all(promises);
   const splitContent = await splitFileData([...allContent]);
   const tempFilePath = getTempFilePath(name)

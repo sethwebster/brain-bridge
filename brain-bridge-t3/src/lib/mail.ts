@@ -37,7 +37,7 @@ async function sendTemplated(From: string, To: string, templateAlias: string, te
   const result = await client.sendEmailWithTemplate({
     TemplateAlias: templateAlias,
     TemplateModel: templateModel,
-    From: `info@brainbridge.app`,
+    From: `Brain Bridge Invites <info@brainbridge.app>`,
     ReplyTo: From,
     To,
     MessageStream: "outbound",
