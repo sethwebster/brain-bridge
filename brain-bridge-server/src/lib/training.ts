@@ -11,6 +11,10 @@ import cleanUpHtml from './clean-up-html';
 import { getTempFilePath } from './get-temp-file';
 import PDFToText from './pdf-to-text';
 
+export interface ProgressNotifier {
+  (payload: { currentStage: string; statusText: string, progress: number, additionalInfo?: string }): void;
+}
+
 export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>()({
   include: {
     trainingSources: true,
@@ -74,13 +78,16 @@ async function loadUrl(url: string, knownMimeType: string): Promise<string | Blo
   }
 }
 
-async function getSourceText(userId: string, source: TrainingSource): Promise<string> {
+async function getSourceText(userId: string, source: TrainingSource, progressNotifier: ProgressNotifier): Promise<string> {
+  progressNotifier({ currentStage: "source-load", statusText: `Loading ${source.name ?? source.content}`, progress: 0 });
   switch (source.type) {
     case "FILE":
       switch (source.mimeType) {
         case "application/pdf":
+          progressNotifier({ currentStage: "source-load", statusText: `Converting ${source.name} to text`, progress: 0 });
           const pdfToText = new PDFToText(source.name);
           const text = await pdfToText.convert();
+          progressNotifier({ currentStage: "source-load", statusText: `Converted ${source.name} to text`, progress: 1 });
           return text;
           break;
         default:
@@ -88,6 +95,8 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
           return await loadFile(source.name);
       }
     case "URL":
+      progressNotifier({ currentStage: "source-load", statusText: `Loading ${source.name}...`, progress: 0 });
+
       const key = `${userId}/${source.content}`;
       let url: string = "";
       if (source.name.startsWith("http")) {
@@ -101,6 +110,7 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
         // markdown
         case "text/markdown":
           const markdownContent = await loadUrl(url, source.mimeType);
+          progressNotifier({ currentStage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
           return markdownContent as string;
         case "application/pdf":
           const content = await loadUrl(url, source.mimeType);
@@ -112,9 +122,12 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
           const pdfToText = new PDFToText(tempFilePath);
           const text = await pdfToText.convert();
           console.log("Successfully converted PDF to text. Length:", text.length)
+          progressNotifier({ currentStage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
           return text;
         default:
-          return await loadUrl(url, source.mimeType ?? "text/plain") as string;
+          const data = await loadUrl(url, source.mimeType ?? "text/plain") as string;
+          progressNotifier({ currentStage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
+          return data;
       }
     default:
       throw new Error(`Unsupported source type`);
@@ -133,20 +146,37 @@ function turnQuestionsIntoText(questions: MissedQuestions[]): string {
   return template.replace("{questions}", mapped);
 }
 
-export async function createTrainingIndex({ name, trainingSet }: { name: string, trainingSet: TrainingSetWithRelations }): Promise<TrainingIndex> {
+export async function createTrainingIndex({ name, trainingSet, onProgress }: { name: string, trainingSet: TrainingSetWithRelations, onProgress?: ProgressNotifier }): Promise<TrainingIndex> {
+  let progressNotifier = onProgress ?? (() => { });
+  progressNotifier({ currentStage: "overall", statusText: "Training Started", progress: 0 });
   const { trainingSources } = trainingSet;
-  const promises = trainingSources.map((source) => getSourceText(trainingSet.userId, source));
+  const promises = trainingSources.map((source, index) => {
+    console.log('progress', index / trainingSources.length)
+    progressNotifier({ currentStage: "sources-load", statusText: `Loading ${source.name}...`, progress: index / trainingSources.length });
+    const result = getSourceText(trainingSet.userId, source, progressNotifier)
+    return result;
+  });
+  progressNotifier({ currentStage: "overall", statusText: "Loading sources...", progress: 0.1 });
   const answeredQuestionText = `\n${turnQuestionsIntoText(trainingSet.missedQuestions)}\n`;
+  progressNotifier({ currentStage: "sources-load", statusText: `Loading all sources.`, progress: 0 });
   const allContent = await Promise.all(promises);
-  const splitContent = await splitFileData([...allContent]);
+  progressNotifier({ currentStage: "sources-load", statusText: `Loaded all sources.`, progress: 1 });
+
+  progressNotifier({ currentStage: "overall", statusText: "Splitting documents...", progress: 0.2 });
+  progressNotifier({ currentStage: "split-documents", statusText: `Splitting documents into chunks`, progress: 0 });
+  const splitContent = await splitFileData([...allContent], progressNotifier);
   const tempFilePath = getTempFilePath(name)
+  progressNotifier({ currentStage: "overall", statusText: "Vectorizing documents...", progress: 0.3 });
+  progressNotifier({ currentStage: "vectorize", statusText: `Vectorizing documents`, progress: 0 });
   const store = await vectorize(splitContent);
+  progressNotifier({ currentStage: "vectorize", statusText: `Vectorized documents`, progress: 1 });
+  progressNotifier({ currentStage: "overall", statusText: "Creating index...", progress: 0.6 });
   await store.save(tempFilePath)
   const indexPath = path.join(tempFilePath, `hnswlib.index`);
   const docStorePath = path.join(tempFilePath, `docstore.json`);
   const indexData = await fs.promises.readFile(indexPath);
   const docStoreData = await fs.promises.readFile(docStorePath);
-
+  progressNotifier({ currentStage: "overall", statusText: "Deleting existing index", progress: .85 });
   const existingIndex = await prisma.trainingIndex.findFirst({
     where: {
       trainingSetId: trainingSet.id
@@ -160,6 +190,7 @@ export async function createTrainingIndex({ name, trainingSet }: { name: string,
       }
     })
   }
+  progressNotifier({ currentStage: "overall", statusText: "Creating new index", progress: 0.95 });
   console.log("Creating training index")
   const trainingIndex = await prisma.trainingIndex.create({
     data: {
@@ -177,6 +208,7 @@ export async function createTrainingIndex({ name, trainingSet }: { name: string,
     }
   });
   console.log("index creation complete");
+  progressNotifier({ currentStage: "overall", statusText: "Index creation complete", progress: 1 });
   return trainingIndex;
 }
 
@@ -249,13 +281,16 @@ function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, 
 const text_splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 4000, chunkOverlap: 200, separators: [" ", ",", "\n"]
 })
-async function splitFileData(data: string[]): Promise<string[]> {
+async function splitFileData(data: string[], progressNotifier: ProgressNotifier): Promise<string[]> {
 
   console.log("Splitting text into chunks...")
   let docs: string[] = [];
+  let index = 0;
   for (const d of data) {
+    progressNotifier({ currentStage: "split-documents", statusText: `Splitting document ${index + 1} of ${data.length}`, progress: index / data.length });
     const docOutput = await textSplitterMine(d, 4000, 200, [" ", ",", "\n"])
     docs = [...docs, ...docOutput];
+    index++;
   }
   return docs;
 }

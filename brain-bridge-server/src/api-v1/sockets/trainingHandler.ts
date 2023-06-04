@@ -1,6 +1,6 @@
 import { PrismaClient, TrainingIndex } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { createTrainingIndex } from "../../lib/training";
+import { ProgressNotifier, createTrainingIndex } from "../../lib/training";
 import { verifyJWT } from "../../lib/jwt";
 
 export function trainingHandler(socket) {
@@ -31,8 +31,14 @@ export function trainingHandler(socket) {
     }
 
     socket.emit("training-started", data);
+
+    function progressNotifiier(progress) {
+      console.log("CALLED")
+      socket.emit("training-progress", progress);
+    }
+
     try {
-      const result = await createTrainingIndex({ name: set.name, trainingSet: set }) as Partial<TrainingIndex>;
+      const result = await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier }) as Partial<TrainingIndex>;
       delete result.vectors;
       delete result.docStore;
       socket.emit("training-complete", result);

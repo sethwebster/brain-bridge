@@ -27,6 +27,7 @@ import Toggle from "~/app/components/toggle";
 import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
 import { useAuthenticatedSocket } from "~/hooks/use-socket";
+import { Socket } from "socket.io-client";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -364,6 +365,12 @@ function TrainingSetForm({
         trainingSet={trainingSetData}
         onUpdate={handleMissedQuestionsUpdate}
       />
+        {isTraining && socketRef.socket && (
+          <TrainingProgressDisplay
+            onMessage={socketRef.onMessage}
+            socket={socketRef.socket}
+          />
+        )}
       <div className="flex flex-row">
         <button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -408,6 +415,61 @@ function TrainingSetForm({
     </div>
   );
 }
+
+function TrainingProgressDisplay({
+  socket,
+  onMessage,
+}: {
+  socket: Socket;
+  onMessage: <T>(message: string, callback: (data: T) => void) => () => void;
+}) {
+  const [status, setStatus] = useState<
+    Record<string, { status: string; progress: number }>
+  >({});
+  useEffect(() => {
+    if (socket) {
+      const removeOnMessage = onMessage(
+        "training-progress",
+        (payload: {
+          currentStage: string;
+          statusText: string;
+          progress: number;
+        }) => {
+          setStatus((s) => ({
+            ...s,
+            [payload.currentStage]: {
+              status: payload.statusText,
+              progress: payload.progress,
+            },
+          }));
+        }
+      );
+
+      return () => {
+        removeOnMessage();
+      };
+    }
+  }, [onMessage, socket]);
+
+  return (
+    <div>
+      <h1>Training Progress</h1>
+      {Object.entries(status).map(([stage, { status, progress }]) => (
+        <div key={stage}>
+          <p>{stage}</p>
+          <p>{status}</p>
+          <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+            <div
+              className="h-2.5 rounded-full bg-blue-600"
+              style={{ width: `${progress * 100}%` }}
+            ></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function TrainingSetPage(props: TrainingSetFormProps) {
   const { trainingSet, onUpdate } = props;
   const [trainingSetData, setTrainingSetData] = useState(trainingSet);
