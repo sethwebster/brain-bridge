@@ -1,4 +1,5 @@
-import { QuestionAndAnswerPartial } from "../api-v1/sockets";
+import { QuestionAndAnswerPartial } from "../api-v1/sockets/types";
+
 
 const replaceTokens = (textWithTokens: string, tokensWithAnswers: QuestionAndAnswerPartial[]) => {
   return tokensWithAnswers.reduce((acc, curr) => {

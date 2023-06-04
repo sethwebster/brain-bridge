@@ -3,10 +3,15 @@ RUN apk --update add --no-cache  python3 make g++ && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
+COPY ./package.json .
+COPY ./pnpm-lock.yaml .
+RUN npm install -g pnpm
+RUN pnpm install
+
 COPY . .
 
-RUN npm install
-RUN npm run build
+RUN pnpm install
+RUN pnpm run build
 
 # FROM node:18-alpine as final
 # RUN apk --update add --no-cache  python3 make g++ && rm -rf /var/cache/apk/*
