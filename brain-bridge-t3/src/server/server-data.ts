@@ -8,7 +8,7 @@ import {
   type PublicChatInstanceWithRelations,
   conversationWithRelations,
   defaultTrainingOptions,
-  TrainingOptions
+  type TrainingOptions
 } from "~/server/interfaces/types";
 import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
@@ -51,9 +51,7 @@ async function fetchUserTrainingSet(trainingSetId: string) {
       trainingSetShares: true
     }
   });
-  console.log("UTS")
   if (set) return set;
-  console.log("UTS2", user.user.id, trainingSetId)
   const share = await prisma.trainingSetShares.findFirst({
     where: {
       trainingSetId: trainingSetId,
