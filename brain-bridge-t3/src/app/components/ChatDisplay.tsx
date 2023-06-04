@@ -7,8 +7,8 @@ import { type Participant } from "@prisma/client";
 import { Messages } from "../(general)/profile/chat/components/Messages";
 import {
   FakeSpeakerIndicator,
-  FakeTypingIndicator,
-} from "../(general)/profile/chat/components/FakeTypingIndicator";
+  TypingIndicator,
+} from "../(general)/profile/chat/components/TypingIndicator";
 import {
   type ChatResponseMode,
   type MessageWithRelations,
@@ -111,7 +111,7 @@ export default function ChatDisplay({
           />
         </div>
         <div className="ml-4">
-          <FakeTypingIndicator
+          <TypingIndicator
             show={answerPending}
             onShown={handleTypingIndicatorShown}
           />

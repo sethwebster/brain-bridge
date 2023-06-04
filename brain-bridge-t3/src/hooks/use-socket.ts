@@ -1,61 +1,81 @@
-import { useEffect, useState } from "react";
-import { socket } from "../lib/socket";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { type User } from "next-auth";
+import ms from 'ms';
 
-function logger<T>(message: string, data: T) {
-  console.log("Socket Message: ", message, data);
+import DataClient from "~/utils/data-client";
+import { SocketContext } from "~/app/components/SocketProvider";
+import invariant from "tiny-invariant";
+
+function logger<T>(message: string, data: T, sendOrReceived: "send" | "received") {
+  console.log(`[${sendOrReceived}] Socket Message: `, message, data);
 }
 
-export default function useSocket() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
-  const [messageSubscriptions, setMessageSubscriptions] = useState<Record<string, (data: unknown) => void>>({});
+export function useAuthenticatedSocket() {
+  const { socket, sendMessage: sendMessageBase, onMessage } = useSocket();
+  const [token, setToken] = useState<string | null>(null);
+  const [tokenExpiration, setTokenExpiration] = useState<number | null>(Date.now() - ms("1m"));
 
-  function sendMessage<T>(message: string, data: T) {
-    console.log("Sending message: ", message, data)
-    socket.emit(message, data);
-  }
-
-  function onMessage<T>(message: string, callback: (data: T) => void) {
-    if (!messageSubscriptions[message]) {
-      socket.on(message, (data: T) => {
-        logger<T>(message, data);
-        callback(data);
-      });
-      const newMessageSubscriptions = { ...messageSubscriptions };
-      newMessageSubscriptions[message] = callback as (data: unknown) => void;
-      setMessageSubscriptions(newMessageSubscriptions);
-    }
-  }
-
-  function connect() {
-    if (!isConnected) {
-      socket.connect();
-    }
+  async function getToken() {
+    const result = await DataClient.getToken();
+    setToken(result.token);
+    setTokenExpiration(Date.now() + ms("1m"));
+    return result.token;
   }
 
   useEffect(() => {
-    function onConnect() {
-      setIsConnected(true);
+    if (Date.now() > (tokenExpiration ?? 0)) {
+      getToken().catch(console.error);
     }
+  }, [tokenExpiration]);
 
-    function onDisconnect() {
-      setIsConnected(false);
+  function sendTheMessage<T>(message: string, data: T, token: string) {
+    invariant(socket, "Socket is not connected");
+    invariant(token, "Token is not set");
+    sendMessageBase(message, { data, token });
+  }
+
+  function sendMessage<T>(message: string, data: T) {
+    const tokenExpired = Date.now() > (tokenExpiration ?? 0);
+    if (tokenExpired || !token) {
+      getToken().then((token) => {
+        sendTheMessage(message, data, token);
+      }).catch(console.error);
+    } else {
+      sendTheMessage(message, data, token);
     }
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-
-    return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      for (const s in messageSubscriptions) {
-        socket.off(s, messageSubscriptions[s]);
-      }
-    }
-  }, [messageSubscriptions]);
+  }
 
   return {
-    connect,
-    isConnected,
+    socket,
+    sendMessage,
+    onMessage
+  }
+}
+
+export default function useSocket() {
+  const context = useContext(SocketContext);
+  const { socket } = context;
+
+  function sendMessage<T>(message: string, data: T) {
+    logger(message, data, "send");
+    socket?.emit(message, data);
+  }
+
+  function onMessage<T>(message: string, callback: (data: T) => void) {
+    const wrapper = (data: T) => {
+      logger(message, data, "received");
+      callback(data);
+    }
+
+    socket?.on(message, wrapper);
+    return () => {
+      if (!socket) return;
+      socket.removeListener(message, wrapper);
+    }
+  }
+
+  return {
+    socket,
     sendMessage,
     onMessage
   }

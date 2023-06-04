@@ -7,7 +7,6 @@ import {
 } from "~/server/interfaces/types";
 import { type Session } from "next-auth";
 import { useCallback, useEffect, useRef, useState } from "react";
-import invariant from "tiny-invariant";
 import ChatDisplay, {
   type Viewer,
   type NewMessage,
@@ -15,6 +14,7 @@ import ChatDisplay, {
 // import useAudioPlayer from "~/hooks/useAudioPlayer";
 import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
+import useSocket, { useAuthenticatedSocket } from "~/hooks/use-socket";
 
 export default function PrivateChat({
   selectedChat,
@@ -33,6 +33,29 @@ export default function PrivateChat({
   );
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const socket = useAuthenticatedSocket();
+
+  useEffect(() => {
+    if (socket) {
+      const removeMessageListener = socket.onMessage(
+        "message",
+        (payload: { message: MessageWithRelations }) => {
+          console.log("new message received", payload);
+          setAnswerPending(false);
+          setSelectedChatMessages((messages) => [...messages, payload.message]);
+        }
+      );
+
+      const removeTypingIndicatorListener = socket.onMessage("llm-response-started", () => {
+        setAnswerPending(true);
+      });
+
+      return () => {
+        removeMessageListener();
+        removeTypingIndicatorListener();
+      }
+    }
+  }, [socket]);
   // const playVoice = useCallback(
   //   (fileUrl: string) => {
   //     player.play(fileUrl);
@@ -40,68 +63,16 @@ export default function PrivateChat({
   //   [player]
   // );
 
-  const getLLMResponse = useCallback(
-    async (message: MessageWithRelations, mode: ChatResponseMode) => {
-      setAnswerPending(true);
-      try {
-        const llmResponse = await DataClient.sendMessage(message, mode);
-        setAnswerPending(false);
-        invariant(llmResponse, "No data in response");
-        const messageResponse = llmResponse;
-        setSelectedChatMessages((messages) => [...messages, messageResponse]);
-        // if (soundEnabled) {
-        //   setSoundPending(true);
-        //   const voice = await Data.getVoiceMessage(
-        //     selectedChat.id,
-        //     llmResponse.data
-        //   );
-        //   setSoundPending(false);
-
-        //   playVoice(voice.file);
-        // }
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      } catch (e) {
-        setSelectedChatMessages((messages) => [
-          ...messages,
-          {
-            id: Date.now().toString(),
-            text: "⛔️ So sorry! I've failed to get a response for this message. This is likely due to an error on the server. We are working on fixing this.",
-            sender: {
-              id: "system",
-              name: "System",
-              conversationId: selectedChat.id,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              type: "BOT",
-              publicChatInstanceId: null,
-            },
-            participantId: "system",
-            timestamp: new Date().toISOString(),
-            createdAt: new Date(),
-            conversation: selectedChat,
-            conversationId: selectedChat.id,
-            publicChatInstance: null,
-            publicChatInstanceId: null,
-          },
-        ]);
-      } finally {
-        setAnswerPending(false);
-      }
-    },
-
-    [selectedChat]
-  );
-
   useEffect(() => {
     if (firstLoad) {
       setFirstLoad(false);
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [firstLoad, getLLMResponse, session.user?.email, session.user?.name]);
+  }, [firstLoad, session.user.email, session.user.name]);
 
   const handleSend = useCallback(
-    async (newMessage: NewMessage, mode: ChatResponseMode) => {
-      const sendMessage = async () => {
+    (newMessage: NewMessage, mode: ChatResponseMode) => {
+      const sendMessage = () => {
         const newMessageAugment: MessageWithRelations = {
           ...newMessage,
           id: generateId(),
@@ -122,13 +93,14 @@ export default function PrivateChat({
           },
         };
         setSelectedChatMessages((messages) => [...messages, newMessageAugment]);
+        socket.sendMessage("message", { mode, message: newMessageAugment });
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        await getLLMResponse(newMessageAugment, mode);
+        // await getLLMResponse(newMessageAugment, mode);
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       };
-      await sendMessage();
+      sendMessage();
     },
-    [getLLMResponse, selectedChat, session.user.id, session.user.name]
+    [selectedChat, session.user.id, session.user.name, socket]
   );
 
   const handleClearChatClicked = useCallback(() => {

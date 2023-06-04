@@ -26,7 +26,8 @@ import { useSession } from "next-auth/react";
 import Toggle from "~/app/components/toggle";
 import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
-import useSocket from "~/hooks/use-socket";
+import useSocket, { useAuthenticatedSocket } from "~/hooks/use-socket";
+import DataClient from "~/utils/data-client";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -37,7 +38,7 @@ interface TrainingSetFormProps {
   };
   onUpdate?: (trainingSet: TrainingSetWithRelations) => void;
 }
-
+let times = 0;
 function TrainingSetForm({
   trainingSet,
   promptTemplate,
@@ -53,26 +54,45 @@ function TrainingSetForm({
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUseOwnPromptModal, setShowUseOwnPromptModal] = useState(false);
-  const socket = useSocket();
+  const socketRef = useAuthenticatedSocket();
 
-  socket.connect();
+  const handleTrainingStarted = useCallback(() => {
+    setIsTraining(true);
+  }, []);
+
+  const handleTrainingComplete = useCallback(() => {
+    setIsTraining(false);
+    router.refresh();
+  }, [router]);
+
+  const handleTrainingError = useCallback((data: { error: string }) => {
+    setIsTraining(false);
+    setError(data.error);
+  }, []);
 
   useEffect(() => {
-    if (socket.isConnected) {
-      socket.onMessage("training-started", () => {
-        setIsTraining(true);
-      });
-      socket.onMessage<TrainingSetWithRelations>("training-complete", () => {
-        setIsTraining(false);
-        router.refresh();
-      });
-      socket.onMessage<{ error: string }>("training-error", (data) => {
-        setIsTraining(false);
-        setError(data.error);
-      });
+    if (socketRef.socket?.connected) {
+      const removeHandleTrainingStarted = socketRef.onMessage(
+        "training-started",
+        handleTrainingStarted
+      );
+      const removeHandleTrainingComplete = socketRef.onMessage(
+        "training-complete",
+        handleTrainingComplete
+      );
+      const removeTrainingError = socketRef.onMessage(
+        "training-error",
+        handleTrainingError
+      );
+      return () => {
+        if (socketRef.socket?.connected) {
+          removeHandleTrainingComplete();
+          removeHandleTrainingStarted();
+          removeTrainingError();
+        }
+      };
     }
-  }, [router, socket, socket.isConnected]);
-
+  }, [handleTrainingComplete, handleTrainingError, handleTrainingStarted, router, socketRef, socketRef.socket]);
   const handlePromptChange = useCallback(
     (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
       const val = evt.target?.value;
@@ -151,8 +171,13 @@ function TrainingSetForm({
 
   const handleTrain = useCallback(() => {
     try {
+      const startTraining = () => {
+        socketRef.sendMessage("train", {
+          trainingSetId: trainingSetData.id,
+        });
+      };
       setError(null);
-      socket.sendMessage("train", { trainingSetId: trainingSetData.id });
+      startTraining();
       // setIsTraining(true);
       // const newSet = await Data.trainTrainingSet(trainingSetData.id);
       // console.log("newSet", newSet);
@@ -169,7 +194,7 @@ function TrainingSetForm({
     } finally {
       setIsTraining(false);
     }
-  }, [socket, trainingSetData.id]);
+  }, [socketRef.socket, trainingSetData.id]);
 
   const isDirty = useMemo(() => {
     const areDifferent =
@@ -232,7 +257,7 @@ function TrainingSetForm({
   const isShared = shared !== undefined;
   const canEdit = role === "OWNER" || role === "EDITOR";
   return (
-    <div>
+    <div className="mb-10">
       <header className="flex justify-between border-b border-gray-400 pb-2 ">
         <div>
           <h1 className="text-2xl">{trainingSet.name}</h1>

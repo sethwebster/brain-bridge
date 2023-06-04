@@ -215,6 +215,17 @@ async function getSignedUrl(fileName: string): Promise<{ url: string }> {
   return data;
 }
 
+async function getToken() {
+  const response = await fetch(makeApiUrl(`/api/tokens`), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  const data = await response.json() as { token: string };
+  return data;
+}
+
 const DataClient = {
   fetchTrainingSet,
   createTrainingSet,
@@ -233,7 +244,8 @@ const DataClient = {
   publishPublicChat,
   sendPublicInstanceChatMessage,
   deletePublicChat,
-  getSignedUrl
+  getSignedUrl,
+  getToken
 }
 
 export default DataClient;

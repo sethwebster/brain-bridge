@@ -88,7 +88,6 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
           return await loadFile(source.name);
       }
     case "URL":
-      console.log("CONTENT", source)
       const key = `${userId}/${source.content}`;
       let url: string = "";
       if (source.name.startsWith("http")) {
@@ -115,7 +114,7 @@ async function getSourceText(userId: string, source: TrainingSource): Promise<st
           console.log("Successfully converted PDF to text. Length:", text.length)
           return text;
         default:
-          return await loadUrl(url, source.mimeType) as string;
+          return await loadUrl(url, source.mimeType ?? "text/plain") as string;
       }
     default:
       throw new Error(`Unsupported source type`);
