@@ -1,18 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["jsonProtocol"]
-  // output          = "../prisma/generated/client"
 }
 
 datasource db {
   provider = "postgresql"
-  // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
-  // Further reading:
-  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
-  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
   url      = env("DATABASE_URL")
 }
 
@@ -21,43 +13,37 @@ model TrainingSet {
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
   name                String
-  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId              String
   version             Int                 @default(0)
-  prompt              String              @default("") @db.Text
-  trainingSources     TrainingSource[]
-  conversations       Conversation[]
-  questionsAndAnswers QuestionAndAnswer[]
+  prompt              String              @default("")
   trainingIndexId     String?
-  trainingIndex       TrainingIndex?
-  publicChats         PublicChat[]
-  missedQuestions     MissedQuestions[]
-  trainingSetShares   TrainingSetShares[]
   useOwnPrompt        Boolean             @default(false)
   trainingOptions     Json                @default("{}")
-}
-
-enum TrainingSetRoles {
-  OWNER
-  EDITOR
-  VIEWER
+  conversations       Conversation[]
+  missedQuestions     MissedQuestions[]
+  publicChats         PublicChat[]
+  questionsAndAnswers QuestionAndAnswer[]
+  trainingIndex       TrainingIndex?
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingSetShares   TrainingSetShares[]
+  trainingSources     TrainingSource[]
 }
 
 model TrainingSetShares {
   id               String           @id @default(cuid())
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
-  invitationSentAt DateTime?
-  trainingSet      TrainingSet      @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
   trainingSetId    String
-  user             User             @relation(name: "owner", fields: [userId], references: [id], onDelete: Cascade)
   userId           String
   toUserEmail      String
   acceptedByUser   Boolean          @default(false)
   acceptedAt       DateTime?
   acceptedUserId   String?
-  acceptedUser     User?            @relation(name: "acceptedUser", fields: [acceptedUserId], references: [id])
   role             TrainingSetRoles @default(VIEWER)
+  invitationSentAt DateTime?
+  acceptedUser     User?            @relation("acceptedUser", fields: [acceptedUserId], references: [id])
+  trainingSet      TrainingSet      @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  user             User             @relation("owner", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model TrainingIndex {
@@ -72,11 +58,6 @@ model TrainingIndex {
   trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }
 
-enum TrainingSourceType {
-  FILE
-  URL
-}
-
 model TrainingSource {
   id            String             @id @default(cuid())
   createdAt     DateTime           @default(now())
@@ -84,10 +65,10 @@ model TrainingSource {
   type          TrainingSourceType
   name          String
   content       String
-  trainingSet   TrainingSet        @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
   trainingSetId String
   pending       Boolean            @default(true)
   mimeType      String?
+  trainingSet   TrainingSet        @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }
 
 model QuestionAndAnswer {
@@ -114,17 +95,12 @@ model Conversation {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   name          String        @default("")
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingSetId String
   userId        String
   trainingSet   TrainingSet   @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
-  trainingSetId String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages      Message[]
   participants  Participant[]
-}
-
-enum ParticipantType {
-  BOT
-  HUMAN
 }
 
 model Participant {
@@ -132,25 +108,24 @@ model Participant {
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
   name                 String              @default("")
-  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId       String?
-  messages             Message[]
   type                 ParticipantType
-  publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
   publicChatInstanceId String?
+  messages             Message[]
+  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
 }
 
 model Message {
-  id   String @id @default(cuid())
-  text String @default("") @db.Text
-
-  sender               Participant         @relation(fields: [participantId], references: [id])
+  id                   String              @id @default(cuid())
+  text                 String              @default("")
   createdAt            DateTime            @default(now())
-  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   conversationId       String?
   participantId        String
-  publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
   publicChatInstanceId String?
+  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender               Participant         @relation(fields: [participantId], references: [id])
+  publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
 }
 
 model PublicChat {
@@ -159,10 +134,10 @@ model PublicChat {
   updatedAt          DateTime             @updatedAt
   name               String               @default("")
   userId             String
-  trainingSet        TrainingSet          @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
   trainingSetId      String
-  user               User                 @relation(fields: [userId], references: [id])
   published          Boolean              @default(false)
+  trainingSet        TrainingSet          @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  user               User                 @relation(fields: [userId], references: [id])
   publicChatInstance PublicChatInstance[]
 }
 
@@ -171,27 +146,26 @@ model PublicChatInstance {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   name         String        @unique @default("")
+  publicChatId String
   messages     Message[]
   participants Participant[]
   publicChat   PublicChat    @relation(fields: [publicChatId], references: [id], onDelete: Cascade)
-  publicChatId String
 }
 
-/////////////////////////////
-// NextAuth Related Models //
-/////////////////////////////
+/// //////////////////////////
+/// //////////////////////////
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -213,12 +187,12 @@ model User {
   emailVerified             DateTime?
   image                     String?
   accounts                  Account[]
-  sessions                  Session[]
-  trainingSets              TrainingSet[]
   conversation              Conversation[]
   publicChats               PublicChat[]
-  trainingSetSharesOutgoing TrainingSetShares[] @relation(name: "owner")
-  trainingSetSharesAccepted TrainingSetShares[] @relation(name: "acceptedUser")
+  sessions                  Session[]
+  trainingSets              TrainingSet[]
+  trainingSetSharesAccepted TrainingSetShares[] @relation("acceptedUser")
+  trainingSetSharesOutgoing TrainingSetShares[] @relation("owner")
 }
 
 model VerificationToken {
@@ -227,4 +201,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+enum TrainingSetRoles {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum TrainingSourceType {
+  FILE
+  URL
+}
+
+enum ParticipantType {
+  BOT
+  HUMAN
 }
