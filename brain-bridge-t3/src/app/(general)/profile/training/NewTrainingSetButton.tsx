@@ -6,6 +6,7 @@ import { NewButton } from "~/app/components/NewButton";
 import DataClient from "~/utils/data-client";
 import promptTemplate from "./PromptTemplate";
 import { useRouter } from "next/navigation";
+import { defaultTrainingOptions } from "~/server/interfaces/types";
 
 interface NewTrainingSetButtonProps {
   empty?: boolean;
@@ -37,6 +38,7 @@ export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
       missedQuestions: [],
       trainingSetShares: [],
       useOwnPrompt: false,
+      trainingOptions: defaultTrainingOptions,
     });
     router.push("/profile/training/" + result.id);
   }, [inputValue, router]);
