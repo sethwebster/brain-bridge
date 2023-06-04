@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { QuestionsWizard } from "./QuestionsWizard";
 import Sources from "./Sources";
 import Data from "~/utils/data-client";
@@ -21,7 +15,7 @@ import {
   type TrainingSource,
 } from "@prisma/client";
 import {
-  TrainingOptions,
+  type TrainingOptions,
   type QuestionAndAnswerPartial,
   type TrainingSetWithRelations,
   defaultTrainingOptions,
@@ -35,7 +29,7 @@ import Toggle from "~/app/components/toggle";
 import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
 import { useAuthenticatedSocket } from "~/hooks/use-socket";
-import { Socket } from "socket.io-client";
+import { type Socket } from "socket.io-client";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -184,6 +178,9 @@ function TrainingSetForm({
     [trainingSetData]
   );
 
+  /**
+   * Train the model
+   */
   const handleTrain = useCallback(() => {
     try {
       const startTraining = () => {
@@ -193,16 +190,6 @@ function TrainingSetForm({
       };
       setError(null);
       startTraining();
-      // setIsTraining(true);
-      // const newSet = await Data.trainTrainingSet(trainingSetData.id);
-      // console.log("newSet", newSet);
-      // if (newSet && newSet.id) {
-      //   router.refresh();
-      // } else {
-      //   setError(
-      //     "😥 Something went wrong. Typically this error results from one or more of your documents being too big. Documents should each be 500kb or smaller."
-      //   );
-      // }
     } catch (err) {
       const error = err as Error;
       setError(error.message);
@@ -211,6 +198,9 @@ function TrainingSetForm({
     }
   }, [socketRef, trainingSetData.id]);
 
+  /**
+   * Check if the training set has been modified
+   */
   const isDirty = useMemo(() => {
     const areDifferent =
       JSON.stringify(trainingSetData) !== JSON.stringify(trainingSet);
@@ -429,12 +419,11 @@ function TrainingSetForm({
         trainingSet={trainingSetData}
         onUpdate={handleMissedQuestionsUpdate}
       />
-      {isTraining && socketRef.socket && (
         <TrainingProgressDisplay
           onMessage={socketRef.onMessage}
           socket={socketRef.socket}
+          isTraining={isTraining}
         />
-      )}
       <div className="flex flex-row">
         <button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -480,31 +469,82 @@ function TrainingSetForm({
   );
 }
 
+type TrainingStages =
+  | "overall"
+  | "sources-load"
+  | "source-load"
+  | "split-documents"
+  | "vectorize";
+
+const StatusToLabelMap: Record<TrainingStages, string> = {
+  overall: "Overall Progress",
+  "sources-load": "Loading Sources",
+  "source-load": "Loading Source",
+  "split-documents": "Splitting Documents",
+  vectorize: "Vectorizing",
+};
+
 function TrainingProgressDisplay({
   socket,
   onMessage,
+  isTraining,
 }: {
   socket: Socket;
   onMessage: <T>(message: string, callback: (data: T) => void) => () => void;
+  isTraining: boolean;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<
-    Record<string, { status: string; progress: number }>
-  >({});
+    Record<
+      TrainingStages,
+      {
+        currentStage: TrainingStages;
+        statusText: string;
+        progress: number;
+        additionalInfo?: string;
+      }
+    >
+  >({
+    overall: {
+      currentStage: "overall",
+      statusText: "Waiting to start",
+      progress: 0,
+    },
+    "sources-load": {
+      currentStage: "sources-load",
+      statusText: "Waiting to start",
+      progress: 0,
+    },
+    "source-load": {
+      currentStage: "source-load",
+      statusText: "Waiting to start",
+      progress: 0,
+    },
+    "split-documents": {
+      currentStage: "split-documents",
+      statusText: "Waiting to start",
+      progress: 0,
+    },
+    vectorize: {
+      currentStage: "vectorize",
+      statusText: "Waiting to start",
+      progress: 0,
+    },
+  });
+
   useEffect(() => {
     if (socket) {
       const removeOnMessage = onMessage(
         "training-progress",
         (payload: {
-          currentStage: string;
+          currentStage: TrainingStages;
           statusText: string;
           progress: number;
+          additionalInfo?: string;
         }) => {
           setStatus((s) => ({
             ...s,
-            [payload.currentStage]: {
-              status: payload.statusText,
-              progress: payload.progress,
-            },
+            [payload.currentStage]: payload,
           }));
         }
       );
@@ -515,21 +555,30 @@ function TrainingProgressDisplay({
     }
   }, [onMessage, socket]);
 
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [status]);
+
   return (
-    <div>
-      <h1>Training Progress</h1>
-      {Object.entries(status).map(([stage, { status, progress }]) => (
+    <div className={`overflow-hidden duration-1000 transition-all ${isTraining ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
+      <h3 className="text-xl">Training Progress</h3>
+      {Object.entries(status).map(([stage, { statusText, progress }]) => (
         <div key={stage}>
-          <p>{stage}</p>
-          <p>{status}</p>
-          <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+          <p>{StatusToLabelMap[stage as TrainingStages]}</p>
+          <div className="h-5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
             <div
-              className="h-2.5 rounded-full bg-blue-600"
+              className="h-5 rounded-full bg-green-300 "
               style={{ width: `${progress * 100}%` }}
             ></div>
+            <div className="relative -top-6 mb-1 w-auto truncate text-center">
+              <small>{statusText}</small>
+            </div>
           </div>
         </div>
       ))}
+      <div ref={ref} role="scoller"></div>
     </div>
   );
 }
