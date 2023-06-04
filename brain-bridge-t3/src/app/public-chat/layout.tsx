@@ -1,4 +1,5 @@
 import "../globals.css";
+import SocketProvider from "../components/SocketProvider";
 // import { Inter } from "next/font/google";
 
 // const inter = Inter({ subsets: ["latin"] });
@@ -15,8 +16,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex flex-col w-full h-screen">
-        <div className="flex flex-col flex-grow w-full h-full">{children}</div>
+      <body className="flex h-screen w-full flex-col">
+        <SocketProvider>
+          <div className="flex h-full w-full flex-grow flex-col">
+            {children}
+          </div>
+        </SocketProvider>
       </body>
     </html>
   );

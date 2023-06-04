@@ -8,7 +8,6 @@ import { prisma } from "../lib/db";
 
 export function messageRouter(socket: Socket) {
   socket.onAny((event, ...args) => {
-    console.log("AUTH", socket.handshake.auth)
     console.log("[received]", event, ...args)
   });
 
@@ -21,7 +20,7 @@ export function messageRouter(socket: Socket) {
       socket.emit("training-error", { error: "Invalid token" });
       return;
     }
-    console.log("Verified token", verifiedToken)
+
     const prisma = new PrismaClient();
     const set = await prisma.trainingSet.findUnique({
       where: { id: id }, include: {
@@ -49,6 +48,107 @@ export function messageRouter(socket: Socket) {
     }
   })
 
+  socket.on("message-public", async (data) => {
+    try {
+      const { data: { message, mode } } = data as { token: string, data: { message: MessageWithRelations, mode: "one-shot" | "critique" | "refine" } };
+      const publicChatInstance = (await prisma.publicChatInstance.findUnique({
+        where: {
+          id: message.publicChatInstanceId
+        },
+        include: {
+          publicChat: {
+            include: {
+              trainingSet: {
+                include: {
+                  questionsAndAnswers: true,
+                  missedQuestions: true,
+                }
+              }
+            }
+          },
+          participants: true,
+          messages: {
+            include: {
+              sender: true,
+              conversation: true,
+              publicChatInstance: true,
+            }
+          }
+        }
+      })) as PublicChatInstanceWithRelations;
+
+
+      invariant(publicChatInstance, "Conversation must exist");
+      const bot = publicChatInstance.participants.find(p => p.type === "BOT");
+      invariant(bot, "Bot must exist");
+      const userMessage = await prisma.message.create({
+        data: {
+          text: message.text,
+          sender: {
+            connect: {
+              id: message.participantId,
+            }
+          },
+          publicChatInstance: {
+            connect: {
+              id: publicChatInstance.id,
+            }
+          },
+          createdAt: new Date(),
+        }
+      });
+
+      const questionsAndAnswers = publicChatInstance.publicChat.trainingSet.questionsAndAnswers;
+
+      const handleMissedQuestion = async (questionAndAnswer: LLMBrainBridgeResponse) => {
+        const missedQuestion = await prisma.missedQuestions.create({
+          data: {
+            question: questionAndAnswer.question,
+            llmAnswer: questionAndAnswer.answer,
+            TrainingSet: {
+              connect: {
+                id: publicChatInstance.publicChat.trainingSet.id,
+              }
+            },
+            correctAnswer: "",
+            ignored: false,
+            id: "",
+          }
+        });
+        return missedQuestion;
+      }
+
+      const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)))
+      const fullPrompt = promptHeader + "\n\n" + publicChatInstance.publicChat.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers)
+
+      socket.emit('llm-response-started')
+      const response = await llm.getLangChainResponse(
+        publicChatInstance.publicChat.trainingSetId,
+        userMessage.text,
+        fullPrompt,
+        publicChatInstance.messages.map(m => `${m.sender.name}: ${m.text}`),
+        mode
+      )
+
+      const newMessage: MessageWithRelations = {
+        id: "",
+        text: response,
+        createdAt: new Date(),
+        sender: bot,
+        participantId: bot.id,
+        conversationId: undefined,
+        conversation: undefined,
+        publicChatInstance: publicChatInstance,
+        publicChatInstanceId: publicChatInstance.id,
+      }
+      const result = await storeBotMessage(publicChatInstance, newMessage);
+      socket.emit("message", { message: result });
+    } catch (error: any) {
+      console.error(error)
+      socket.emit("message-error", { error });
+    }
+  });
+
   socket.on("message", async (data) => {
     try {
       const { token, data: { message, mode } } = data as { token: string, data: { message: MessageWithRelations, mode: "one-shot" | "critique" | "refine" } };
@@ -57,7 +157,7 @@ export function messageRouter(socket: Socket) {
         socket.emit("message-error", { error: "Invalid token" });
         return;
       }
-      console.log("verifiedToken message", verifiedToken)
+
       const userData = verifiedToken.body.toJSON() as JSONMap;
 
       const conversation = await prisma.conversation.findUnique({
@@ -138,6 +238,55 @@ export function messageRouter(socket: Socket) {
       socket.emit("message-error", { error });
     }
   });
+}
+
+async function storeBotMessage(instance: PublicChatInstanceWithRelations, payload: MessageWithRelations) {
+  const sender = instance.participants.find(p => p.type === "BOT");
+  let responseMessage: MessageWithRelations;
+  if (!sender) {
+    responseMessage = await prisma.message.create({
+      data: {
+        text: payload.text,
+        sender: {
+          create: {
+            type: "BOT",
+            publicChatInstance: {
+              connect: {
+                id: instance.id,
+              }
+            },
+            createdAt: new Date(),
+          }
+        },
+        publicChatInstance: {
+          connect: {
+            id: instance.id,
+          }
+        },
+        createdAt: new Date(),
+      },
+      ...messageWithRelations
+    });
+  } else {
+    responseMessage = await prisma.message.create({
+      data: {
+        text: payload.text,
+        sender: {
+          connect: {
+            id: sender.id,
+          }
+        },
+        publicChatInstance: {
+          connect: {
+            id: instance.id,
+          }
+        },
+        createdAt: new Date(),
+      },
+      ...messageWithRelations
+    });
+  }
+  return responseMessage;
 }
 
 async function storeUserMessage(conversation: (Conversation & {
@@ -231,7 +380,15 @@ export type PublicChatWithRelations = Prisma.PublicChatGetPayload<typeof publicC
 
 export const publicChatInstanceWithRelations = Prisma.validator<Prisma.PublicChatInstanceArgs>()({
   include: {
-    publicChat: true,
+    publicChat: {
+      include: {
+        trainingSet: {
+          include: {
+            questionsAndAnswers: true,
+          }
+        }
+      }
+    },
     messages: messageWithRelations,
     participants: true,
   }

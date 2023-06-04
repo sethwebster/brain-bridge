@@ -55,9 +55,15 @@ export default function useSocket() {
   const context = useContext(SocketContext);
   const { socket } = context;
 
-  function sendMessage<T>(message: string, data: T) {
+  function sendMessage<T extends object>(message: string, data: T) {
     logger(message, data, "send");
-    socket?.emit(message, data);
+    if (
+      Object.hasOwn(data, "data")
+    ) {
+      socket?.emit(message, data);
+    } else {
+      socket?.emit(message, { data });
+    }
   }
 
   function onMessage<T>(message: string, callback: (data: T) => void) {

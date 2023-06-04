@@ -22,7 +22,6 @@ export default class TrainingController {
     const result = await createTrainingIndex({ name: set.name, trainingSet: set });
     delete result.vectors
     delete result.docStore
-    console.log("RESULT", result)
     res.json(result)
     } catch (error: any) {
       console.log("ERROR", error)
