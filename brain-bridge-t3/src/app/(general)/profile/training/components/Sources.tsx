@@ -40,9 +40,9 @@ export default function Sources({
 
   const handleFileAdded = useCallback(
     async (file: FileWithDirectoryAndFileHandle) => {
-      console.log("WKRP", file.webkitRelativePath);
+      const fileName = file.webkitRelativePath || file.name;
       setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);
-      const parts = [trainingSetId, file.webkitRelativePath].filter(
+      const parts = [trainingSetId, fileName].filter(
         (p) => p.length > 0
       );
       const fileKey = parts.join("/");
@@ -117,7 +117,7 @@ export default function Sources({
           const updated: Omit<TrainingSource, "trainingSetId">[] = [...sources];
 
           files.forEach((file) => {
-            const parts = [file.file.webkitRelativePath].filter(
+            const parts = [file.file.name, file.file.webkitRelativePath].filter(
               (p) => p.length > 0
             );
             const name = parts.join("/");
@@ -251,7 +251,11 @@ export default function Sources({
       </div>
       <div className="rounded-lg border p-2">
         <header className="flex flex-row justify-between border-b border-dotted">
-          <div>{sources.length} Sources</div>
+          <div>
+            <span>{sources.length} Sources</span>
+            {inProcessFiles.length > 0 && (
+            <span className="text-green-500 inline-block ml-2">{inProcessFiles.filter(f=>f.status==="pending").length} Uploading</span>)}
+          </div>
           <div className="flex w-auto flex-row justify-between" role="toolbar">
             <button
               disabled={disabled}
@@ -277,7 +281,8 @@ export default function Sources({
             </button>
           </div>
         </header>
-        <ul>
+
+        <ul className="w-full h-96 overflow-y-scroll">
           {inProcessFiles
             .sort((a, b) => {
               return a.file.name.localeCompare(b.file.name);
