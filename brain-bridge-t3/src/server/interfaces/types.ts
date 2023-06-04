@@ -66,3 +66,13 @@ export type PublicChatInstanceWithRelations = Prisma.PublicChatInstanceGetPayloa
 export type QuestionAndAnswerPartial = Omit<QuestionAndAnswer, "trainingSetId" | "id">;
 
 export type ChatResponseMode = "one-shot" | "critique" | "refine";
+
+export type TrainingOptions = {
+  maxSegmentLength: number; // 2000;
+  overlapBetweenSegments: number; // 200;
+}
+
+export const defaultTrainingOptions: TrainingOptions = {
+  maxSegmentLength: 2000,
+  overlapBetweenSegments: 200,
+}

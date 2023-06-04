@@ -146,7 +146,10 @@ function turnQuestionsIntoText(questions: MissedQuestions[]): string {
   return template.replace("{questions}", mapped);
 }
 
-export async function createTrainingIndex({ name, trainingSet, onProgress }: { name: string, trainingSet: TrainingSetWithRelations, onProgress?: ProgressNotifier }): Promise<TrainingIndex> {
+export async function createTrainingIndex({ name, trainingSet, onProgress, options }: { name: string, trainingSet: TrainingSetWithRelations, onProgress?: ProgressNotifier, options?: { maxSegmentLength?: number, overlapBetweenSegments?: number } }): Promise<TrainingIndex> {
+  const usedOptions = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...(options ?? {}) }
+  usedOptions.maxSegmentLength = parseInt(usedOptions.maxSegmentLength.toString());
+  usedOptions.overlapBetweenSegments = parseInt(usedOptions.overlapBetweenSegments.toString());
   let progressNotifier = onProgress ?? (() => { });
   progressNotifier({ currentStage: "overall", statusText: "Training Started", progress: 0 });
   const { trainingSources } = trainingSet;
@@ -164,7 +167,7 @@ export async function createTrainingIndex({ name, trainingSet, onProgress }: { n
 
   progressNotifier({ currentStage: "overall", statusText: "Splitting documents...", progress: 0.2 });
   progressNotifier({ currentStage: "split-documents", statusText: `Splitting documents into chunks`, progress: 0 });
-  const splitContent = await splitFileData([...allContent], progressNotifier);
+  const splitContent = await splitFileData([...allContent], progressNotifier, usedOptions);
   const tempFilePath = getTempFilePath(name)
   progressNotifier({ currentStage: "overall", statusText: "Vectorizing documents...", progress: 0.3 });
   progressNotifier({ currentStage: "vectorize", statusText: `Vectorizing documents`, progress: 0 });
@@ -235,6 +238,9 @@ const textSplitter = new CharacterTextSplitter({
 
 function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, separator: string[] = [" ", ",", "\n"]) {
   console.log("Splitting a string of ", str.length, "Characters");
+  console.log("Chunk size", chunkSize);
+  console.log("Chunk overlap", chunkOverlap);
+
   let chunks: string[] = [str];
   const maxLen = (chunks: string[]) => {
     const lengths = chunks.map((c) => c.length);
@@ -281,14 +287,14 @@ function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, 
 const text_splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 4000, chunkOverlap: 200, separators: [" ", ",", "\n"]
 })
-async function splitFileData(data: string[], progressNotifier: ProgressNotifier): Promise<string[]> {
+async function splitFileData(data: string[], progressNotifier: ProgressNotifier, options: { maxSegmentLength: number, overlapBetweenSegments: number }): Promise<string[]> {
 
   console.log("Splitting text into chunks...")
   let docs: string[] = [];
   let index = 0;
   for (const d of data) {
     progressNotifier({ currentStage: "split-documents", statusText: `Splitting document ${index + 1} of ${data.length}`, progress: index / data.length });
-    const docOutput = await textSplitterMine(d, 4000, 200, [" ", ",", "\n"])
+    const docOutput = await textSplitterMine(d, options.maxSegmentLength, options.overlapBetweenSegments, [" ", ",", "\n"])
     docs = [...docs, ...docOutput];
     index++;
   }

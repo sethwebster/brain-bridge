@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { QuestionsWizard } from "./QuestionsWizard";
 import Sources from "./Sources";
 import Data from "~/utils/data-client";
@@ -15,8 +21,10 @@ import {
   type TrainingSource,
 } from "@prisma/client";
 import {
+  TrainingOptions,
   type QuestionAndAnswerPartial,
   type TrainingSetWithRelations,
+  defaultTrainingOptions,
 } from "~/server/interfaces/types";
 import { InfoBoxDisplay } from "~/app/components/InfoBox";
 import replaceTokens from "~/utils/replace-tokens";
@@ -257,12 +265,32 @@ function TrainingSetForm({
     [trainingSetData]
   );
 
+  const handleTrainingOptionChanged = useCallback(
+    (option: string, e: React.ChangeEvent<HTMLInputElement>) => {
+      setTrainingSetData((trainingSetData) => ({
+        ...trainingSetData,
+        trainingOptions: {
+          ...((trainingSetData.trainingOptions ||
+            defaultTrainingOptions) as TrainingOptions),
+          [option]: e.target.value,
+        },
+      }));
+    },
+    []
+  );
+
   const shared = trainingSetData.trainingSetShares.find(
     (s) => s.acceptedUserId === session.data?.user.id
   );
   const role = shared?.role ?? "OWNER";
   const isShared = shared !== undefined;
   const canEdit = role === "OWNER" || role === "EDITOR";
+
+  const trainingOptions = useMemo(() => {
+    const options: TrainingOptions = (trainingSetData.trainingOptions ??
+      defaultTrainingOptions) as TrainingOptions;
+    return options;
+  }, [trainingSetData.trainingOptions]);
   return (
     <div className="mb-10">
       <header className="flex justify-between border-b border-gray-400 pb-2 ">
@@ -316,6 +344,44 @@ function TrainingSetForm({
           label="Use custom prompt"
           onChange={handleUseOwnPromptToggle}
         />
+        <div>
+          <h3 className="text-lg">Training Options</h3>
+          <div className="mb-4 flex flex-col">
+            <label className="text-sm">Maximum Segment Length</label>
+            <Input
+              className="p-2"
+              disabled={!canEdit}
+              type="text"
+              name="maxSegmentLength"
+              value={trainingOptions.maxSegmentLength}
+              placeholder="Enter a maximum segment length. Default is 2000."
+              onChange={(e) =>
+                handleTrainingOptionChanged("maxSegmentLength", e)
+              }
+            />
+            <small>
+              This is the maximum length of each document segment when split.
+            </small>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-sm">Document Segment Overlap</label>
+            <Input
+              className="p-2"
+              disabled={!canEdit}
+              type="text"
+              name="maxSegmentLength"
+              value={trainingOptions.overlapBetweenSegments}
+              placeholder="Enter a desired document overlap. Default is 200."
+              onChange={(e) =>
+                handleTrainingOptionChanged("overlapBetweenSegments", e)
+              }
+            />
+            <small>
+              This is the amount of overlap between each document segment when
+              split.
+            </small>
+          </div>
+        </div>
       </div>
       {!trainingSetData.useOwnPrompt && !isNew && (
         <div>
@@ -365,12 +431,12 @@ function TrainingSetForm({
         trainingSet={trainingSetData}
         onUpdate={handleMissedQuestionsUpdate}
       />
-        {isTraining && socketRef.socket && (
-          <TrainingProgressDisplay
-            onMessage={socketRef.onMessage}
-            socket={socketRef.socket}
-          />
-        )}
+      {isTraining && socketRef.socket && (
+        <TrainingProgressDisplay
+          onMessage={socketRef.onMessage}
+          socket={socketRef.socket}
+        />
+      )}
       <div className="flex flex-row">
         <button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises

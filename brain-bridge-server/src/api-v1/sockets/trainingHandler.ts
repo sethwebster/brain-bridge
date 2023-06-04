@@ -16,7 +16,8 @@ export function trainingHandler(socket) {
 
     const prisma = new PrismaClient();
     const set = await prisma.trainingSet.findUnique({
-      where: { id: id }, include: {
+      where: { id: id },
+      include: {
         conversations: true,
         trainingSources: true,
         questionsAndAnswers: true,
@@ -33,12 +34,15 @@ export function trainingHandler(socket) {
     socket.emit("training-started", data);
 
     function progressNotifiier(progress) {
-      console.log("CALLED")
       socket.emit("training-progress", progress);
     }
 
+
+
     try {
-      const result = await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier }) as Partial<TrainingIndex>;
+      const options = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...((set.trainingOptions as object) ?? {}) }
+      console.log("USED OPTIONS", options)
+      const result = await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier, options }) as Partial<TrainingIndex>;
       delete result.vectors;
       delete result.docStore;
       socket.emit("training-complete", result);

@@ -6,7 +6,9 @@ import {
   type PublicChatWithRelations,
   messageWithRelations,
   type PublicChatInstanceWithRelations,
-  conversationWithRelations
+  conversationWithRelations,
+  defaultTrainingOptions,
+  TrainingOptions
 } from "~/server/interfaces/types";
 import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
@@ -168,6 +170,8 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
     )
   );
   invariant(authorizedToUpdate, "User is not authorized to make this update");
+  const incomingTrainingOptions = ((trainingSet.trainingOptions ?? defaultTrainingOptions) ?? defaultTrainingOptions) as TrainingOptions
+
   await prisma.trainingSet.update({
     where: {
       id: trainingSet.id,
@@ -176,6 +180,7 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
       name: trainingSet.name,
       prompt: trainingSet.prompt,
       useOwnPrompt: trainingSet.useOwnPrompt,
+      trainingOptions: { ...defaultTrainingOptions, ...incomingTrainingOptions },
       questionsAndAnswers: {
         deleteMany: {},
         create: trainingSet.questionsAndAnswers.map(qa => {
@@ -250,6 +255,7 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
 async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to create training sets");
+  const incomingTrainingOptions = ((trainingSet.trainingOptions ?? defaultTrainingOptions) ?? defaultTrainingOptions) as TrainingOptions
   const result = await prisma.trainingSet.create({
     data: {
       name: trainingSet.name,
@@ -268,7 +274,7 @@ async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
         connect: { id: session.user.id },
       },
       version: 0,
-
+      trainingOptions: { ...defaultTrainingOptions, ...incomingTrainingOptions },
     },
     select: {
       id: true,

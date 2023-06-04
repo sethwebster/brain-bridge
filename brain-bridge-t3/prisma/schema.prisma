@@ -34,6 +34,7 @@ model TrainingSet {
   missedQuestions     MissedQuestions[]
   trainingSetShares   TrainingSetShares[]
   useOwnPrompt        Boolean             @default(false)
+  trainingOptions     Json              @default("{}")
 }
 
 enum TrainingSetRoles {

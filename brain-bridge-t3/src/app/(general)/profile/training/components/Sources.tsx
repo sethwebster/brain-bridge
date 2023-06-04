@@ -1,5 +1,5 @@
 import { useFilePicker } from "use-file-picker";
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { PlusAddIcon, TrashCan, UrlIcon } from "./SvgIcons";
 import { isValidURL } from "~/utils/validation";
 import { type TrainingSource } from "@prisma/client";
@@ -17,7 +17,7 @@ import delay from "~/utils/delay";
 import { FolderIcon } from "~/app/components/SvgIcons";
 import DeleteButton from "../../components/DeleteButton";
 
-export default function Sources({
+function Sources({
   sources,
   trainingSetId,
   onSourcesChanged,
@@ -36,15 +36,14 @@ export default function Sources({
     }[]
   >([]);
 
+  const [showMore, setShowMore] = useState(false);
   const [showClearSourcesModal, setShowClearSourcesModal] = useState(false);
 
   const handleFileAdded = useCallback(
     async (file: FileWithDirectoryAndFileHandle) => {
       const fileName = file.webkitRelativePath || file.name;
       setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);
-      const parts = [trainingSetId, fileName].filter(
-        (p) => p.length > 0
-      );
+      const parts = [trainingSetId, fileName].filter((p) => p.length > 0);
       const fileKey = parts.join("/");
       const { url } = await DataClient.getSignedUrl(fileKey);
       const final = `${fileKey}`;
@@ -231,6 +230,8 @@ export default function Sources({
     return isValidURL(newUrlText);
   }, [newUrlText]);
 
+  const maxDisplayed = showMore ? sources.length : 20;
+
   return (
     <div className="mt-2 rounded-lg py-4">
       <h1 className="text-lg">Training Data Sources</h1>
@@ -254,7 +255,11 @@ export default function Sources({
           <div>
             <span>{sources.length} Sources</span>
             {inProcessFiles.length > 0 && (
-            <span className="text-green-500 inline-block ml-2">{inProcessFiles.filter(f=>f.status==="pending").length} Uploading</span>)}
+              <span className="ml-2 inline-block text-green-500">
+                {inProcessFiles.filter((f) => f.status === "pending").length}{" "}
+                Uploading
+              </span>
+            )}
           </div>
           <div className="flex w-auto flex-row justify-between" role="toolbar">
             <button
@@ -282,7 +287,7 @@ export default function Sources({
           </div>
         </header>
 
-        <ul className="w-full h-96 overflow-y-scroll">
+        <ul className="max-h-72 w-full overflow-y-scroll">
           {inProcessFiles
             .sort((a, b) => {
               return a.file.name.localeCompare(b.file.name);
@@ -322,6 +327,7 @@ export default function Sources({
             .sort((a, b) => {
               return a.name.localeCompare(b.name);
             })
+            .slice(0, maxDisplayed)
             .map((source, index) => (
               <li
                 key={index}
@@ -369,6 +375,13 @@ export default function Sources({
                 </DeleteButton>
               </li>
             ))}
+          {sources.length > 25 && (
+            <li className="text-center">
+              <button onClick={() => setShowMore(!showMore)}>
+                Show {showMore ? "Less" : "More"}
+              </button>
+            </li>
+          )}
         </ul>
         {/* <small>Pending {filesContent.length} sources</small>
         <ul>
@@ -415,3 +428,5 @@ export default function Sources({
     </div>
   );
 }
+
+export default memo(Sources);
