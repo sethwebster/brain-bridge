@@ -19,7 +19,7 @@ function log {
 function add_metadata {
     echo -e "---\noriginal_file: $1\n---\n$(cat "$2")" > "$2"
 }
-
+ 
 # $1 - file name
 function conversion_done {
     converted_files=$((converted_files + 1))
