@@ -39,6 +39,7 @@ export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
       trainingSetShares: [],
       useOwnPrompt: false,
       trainingOptions: defaultTrainingOptions,
+      trainingStatus: "IDLE"
     });
     router.push("/profile/training/" + result.id);
   }, [inputValue, router]);
