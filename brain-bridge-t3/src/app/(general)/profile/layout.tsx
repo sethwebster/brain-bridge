@@ -3,6 +3,7 @@ import { getServerSession } from "~/server/auth";
 import SideBar from "./components/SideBar";
 import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
 import ServerData from "~/server/server-data";
+import Tabs from "~/app/components/Tabs";
 
 export default async function Layout({
   children,
@@ -15,7 +16,11 @@ export default async function Layout({
   const chatsRequest = ServerData.fetchChats();
   const publicChatsRequest = ServerData.fetchPublicChats();
 
-  const [sets, chats, publicChats] = await Promise.all([setsRequest, chatsRequest, publicChatsRequest]);
+  const [sets, chats, publicChats] = await Promise.all([
+    setsRequest,
+    chatsRequest,
+    publicChatsRequest,
+  ]);
   // invariant(session, "Session must exist");
   // invariant(session.user, "User must exist");
   // const sets = await Data.fetchTrainingSets({ email: session.user.email! });
@@ -24,11 +29,21 @@ export default async function Layout({
   //   email: session.user.email!,
   // });
   return (
-    <div className="flex flex-row w-full h-full bg-slate-100 dark:bg-slate-700">
+    <div className="flex h-full w-full flex-row bg-slate-100 dark:bg-slate-700">
       <div className="h-full sm:p-4">
-        <SideBar setCount={sets.length} chatCount={chats.length} publicChatCount={publicChats.length} />
+        <SideBar
+          setCount={sets.length}
+          chatCount={chats.length}
+          publicChatCount={publicChats.length}
+        />
       </div>
-      <SideBarPaddedContainer>{children}</SideBarPaddedContainer>
+
+      <SideBarPaddedContainer>
+        <Tabs tabContent={{
+          "Dashboard": <div>Dashboard</div>,
+        }}/>
+        {children}
+      </SideBarPaddedContainer>
     </div>
   );
 }
