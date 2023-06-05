@@ -180,7 +180,7 @@ function TrainingSetForm({
 
   /**
    * Train the model
-   */
+   */ 
   const handleTrain = useCallback(() => {
     try {
       const startTraining = () => {
