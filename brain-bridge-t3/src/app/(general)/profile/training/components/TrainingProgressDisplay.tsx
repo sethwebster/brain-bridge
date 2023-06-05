@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { type Socket } from "socket.io-client";
 
 type TrainingStages = "overall" |
@@ -25,7 +25,7 @@ export function TrainingProgressDisplay({
   const [status, setStatus] = useState<
     Record<
       TrainingStages, {
-        currentStage: TrainingStages;
+        stage: TrainingStages;
         statusText: string;
         progress: number;
         additionalInfo?: string;
@@ -33,27 +33,27 @@ export function TrainingProgressDisplay({
     >
   >({
     overall: {
-      currentStage: "overall",
+      stage: "overall",
       statusText: "Waiting to start",
       progress: 0,
     },
     "sources-load": {
-      currentStage: "sources-load",
+      stage: "sources-load",
       statusText: "Waiting to start",
       progress: 0,
     },
     "source-load": {
-      currentStage: "source-load",
+      stage: "source-load",
       statusText: "Waiting to start",
       progress: 0,
     },
     "split-documents": {
-      currentStage: "split-documents",
+      stage: "split-documents",
       statusText: "Waiting to start",
       progress: 0,
     },
     vectorize: {
-      currentStage: "vectorize",
+      stage: "vectorize",
       statusText: "Waiting to start",
       progress: 0,
     },
@@ -64,14 +64,15 @@ export function TrainingProgressDisplay({
       const removeOnMessage = onMessage(
         "training-progress",
         (payload: {
-          currentStage: TrainingStages;
+          stage: TrainingStages;
           statusText: string;
           progress: number;
           additionalInfo?: string;
         }) => {
+          console.log(payload.stage, payload.progress)
           setStatus((s) => ({
             ...s,
-            [payload.currentStage]: payload,
+            [payload.stage]: payload,
           }));
         }
       );
@@ -91,13 +92,14 @@ export function TrainingProgressDisplay({
   return (
     <div className={`overflow-hidden duration-1000 transition-all ${isTraining ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
       <h3 className="text-xl">Training Progress</h3>
+      <pre>{JSON.stringify(status, null, 2)}</pre>
       {Object.entries(status).map(([stage, { statusText, progress }]) => (
         <div key={stage}>
           <p>{StatusToLabelMap[stage as TrainingStages]}</p>
           <div className="h-5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
             <div
               className="h-5 rounded-full bg-green-300 "
-              style={{ width: `${progress * 100}%` }}
+              style={{ width: `${Math.round(progress * 100)}%` }}
             ></div>
             <div className="relative -top-6 mb-1 w-auto truncate text-center">
               <small>{statusText}</small>

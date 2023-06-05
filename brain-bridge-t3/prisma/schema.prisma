@@ -16,6 +16,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TrainingSetTrainingStatus {
+  IDLE
+  TRAINING
+  ERROR
+}
+
 model TrainingSet {
   id                  String              @id @default(cuid())
   createdAt           DateTime            @default(now())
@@ -35,6 +41,7 @@ model TrainingSet {
   trainingSetShares   TrainingSetShares[]
   useOwnPrompt        Boolean             @default(false)
   trainingOptions     Json              @default("{}")
+  trainingStatus      TrainingSetTrainingStatus @default(IDLE)
 }
 
 enum TrainingSetRoles {
