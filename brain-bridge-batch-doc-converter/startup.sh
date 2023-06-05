@@ -24,7 +24,7 @@ function add_metadata {
 function conversion_done {
     converted_files=$((converted_files + 1))
     log "Converted $1" "$2" 
-}
+} 
 
 # Function to convert a HTML document to Markdown
 # Parameters:
