@@ -7,6 +7,7 @@ import path from "path";
 import invariant from "tiny-invariant";
 import { prisma } from "./db";
 import { getTempFilePath } from "./get-temp-file";
+import { Milvus } from "langchain/vectorstores/milvus";
 
 interface LangChainStorage {
   getIndex(id: string): Promise<HNSWLib>;
@@ -72,18 +73,15 @@ export class BrainBridgeLangChain implements LangChainStore {
     this._lowConfidenceAnswerHandler = lowConfidenceAnswerHandler;
   }
 
-  private getStore(trainingSetId: string): Promise<HNSWLib> {
-    return new Promise((resolve, reject) => {
-      if (this._store) {
-        return this._store;
+  private async getStore(trainingSetId: string): Promise<Milvus> {
+    const vectorStore = await Milvus.fromExistingCollection(
+      new OpenAIEmbeddings(),
+      {
+        collectionName: trainingSetId,
       }
-      this.storage.getIndex(trainingSetId).then((index) => {
-        this._store = index;
-        resolve(index);
-      }).catch((err) => {
-        reject(err);
-      });
-    });
+    );
+    return vectorStore;
+
   }
 
   /**

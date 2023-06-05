@@ -24,12 +24,20 @@ export function trainingHandler(socket) {
         missedQuestions: true,
       }
     });
-
-    console.log("set", set);
     if (!set) {
       socket.emit("training-error", { error: "Training set not found" });
       return;
     }
+
+    if (set.trainingStatus === "TRAINING") {
+      socket.emit("training-error", { error: "Training already in progress" });
+      return;
+    }
+
+    await prisma.trainingSet.update({
+      where: { id: set.id },
+      data: { trainingStatus: "TRAINING" }
+    });
 
     socket.emit("training-started", data);
 
@@ -42,13 +50,19 @@ export function trainingHandler(socket) {
     try {
       const options = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...((set.trainingOptions as object) ?? {}) }
       console.log("USED OPTIONS", options)
-      const result = await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier, options }) as Partial<TrainingIndex>;
-      delete result.vectors;
-      delete result.docStore;
-      socket.emit("training-complete", result);
+      await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier, options }) as Partial<TrainingIndex>;
+      await prisma.trainingSet.update({
+        where: { id: set.id },
+        data: { trainingStatus: "IDLE" }
+      });
+      socket.emit("training-complete", { trainingSetId: set.id });
     } catch (error: any) {
       console.log("ERROR", error);
       socket.emit("training-error", { error });
+      await prisma.trainingSet.update({
+        where: { id: set.id },
+        data: { trainingStatus: "ERROR" }
+      });
     }
   });
 }

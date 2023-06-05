@@ -1,7 +1,7 @@
 import fs from 'fs'
-import { HNSWLib } from "langchain/vectorstores";
+import { Milvus } from "langchain/vectorstores/milvus";
 import { CharacterTextSplitter, RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { OpenAIEmbeddings } from 'langchain/embeddings';
+import { OpenAIEmbeddings} from 'langchain/embeddings';
 import path from 'path';
 import jsdom from 'jsdom';
 import { MissedQuestions, Prisma, type TrainingIndex, type TrainingSource } from '@prisma/client';
@@ -10,9 +10,11 @@ import { prisma } from './db';
 import cleanUpHtml from './clean-up-html';
 import { getTempFilePath } from './get-temp-file';
 import PDFToText from './pdf-to-text';
+import { textSplitterMine } from './textSplitterMine';
+import client from './milvus';
 
 export interface ProgressNotifier {
-  (payload: { currentStage: string; statusText: string, progress: number, additionalInfo?: string }): void;
+  (payload: { stage: string; statusText: string, progress: number, additionalInfo?: string }): void;
 }
 
 export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>()({
@@ -79,15 +81,15 @@ async function loadUrl(url: string, knownMimeType: string): Promise<string | Blo
 }
 
 async function getSourceText(userId: string, source: TrainingSource, progressNotifier: ProgressNotifier): Promise<string> {
-  progressNotifier({ currentStage: "source-load", statusText: `Loading ${source.name ?? source.content}`, progress: 0 });
+  progressNotifier({ stage: "source-load", statusText: `Loading ${source.name ?? source.content}`, progress: 0 });
   switch (source.type) {
     case "FILE":
       switch (source.mimeType) {
         case "application/pdf":
-          progressNotifier({ currentStage: "source-load", statusText: `Converting ${source.name} to text`, progress: 0 });
+          progressNotifier({ stage: "source-load", statusText: `Converting ${source.name} to text`, progress: 0 });
           const pdfToText = new PDFToText(source.name);
           const text = await pdfToText.convert();
-          progressNotifier({ currentStage: "source-load", statusText: `Converted ${source.name} to text`, progress: 1 });
+          progressNotifier({ stage: "source-load", statusText: `Converted ${source.name} to text`, progress: 1 });
           return text;
           break;
         default:
@@ -95,7 +97,7 @@ async function getSourceText(userId: string, source: TrainingSource, progressNot
           return await loadFile(source.name);
       }
     case "URL":
-      progressNotifier({ currentStage: "source-load", statusText: `Loading ${source.name}...`, progress: 0 });
+      progressNotifier({ stage: "source-load", statusText: `Loading ${source.name}...`, progress: 0 });
 
       const key = `${userId}/${source.content}`;
       let url: string = "";
@@ -110,7 +112,7 @@ async function getSourceText(userId: string, source: TrainingSource, progressNot
         // markdown
         case "text/markdown":
           const markdownContent = await loadUrl(url, source.mimeType);
-          progressNotifier({ currentStage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
+          progressNotifier({ stage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
           return markdownContent as string;
         case "application/pdf":
           const content = await loadUrl(url, source.mimeType);
@@ -122,11 +124,11 @@ async function getSourceText(userId: string, source: TrainingSource, progressNot
           const pdfToText = new PDFToText(tempFilePath);
           const text = await pdfToText.convert();
           console.log("Successfully converted PDF to text. Length:", text.length)
-          progressNotifier({ currentStage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
+          progressNotifier({ stage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
           return text;
         default:
           const data = await loadUrl(url, source.mimeType ?? "text/plain") as string;
-          progressNotifier({ currentStage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
+          progressNotifier({ stage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
           return data;
       }
     default:
@@ -151,35 +153,43 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
   usedOptions.maxSegmentLength = parseInt(usedOptions.maxSegmentLength.toString());
   usedOptions.overlapBetweenSegments = parseInt(usedOptions.overlapBetweenSegments.toString());
   let progressNotifier = onProgress ?? (() => { });
-  progressNotifier({ currentStage: "overall", statusText: "Training Started", progress: 0 });
+  progressNotifier({ stage: "overall", statusText: "Training Started", progress: 0 });
+
   const { trainingSources } = trainingSet;
+
+  /**
+   * Load all the sources, just get the content as text
+   */
+  progressNotifier({ stage: "overall", statusText: "Loading sources...", progress: 0.1 });
   const promises = trainingSources.map((source, index) => {
     console.log('progress', index / trainingSources.length)
-    progressNotifier({ currentStage: "sources-load", statusText: `Loading ${source.name}...`, progress: index / trainingSources.length });
-    const result = getSourceText(trainingSet.userId, source, progressNotifier)
-    return result;
+    return new Promise<string>((resolve, reject) => {
+      console.log('progress', index / trainingSources.length)
+      const result = getSourceText(trainingSet.userId, source, progressNotifier)
+      progressNotifier({ stage: "sources-load", statusText: ``, progress: index / trainingSources.length });
+      resolve(result);
+    });
   });
-  progressNotifier({ currentStage: "overall", statusText: "Loading sources...", progress: 0.1 });
   const answeredQuestionText = `\n${turnQuestionsIntoText(trainingSet.missedQuestions)}\n`;
-  progressNotifier({ currentStage: "sources-load", statusText: `Loading all sources.`, progress: 0 });
+  progressNotifier({ stage: "sources-load", statusText: `Loading all sources.`, progress: 0 });
   const allContent = await Promise.all(promises);
-  progressNotifier({ currentStage: "sources-load", statusText: `Loaded all sources.`, progress: 1 });
+  progressNotifier({ stage: "sources-load", statusText: `Loaded all sources.`, progress: 1 });
 
-  progressNotifier({ currentStage: "overall", statusText: "Splitting documents...", progress: 0.2 });
-  progressNotifier({ currentStage: "split-documents", statusText: `Splitting documents into chunks`, progress: 0 });
-  const splitContent = await splitFileData([...allContent], progressNotifier, usedOptions);
+  progressNotifier({ stage: "overall", statusText: "Splitting documents...", progress: 0.2 });
+  progressNotifier({ stage: "split-documents", statusText: `Splitting documents into chunks`, progress: 0 });
+  let splitContent = await splitFileData([...allContent], progressNotifier, usedOptions);
   const tempFilePath = getTempFilePath(name)
-  progressNotifier({ currentStage: "overall", statusText: "Vectorizing documents...", progress: 0.3 });
-  progressNotifier({ currentStage: "vectorize", statusText: `Vectorizing documents`, progress: 0 });
-  const store = await vectorize(splitContent);
-  progressNotifier({ currentStage: "vectorize", statusText: `Vectorized documents`, progress: 1 });
-  progressNotifier({ currentStage: "overall", statusText: "Creating index...", progress: 0.6 });
-  await store.save(tempFilePath)
+  progressNotifier({ stage: "overall", statusText: "Vectorizing documents...", progress: 0.3 });
+  progressNotifier({ stage: "vectorize", statusText: `Vectorizing documents`, progress: 0 });
+  const store = await vectorize(splitContent, trainingSet.id);
+  progressNotifier({ stage: "vectorize", statusText: `Vectorized documents`, progress: 1 });
+  progressNotifier({ stage: "overall", statusText: "Creating index...", progress: 0.6 });
+  console.log(store);
   const indexPath = path.join(tempFilePath, `hnswlib.index`);
   const docStorePath = path.join(tempFilePath, `docstore.json`);
   const indexData = await fs.promises.readFile(indexPath);
   const docStoreData = await fs.promises.readFile(docStorePath);
-  progressNotifier({ currentStage: "overall", statusText: "Deleting existing index", progress: .85 });
+  progressNotifier({ stage: "overall", statusText: "Deleting existing index", progress: .85 });
   const existingIndex = await prisma.trainingIndex.findFirst({
     where: {
       trainingSetId: trainingSet.id
@@ -193,41 +203,43 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
       }
     })
   }
-  progressNotifier({ currentStage: "overall", statusText: "Creating new index", progress: 0.95 });
+  progressNotifier({ stage: "overall", statusText: "Creating new index", progress: 0.95 });
   console.log("Creating training index")
-  const trainingIndex = await prisma.trainingIndex.create({
-    data: {
-      metaData: "",
-      docStore: docStoreData,
-      vectors: indexData,
-      pending: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      trainingSet: {
-        connect: {
-          id: trainingSet.id
-        }
-      }
-    }
-  });
+  // const trainingIndex = await prisma.trainingIndex.create({
+  //   data: {
+  //     metaData: "",
+  //     docStore: docStoreData,
+  //     vectors: indexData,
+  //     pending: false,
+  //     createdAt: new Date(),
+  //     updatedAt: new Date(),
+  //     trainingSet: {
+  //       connect: {
+  //         id: trainingSet.id
+  //       }
+  //     }
+  //   }
+  // });
   console.log("index creation complete");
-  progressNotifier({ currentStage: "overall", statusText: "Index creation complete", progress: 1 });
-  return trainingIndex;
+  progressNotifier({ stage: "overall", statusText: "Index creation complete", progress: 1 });
+  return null;
 }
 
-async function vectorize(docs: string[]): Promise<HNSWLib> {
+async function vectorize(docs: string[], trainingSetId: string): Promise<Milvus> {
   if (docs.length === 0) throw new Error("No documents to vectorize!");
   console.log("Vectorizing documents...")
-  const store = await HNSWLib.fromTexts(
+
+
+  const vectorStore = Milvus.fromTexts(
     docs,
     docs.map((_, i) => ({ id: i })),
-    new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      // modelName: 'gpt-3.5-turbo'
-    })
-  )
-  console.log("Documents vectorized")
-  return store;
+    new OpenAIEmbeddings(),
+    {
+      collectionName: trainingSetId,
+    }
+  );
+
+  return vectorStore;
 }
 
 const textSplitter = new CharacterTextSplitter({
@@ -235,54 +247,6 @@ const textSplitter = new CharacterTextSplitter({
   chunkOverlap: 0,
   separator: "\n"
 });
-
-function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, separator: string[] = [" ", ",", "\n"]) {
-  console.log("Splitting a string of ", str.length, "Characters");
-  console.log("Chunk size", chunkSize);
-  console.log("Chunk overlap", chunkOverlap);
-
-  let chunks: string[] = [str];
-  const maxLen = (chunks: string[]) => {
-    const lengths = chunks.map((c) => c.length);
-    const maxLen = Math.max(...lengths);
-    console.log("Max length", maxLen);
-    return maxLen;
-  }
-  let lastChunkMaxLen = maxLen(chunks);
-  let timesSeenSameMaxLen = 0;
-  while (maxLen(chunks) > chunkSize) {
-    if (lastChunkMaxLen === maxLen(chunks)) {
-      timesSeenSameMaxLen++;
-    }
-    if (timesSeenSameMaxLen > 2) {
-      console.log("Max length stuck. Breaking.")
-      lastChunkMaxLen = 0;
-      break;
-    }
-    const newStart: string[] = [];
-    // Split into chunks of chunkSize
-    for (const s of chunks) {
-      if (s.length > chunkSize) {
-        const approxMiddle = Math.floor(s.length / 2);
-        let index = approxMiddle;
-        while (!separator.includes(s[index]) && index < s.length) {
-          index++;
-        }
-        const firstHalf = s.slice(0, index + chunkOverlap);
-        const secondHalf = s.slice(index - chunkOverlap);
-        newStart.push(firstHalf);
-        newStart.push(secondHalf);
-      } else {
-        newStart.push(s);
-      }
-    }
-    lastChunkMaxLen = maxLen(chunks);
-    chunks = newStart;
-  }
-  const filtered = chunks.filter((c) => c && c.length > 0);
-  console.log("Split into", filtered.length, "chunks", Array.isArray(filtered))
-  return filtered;
-}
 
 const text_splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 4000, chunkOverlap: 200, separators: [" ", ",", "\n"]
@@ -293,7 +257,7 @@ async function splitFileData(data: string[], progressNotifier: ProgressNotifier,
   let docs: string[] = [];
   let index = 0;
   for (const d of data) {
-    progressNotifier({ currentStage: "split-documents", statusText: `Splitting document ${index + 1} of ${data.length}`, progress: index / data.length });
+    progressNotifier({ stage: "split-documents", statusText: `Splitting document ${index + 1} of ${data.length}`, progress: index / data.length });
     const docOutput = await textSplitterMine(d, options.maxSegmentLength, options.overlapBetweenSegments, [" ", ",", "\n"])
     docs = [...docs, ...docOutput];
     index++;
