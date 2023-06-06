@@ -2,7 +2,7 @@ import {
   type MessageWithRelations,
   type ConversationWithRelations,
   type TrainingSetWithRelations,
-  type TrainingIndexWithRelations, trainingSetWithRelations,
+  trainingSetWithRelations,
   type PublicChatWithRelations,
   messageWithRelations,
   type PublicChatInstanceWithRelations,
