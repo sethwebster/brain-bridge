@@ -27,9 +27,10 @@ import Shares from "./Shares";
 import { useSession } from "next-auth/react";
 import Toggle from "~/app/components/toggle";
 import Modal from "~/app/components/ModalDialog";
-import { ShareIcon } from "~/app/components/SvgIcons";
+import { ShareIcon, SaveIcon } from "~/app/components/SvgIcons";
 import { useAuthenticatedSocket } from "~/hooks/use-socket";
 import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
+import Tabs from "~/app/components/Tabs";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -283,175 +284,213 @@ function TrainingSetForm({
   }, [trainingSetData.trainingOptions]);
   return (
     <div className="mb-10">
-      <header className="flex justify-between border-b border-gray-400 pb-2 ">
-        <div>
-          <h1 className="text-2xl">{trainingSet.name}</h1>
-          {isShared ? (
-            <div className="flex flex-row">
-              <div className=" mr-1 flex h-4 w-12  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
-                <ShareIcon
-                  fillColor="white"
-                  className="h-4 w-4 border-red-800"
+      <div className="w-full overflow-hidden">
+        <Tabs
+          header={<h1 className="text-sm">{trainingSet.name}</h1>}
+          initialSelectedTab="Details"
+          rightEnd={
+            <div className="flex flex-row ">
+              <button
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                onClick={handleSave}
+                disabled={!isDirty || isSaving || !canSave}
+                className="w-24 rounded-md border bg-blue-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </button>
+              {!isNew && (
+                <button
+                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                  onClick={handleTrain}
+                  disabled={
+                    isDirty ||
+                    isTraining ||
+                    trainingSetData.version === trainingSet.trainingIndexVersion
+                  }
+                  className="w-24 rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400"
+                >
+                  Train
+                </button>
+              )}
+            </div>
+          }
+          tabContent={{
+            Details: (
+              <div className="p-6">
+                <header className="flex justify-between border-b border-gray-400 pb-2 ">
+                  <div>
+                    <h1 className="text-2xl">{trainingSet.name}</h1>
+                    {isShared ? (
+                      <div className="flex flex-row">
+                        <div className=" mr-1 flex h-4 w-12  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
+                          <ShareIcon
+                            fillColor="white"
+                            className="h-4 w-4 border-red-800"
+                          />
+                        </div>
+                        <small>Shared with you</small>
+                      </div>
+                    ) : (
+                      <></>
+                    )}
+                  </div>
+                  <Shares
+                    trainingSet={trainingSetData}
+                    onConfirmChanges={handleConfirmShareChanges}
+                  />
+                </header>
+                <Input
+                  disabled={!canEdit}
+                  className="mt-2 w-full rounded-md border p-2"
+                  alt="Training Set Name"
+                  placeholder="Training Set Name"
+                  type="text"
+                  name="name"
+                  value={trainingSetData.name}
+                  onChange={handleNameChange}
                 />
               </div>
-              <small>Shared with you</small>
-            </div>
-          ) : (
-            <></>
-          )}
-        </div>
-        <Shares
-          trainingSet={trainingSetData}
-          onConfirmChanges={handleConfirmShareChanges}
-        />
-      </header>
-
-      <Input
-        disabled={!canEdit}
-        className="mt-2 w-full rounded-md border p-2"
-        alt="Training Set Name"
-        placeholder="Training Set Name"
-        type="text"
-        name="name"
-        value={trainingSetData.name}
-        onChange={handleNameChange}
-      />
-      {!allQuestionsAnswered && (
-        <InfoBoxDisplay
-          hidden={false}
-          handleDismiss={() => {
-            console.log("dismiss");
+            ),
+            Prompt: (
+              <div className="p-6">
+                {!allQuestionsAnswered && (
+                  <InfoBoxDisplay
+                    hidden={false}
+                    handleDismiss={() => {
+                      console.log("dismiss");
+                    }}
+                    title="Questions and Answers"
+                    body="You need to answer all questions before you can save or train."
+                    dismissable={false}
+                  />
+                )}
+                <div className="mt-2">
+                  <Toggle
+                    disabled={!canEdit}
+                    value={trainingSetData.useOwnPrompt}
+                    label="Use custom prompt"
+                    onChange={handleUseOwnPromptToggle}
+                  />
+                </div>
+                {!trainingSetData.useOwnPrompt && !isNew && (
+                  <div>
+                    <button
+                      onClick={() =>
+                        setShowQuestionsPrompts(!showQuestionsPrompts)
+                      }
+                      className="text-blue-400"
+                    >
+                      {!showQuestionsPrompts
+                        ? "Answer questions"
+                        : "Hide questions"}
+                    </button>
+                  </div>
+                )}
+                {!trainingSetData.useOwnPrompt &&
+                  (showQuestionsPrompts || isNew) && (
+                    <QuestionsWizard
+                      disabled={!canEdit}
+                      onStateChange={handleQnAChange}
+                      questionsAndTokens={trainingSetData.questionsAndAnswers}
+                    />
+                  )}
+                {trainingSetData.useOwnPrompt && !isNew && (
+                  <div>
+                    <button
+                      onClick={() => setShowPrompt(!showPrompt)}
+                      className="text-blue-400"
+                    >
+                      {!showPrompt
+                        ? "Show detailed prompt"
+                        : "Hide detailed prompt"}
+                    </button>
+                  </div>
+                )}
+                {trainingSetData.useOwnPrompt && showPrompt && (
+                  <AutoSizingTextArea
+                    className="mt-2 w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
+                    placeholder="Prompt"
+                    name="prompt"
+                    value={trainingSetData.prompt}
+                    onChange={handlePromptChange}
+                    disabled={!trainingSetData.useOwnPrompt}
+                  />
+                )}
+              </div>
+            ),
+            Options: (
+              <div className="p-6">
+                <h3 className="text-lg">Training Options</h3>
+                <div className="mb-4 flex flex-col">
+                  <label className="text-sm">Maximum Segment Length</label>
+                  <Input
+                    className="p-2"
+                    disabled={!canEdit}
+                    type="text"
+                    name="maxSegmentLength"
+                    value={trainingOptions.maxSegmentLength}
+                    placeholder="Enter a maximum segment length. Default is 2000."
+                    onChange={(e) =>
+                      handleTrainingOptionChanged("maxSegmentLength", e)
+                    }
+                  />
+                  <small>
+                    This is the maximum length of each document segment when
+                    split.
+                  </small>
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-sm">Document Segment Overlap</label>
+                  <Input
+                    className="p-2"
+                    disabled={!canEdit}
+                    type="text"
+                    name="maxSegmentLength"
+                    value={trainingOptions.overlapBetweenSegments}
+                    placeholder="Enter a desired document overlap. Default is 200."
+                    onChange={(e) =>
+                      handleTrainingOptionChanged("overlapBetweenSegments", e)
+                    }
+                  />
+                  <small>
+                    This is the amount of overlap between each document segment
+                    when split.
+                  </small>
+                </div>
+              </div>
+            ),
+            Sources: (
+              <div className="p-6">
+                <Sources
+                  disabled={!canEdit}
+                  trainingSetId={trainingSetData.id}
+                  sources={trainingSetData.trainingSources}
+                  onSourcesChanged={handleSourcesChanged}
+                />
+                <MissedQuestionsList
+                  disabled={!canEdit}
+                  trainingSet={trainingSetData}
+                  onUpdate={handleMissedQuestionsUpdate}
+                />
+              </div>
+            ),
           }}
-          title="Questions and Answers"
-          body="You need to answer all questions before you can save or train."
-          dismissable={false}
-        />
-      )}
-      <div className="mt-2">
-        <Toggle
-          disabled={!canEdit}
-          value={trainingSetData.useOwnPrompt}
-          label="Use custom prompt"
-          onChange={handleUseOwnPromptToggle}
         />
       </div>
-      {!trainingSetData.useOwnPrompt && !isNew && (
-        <div>
-          <button
-            onClick={() => setShowQuestionsPrompts(!showQuestionsPrompts)}
-            className="text-blue-400"
-          >
-            {!showQuestionsPrompts ? "Answer questions" : "Hide questions"}
-          </button>
-        </div>
-      )}
-      {!trainingSetData.useOwnPrompt && (showQuestionsPrompts || isNew) && (
-        <QuestionsWizard
-          disabled={!canEdit}
-          onStateChange={handleQnAChange}
-          questionsAndTokens={trainingSetData.questionsAndAnswers}
-        />
-      )}
-      {trainingSetData.useOwnPrompt && !isNew && (
-        <div>
-          <button
-            onClick={() => setShowPrompt(!showPrompt)}
-            className="text-blue-400"
-          >
-            {!showPrompt ? "Show detailed prompt" : "Hide detailed prompt"}
-          </button>
-        </div>
-      )}
-      {trainingSetData.useOwnPrompt && showPrompt && (
-        <AutoSizingTextArea
-          className="mt-2 w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
-          placeholder="Prompt"
-          name="prompt"
-          value={trainingSetData.prompt}
-          onChange={handlePromptChange}
-          disabled={!trainingSetData.useOwnPrompt}
-        />
-      )}
-      <div>
-        <h3 className="text-lg">Training Options</h3>
-        <div className="mb-4 flex flex-col">
-          <label className="text-sm">Maximum Segment Length</label>
-          <Input
-            className="p-2"
-            disabled={!canEdit}
-            type="text"
-            name="maxSegmentLength"
-            value={trainingOptions.maxSegmentLength}
-            placeholder="Enter a maximum segment length. Default is 2000."
-            onChange={(e) => handleTrainingOptionChanged("maxSegmentLength", e)}
-          />
-          <small>
-            This is the maximum length of each document segment when split.
-          </small>
-        </div>
-        <div className="flex flex-col">
-          <label className="text-sm">Document Segment Overlap</label>
-          <Input
-            className="p-2"
-            disabled={!canEdit}
-            type="text"
-            name="maxSegmentLength"
-            value={trainingOptions.overlapBetweenSegments}
-            placeholder="Enter a desired document overlap. Default is 200."
-            onChange={(e) =>
-              handleTrainingOptionChanged("overlapBetweenSegments", e)
-            }
-          />
-          <small>
-            This is the amount of overlap between each document segment when
-            split.
-          </small>
-        </div>
-      </div>
-      <Sources
-        disabled={!canEdit}
-        trainingSetId={trainingSetData.id}
-        sources={trainingSetData.trainingSources}
-        onSourcesChanged={handleSourcesChanged}
-      />
-      <MissedQuestionsList
-        disabled={!canEdit}
-        trainingSet={trainingSetData}
-        onUpdate={handleMissedQuestionsUpdate}
-      />
-      <TrainingProgressDisplay
-        onMessage={socketRef.onMessage}
-        socket={socketRef.socket}
-        isTraining={isTraining}
-      />
-      <div className="flex flex-row">
-        <button
-          // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          onClick={handleSave}
-          disabled={!isDirty || isSaving || !canSave}
-          className="mt-2 w-full rounded-md border bg-blue-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
-        >
-          {isSaving ? "Saving..." : "Save"}
-        </button>
-        {!isNew && (
-          <button
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
-            onClick={handleTrain}
-            disabled={
-              isDirty ||
-              isTraining ||
-              trainingSetData.version === trainingSet.trainingIndexVersion
-            }
-            className="mt-2 w-full rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400"
-          >
-            Train
-          </button>
-        )}
-      </div>
+
       {/* {isDirty ? <p>Unsaved changes</p> : <p>No unsaved</p>} */}
       {/* {isSaving ? <p>Saving...</p> : <p>Saved</p>}
       {isTraining ? <p>Training...</p> : <p>Trained</p>}*/}
       {error && <ErrorBox message={error} title="An error has occurred" />}
+      <Modal title="" show={isTraining} icon={<SaveIcon/>}>
+        <div className="w-full">
+          <TrainingProgressDisplay
+            onMessage={socketRef.onMessage}
+            socket={socketRef.socket}
+            isTraining={isTraining}
+          />
+        </div>
+      </Modal>
       <Modal
         title="Use your own prompt"
         show={showUseOwnPromptModal}

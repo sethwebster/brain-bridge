@@ -3,7 +3,6 @@ import { getServerSession } from "~/server/auth";
 import SideBar from "./components/SideBar";
 import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
 import ServerData from "~/server/server-data";
-import Tabs from "~/app/components/Tabs";
 
 export default async function Layout({
   children,
@@ -30,20 +29,14 @@ export default async function Layout({
   // });
   return (
     <div className="flex h-full w-full flex-row bg-slate-100 dark:bg-slate-700">
-      <div className="h-full sm:p-4">
+      <div className="h-full">
         <SideBar
           setCount={sets.length}
           chatCount={chats.length}
           publicChatCount={publicChats.length}
         />
       </div>
-
-      <SideBarPaddedContainer>
-        <Tabs tabContent={{
-          "Dashboard": <div>Dashboard</div>,
-        }}/>
-        {children}
-      </SideBarPaddedContainer>
+      <div className="sm:ml-64 w-full">{children}</div>
     </div>
   );
 }

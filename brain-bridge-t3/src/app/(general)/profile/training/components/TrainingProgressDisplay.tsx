@@ -84,10 +84,10 @@ export function TrainingProgressDisplay({
   }, [onMessage, socket]);
 
   useEffect(() => {
-    if (ref.current) {
+    if (ref.current && isTraining) {
       ref.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [status]);
+  }, [isTraining, status]);
 
   return (
     <div className={`overflow-hidden duration-500 transition-all ${isTraining ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
