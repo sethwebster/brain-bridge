@@ -29,7 +29,7 @@
     "@prisma/client": "4.15.0",
     "@types/jsdom": "21.1.1",
     "@types/turndown": "5.0.1",
-    "@zilliz/milvus2-sdk-node": "2.2.12",
+    "@zilliz/milvus2-sdk-node": "2.2.7",
     "body-parser": "^1.18.3",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",

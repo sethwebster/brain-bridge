@@ -92,7 +92,7 @@ export function TrainingProgressDisplay({
   return (
     <div className={`overflow-hidden duration-1000 transition-all ${isTraining ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
       <h3 className="text-xl">Training Progress</h3>
-      <pre>{JSON.stringify(status, null, 2)}</pre>
+      {/* <pre>{JSON.stringify(status, null, 2)}</pre> */}
       {Object.entries(status).map(([stage, { statusText, progress }]) => (
         <div key={stage}>
           <p>{StatusToLabelMap[stage as TrainingStages]}</p>

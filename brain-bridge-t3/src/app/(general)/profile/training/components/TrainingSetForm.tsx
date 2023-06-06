@@ -180,7 +180,7 @@ function TrainingSetForm({
 
   /**
    * Train the model
-   */  
+   */
   const handleTrain = useCallback(() => {
     try {
       const startTraining = () => {
@@ -419,11 +419,11 @@ function TrainingSetForm({
         trainingSet={trainingSetData}
         onUpdate={handleMissedQuestionsUpdate}
       />
-        <TrainingProgressDisplay
-          onMessage={socketRef.onMessage}
-          socket={socketRef.socket}
-          isTraining={isTraining}
-        />
+      <TrainingProgressDisplay
+        onMessage={socketRef.onMessage}
+        socket={socketRef.socket}
+        isTraining={isTraining}
+      />
       <div className="flex flex-row">
         <button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
@@ -437,7 +437,11 @@ function TrainingSetForm({
           <button
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onClick={handleTrain}
-            disabled={isDirty || isTraining}
+            disabled={
+              isDirty ||
+              isTraining ||
+              trainingSetData.version === trainingSet.trainingIndexVersion
+            }
             className="mt-2 w-full rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400"
           >
             Train

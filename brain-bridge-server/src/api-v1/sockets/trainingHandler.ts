@@ -29,6 +29,13 @@ export function trainingHandler(socket) {
       return;
     }
 
+    console.log("Version Comparison", set.version, set.trainingIndexVersion)
+    if (set.version === set.trainingIndexVersion) {
+      socket.emit("training-error", { error: "Training set is already up to date" });
+      return;
+    }
+
+
     // if (set.trainingStatus === "TRAINING") {
     //   socket.emit("training-error", { error: "Training already in progress" });
     //   return;
@@ -49,11 +56,10 @@ export function trainingHandler(socket) {
 
     try {
       const options = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...((set.trainingOptions as object) ?? {}) }
-      console.log("USED OPTIONS", options)
       await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier, options }) as Partial<TrainingSet>;
       await prisma.trainingSet.update({
         where: { id: set.id },
-        data: { trainingStatus: "IDLE" }
+        data: { trainingStatus: "IDLE", trainingIndexVersion: set.version }
       });
       socket.emit("training-complete", { trainingSetId: set.id });
     } catch (error: any) {

@@ -15,8 +15,11 @@ import client from './milvus';
 import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus';
 import delay from './delay';
 
+export interface ProgressPayload {
+  stage: string; statusText: string, progress: number, additionalInfo?: string
+}
 export interface ProgressNotifier {
-  (payload: { stage: string; statusText: string, progress: number, additionalInfo?: string }): void;
+  (payload: ProgressPayload | ((stage: string, progress: ProgressPayload) => ProgressPayload)): void;
 }
 
 export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>()({
@@ -149,6 +152,9 @@ function turnQuestionsIntoText(questions: MissedQuestions[]): string {
   const mapped = questions.filter(q => !q.ignored).map((q) => `* ${q.question} - ${q.correctAnswer ?? "make something up"}`).join("\n");
   return template.replace("{questions}", mapped);
 }
+class CountKeeper {
+  completed = 0;
+}
 
 export async function createTrainingIndex({ name, trainingSet, onProgress, options }: { name: string, trainingSet: TrainingSetWithRelations, onProgress?: ProgressNotifier, options?: { maxSegmentLength?: number, overlapBetweenSegments?: number } }): Promise<TrainingSet> {
   const usedOptions = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...(options ?? {}) }
@@ -163,13 +169,14 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
    * Load all the sources, just get the content as text
    */
   progressNotifier({ stage: "overall", statusText: "Loading sources...", progress: 0.1 });
-  const promises = trainingSources.map((source, index) => {
-    return new Promise<string>((resolve, reject) => {
-      console.log('progress', index / trainingSources.length)
-      const result = getSourceText(trainingSet.userId, source, progressNotifier)
-      progressNotifier({ stage: "sources-load", statusText: ``, progress: index / trainingSources.length });
-      resolve(result);
-    });
+
+  const countKeeper = new CountKeeper();
+  const promises = trainingSources.map(async (source, index) => {
+    console.log('progress', index / trainingSources.length)
+    const result = await getSourceText(trainingSet.userId, source, progressNotifier)
+    countKeeper.completed++;
+    progressNotifier({ stage: "sources-load", statusText: ``, progress: countKeeper.completed / trainingSources.length });
+    return result;
   });
   // TODO: Figure out how to incorporate the missed questions into the training set
   const answeredQuestionText = `\n${turnQuestionsIntoText(trainingSet.missedQuestions)}\n`;
@@ -238,14 +245,11 @@ async function vectorize(docs: string[], trainingSetId: string, progressNotifier
   while (batches.length > 0) {
     progressNotifier({
       stage: "vectorize",
-      statusText: `Vectorizing batch ${batchCount - batches.length} of ${batchCount}`,
+      statusText: `Vectorizing batch ${batchCount - batches.length + 1} of ${batchCount}`,
       progress: (batchCount - batches.length) / batchCount
     })
-    console.log("Batches length", batches.length)
     const batch = batches.shift();
     if (!batch) break;
-    console.log("Batch size", batch.length);
-    console.log(`Vectorizing batch ${batchCount - batches.length} of ${batchCount}`);
     const filteredBatch = batch.filter(b => b && b.length > 0);
     const mappedMeta = filteredBatch.map((_, i) => ({ id: i }));
     try {
@@ -279,15 +283,15 @@ const text_splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 4000, chunkOverlap: 200, separators: [" ", ",", "\n"]
 })
 async function splitFileData(data: string[], progressNotifier: ProgressNotifier, options: { maxSegmentLength: number, overlapBetweenSegments: number }): Promise<string[]> {
-
+  const countKeeper = new CountKeeper();
   console.log("Splitting text into chunks...")
   let docs: string[] = [];
   let index = 0;
   for (const d of data) {
-    progressNotifier({ stage: "split-documents", statusText: `Splitting document ${index + 1} of ${data.length}`, progress: index / data.length });
     const docOutput = await textSplitterMine(d, options.maxSegmentLength, options.overlapBetweenSegments, [" ", ",", "\n"])
     docs = [...docs, ...docOutput];
-    index++;
+    countKeeper.completed++;
+    progressNotifier({ stage: "split-documents", statusText: `Splitting document ${countKeeper.completed} of ${data.length}`, progress: countKeeper.completed / data.length });
   }
   return docs;
 }
