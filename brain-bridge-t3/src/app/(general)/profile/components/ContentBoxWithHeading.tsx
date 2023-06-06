@@ -8,7 +8,7 @@ export default function ContentBoxWithHeading({
 
   const headingComponent = typeof heading === "string" ? <h2 className="text-xl">{heading}</h2> : heading;
 
-  return <div className="h-full w-full p-4">
+  return <div className="h-full w-full p-4 mt-20">
     <header className="flex justify-between border-b border-b-slate-300 pb-2">
       {headingComponent}
     </header>

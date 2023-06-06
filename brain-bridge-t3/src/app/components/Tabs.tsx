@@ -20,8 +20,8 @@ export default function Tabs({
     <div>
       <div className="fixed sm:w-5/6">
         <div className="z-50 flex w-full flex-row  bg-slate-100 text-center text-sm font-medium text-gray-500 shadow transition-all dark:border-gray-700 dark:text-gray-400 dark:invert">
-          <ul className="-mb-px flex flex-grow flex-wrap">
-            <li className="mr-2 p-4">{header}</li>
+          <ul className="-mb-px flex flex-grow flex-wrap transition-all ">
+            <li className="mr-2 p-4 hover:w-auto truncate">{header}</li>
             {Object.keys(tabContent).map((tab) => (
               <li className="mr-2" key={tab}>
                 <button
