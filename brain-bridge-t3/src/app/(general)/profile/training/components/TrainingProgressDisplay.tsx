@@ -1,5 +1,5 @@
 "use client";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type Socket } from "socket.io-client";
 
 type TrainingStages = "overall" |
