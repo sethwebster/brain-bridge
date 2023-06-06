@@ -90,7 +90,7 @@ export function TrainingProgressDisplay({
   }, [status]);
 
   return (
-    <div className={`overflow-hidden duration-1000 transition-all ${1==1 ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
+    <div className={`overflow-hidden duration-500 transition-all ${isTraining ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
       <h3 className="text-xl">Training Progress</h3>
       {/* <pre>{JSON.stringify(status, null, 2)}</pre> */}
       {Object.entries(status).map(([stage, { statusText, progress }]) => (
