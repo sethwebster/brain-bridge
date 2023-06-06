@@ -12,7 +12,6 @@ import { getTempFilePath } from './get-temp-file';
 import PDFToText from './pdf-to-text';
 import { textSplitterMine } from './textSplitterMine';
 import client from './milvus';
-import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus';
 import delay from './delay';
 
 export interface ProgressPayload {
@@ -46,7 +45,6 @@ async function loadUrl(url: string, knownMimeType: string): Promise<string | Blo
   console.log("Loading url", url)
   const response = await fetch(url);
   if (response.status !== 200) throw new Error(`Failed to load url: ${url}`);
-  console.log("file retrieved");
   let data: string | Blob;
   switch (knownMimeType) {
     case "text/markdown":
@@ -54,29 +52,19 @@ async function loadUrl(url: string, knownMimeType: string): Promise<string | Blo
       return data;
     case "text/html":
       data = await response.text();
-      console.log("file length", data.length);
-
-      console.log("Processing html")
       const doc = new jsdom.JSDOM(data).window.document;
-
       const htmlDoc = `<html><head><title>${doc.title}</title></head><body>${doc.body.innerHTML}</body></html>`
       /* Parse the HTML into markdown, and remove any bloks of script */
       const markdown = cleanUpHtml(htmlDoc);
-      console.log("html processed")
       return markdown;
     case "application/json":
       data = await response.text();
-      console.log("file length", data.length);
-
       return data;
     case "application/pdf":
       data = await response.blob();
-      console.log("PDF file length", data.size)
       return data;
     case "text/plain":
       data = await response.text();
-      console.log("file length", data.length);
-
       return data;
     default:
       data = await response.text();
@@ -111,8 +99,6 @@ async function getSourceText(userId: string, source: TrainingSource, progressNot
       } else {
         url = await R2.getSignedUrlForRetrieval(key)
       }
-      console.log("Will retrieve for", source.content, url)
-      console.log("STORED SOURCE MIME", source.mimeType)
       switch (source.mimeType) {
         // markdown
         case "text/markdown":
@@ -123,12 +109,10 @@ async function getSourceText(userId: string, source: TrainingSource, progressNot
           const content = await loadUrl(url, source.mimeType);
           const buffer = await (content as Blob).arrayBuffer();
           const tempFilePath = getTempFilePath(source.name);
-          console.log("Saved to", tempFilePath)
 
           fs.writeFileSync(tempFilePath, Buffer.from(buffer));
           const pdfToText = new PDFToText(tempFilePath);
           const text = await pdfToText.convert();
-          console.log("Successfully converted PDF to text. Length:", text.length)
           progressNotifier({ stage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
           return text;
         default:
@@ -172,7 +156,6 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
 
   const countKeeper = new CountKeeper();
   const promises = trainingSources.map(async (source, index) => {
-    console.log('progress', index / trainingSources.length)
     const result = await getSourceText(trainingSet.userId, source, progressNotifier)
     countKeeper.completed++;
     progressNotifier({ stage: "sources-load", statusText: ``, progress: countKeeper.completed / trainingSources.length });
@@ -215,17 +198,16 @@ async function vectorize(docs: string[], trainingSetId: string, progressNotifier
   const sizeOfDocsData = docs.reduce((acc, doc) => acc + doc.length, 0);
   console.log(`Total size of docs data: ${sizeOfDocsData} bytes`)
   const ONE_MEGABYTE = 1000000;
-
+  const MAX_BATCH_SIZE = ONE_MEGABYTE * 2;
   const batches = docs.reduce((acc, doc, i) => {
     if (!doc) return acc;
-    console.log(i, doc.length)
     const lastBatch = acc[acc.length - 1];
     if (!lastBatch) {
       acc.push([doc]);
       return acc;
     }
     const lastBatchSize = lastBatch.reduce((acc, doc) => acc + doc.length, 0);
-    if (lastBatchSize + doc.length > ONE_MEGABYTE) {
+    if (lastBatchSize + doc.length > MAX_BATCH_SIZE) {
       acc.push([doc]);
     } else {
       lastBatch.push(doc);
@@ -248,6 +230,7 @@ async function vectorize(docs: string[], trainingSetId: string, progressNotifier
       statusText: `Vectorizing batch ${batchCount - batches.length + 1} of ${batchCount}`,
       progress: (batchCount - batches.length) / batchCount
     })
+    console.log("Vectoring batch", batchCount - batches.length + 1, "of", batchCount)
     const batch = batches.shift();
     if (!batch) break;
     const filteredBatch = batch.filter(b => b && b.length > 0);
@@ -284,7 +267,7 @@ const text_splitter = new RecursiveCharacterTextSplitter({
 })
 async function splitFileData(data: string[], progressNotifier: ProgressNotifier, options: { maxSegmentLength: number, overlapBetweenSegments: number }): Promise<string[]> {
   const countKeeper = new CountKeeper();
-  console.log("Splitting text into chunks...")
+  console.log("Splitting text into chunks...", options)
   let docs: string[] = [];
   let index = 0;
   for (const d of data) {

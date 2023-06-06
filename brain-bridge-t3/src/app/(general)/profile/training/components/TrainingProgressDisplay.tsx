@@ -90,19 +90,20 @@ export function TrainingProgressDisplay({
   }, [status]);
 
   return (
-    <div className={`overflow-hidden duration-1000 transition-all ${isTraining ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
+    <div className={`overflow-hidden duration-1000 transition-all ${1==1 ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
       <h3 className="text-xl">Training Progress</h3>
       {/* <pre>{JSON.stringify(status, null, 2)}</pre> */}
       {Object.entries(status).map(([stage, { statusText, progress }]) => (
-        <div key={stage}>
-          <p>{StatusToLabelMap[stage as TrainingStages]}</p>
-          <div className="h-5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+        <div key={stage} className={`${stage==="split-documents" ? "hidden":""}`}>
+          <p className="text-sm">{StatusToLabelMap[stage as TrainingStages]}</p>
+          <div className="h-5 w-full rounded-full bg-gray-200 dark:bg-gray-400">
             <div
-              className="h-5 rounded-full bg-green-300 transition-all "
+              className="h-5 rounded-full bg-green-300 transition-all shadow-sm "
               style={{ width: `${Math.round(progress * 100)}%` }}
             ></div>
-            <div className="relative -top-6 mb-1 w-auto truncate text-center">
-              <small>{statusText}</small>
+            <div className="relative -top-5 h-5  m-auto rounded-lg flex flex-col justify-center truncate text-center ">
+              
+              <div className="truncate w-auto text-xs mix-blend-difference text-slate-100">{statusText}</div>
             </div>
           </div>
         </div>
