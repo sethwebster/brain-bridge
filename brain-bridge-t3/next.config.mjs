@@ -24,5 +24,8 @@ const config = {
 
     return config
   },
+  images: {
+    domains: ['avatars.githubusercontent.com', "*"],
+  }
 };
 export default config;
