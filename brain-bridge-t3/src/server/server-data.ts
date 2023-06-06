@@ -595,41 +595,13 @@ async function sendMessage(message: MessageWithRelations): Promise<MessageWithRe
   return newMessage;
 }
 
-async function createTrainingIndex(trainingIndex: TrainingIndexWithRelations) {
-  const session = await getServerSession();
-  invariant(session, "User must be logged in to create training index");
-  const trainingSet = await prisma.trainingSet.findFirst({
-    where: { id: trainingIndex.trainingSetId, userId: session.user.id },
-  });
-  invariant(trainingSet, "User must own training set to create training index");
-  const existing = await prisma.trainingIndex.findFirst({
-    where: { trainingSetId: trainingSet.id },
-  });
-  if (existing) {
-    await prisma.trainingIndex.delete({
-      where: { id: existing.id },
-    });
-  }
-  const created = await prisma.trainingIndex.create({
-    data: {
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      trainingSetId: trainingSet.id,
-      pending: false,
-      docStore: trainingIndex.docStore,
-      vectors: trainingIndex.vectors,
-      metaData: trainingIndex.metaData as string,
-    },
-  });
-  return created;
-}
+
 
 const ServerData = {
   /* Training Sets */
   createTrainingSet,
   fetchUserTrainingSets,
   fetchUserTrainingSet,
-  createTrainingIndex,
   updateUserTrainingSet,
   /* Conversations */
   newChat,

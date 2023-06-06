@@ -1,6 +1,6 @@
-import { PrismaClient, TrainingIndex } from "@prisma/client";
+import { PrismaClient, TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { ProgressNotifier, createTrainingIndex } from "../../lib/training";
+import { createTrainingIndex } from "../../lib/training";
 import { verifyJWT } from "../../lib/jwt";
 
 export function trainingHandler(socket) {
@@ -29,10 +29,10 @@ export function trainingHandler(socket) {
       return;
     }
 
-    if (set.trainingStatus === "TRAINING") {
-      socket.emit("training-error", { error: "Training already in progress" });
-      return;
-    }
+    // if (set.trainingStatus === "TRAINING") {
+    //   socket.emit("training-error", { error: "Training already in progress" });
+    //   return;
+    // }
 
     await prisma.trainingSet.update({
       where: { id: set.id },
@@ -50,7 +50,7 @@ export function trainingHandler(socket) {
     try {
       const options = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...((set.trainingOptions as object) ?? {}) }
       console.log("USED OPTIONS", options)
-      await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier, options }) as Partial<TrainingIndex>;
+      await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier, options }) as Partial<TrainingSet>;
       await prisma.trainingSet.update({
         where: { id: set.id },
         data: { trainingStatus: "IDLE" }
@@ -59,10 +59,11 @@ export function trainingHandler(socket) {
     } catch (error: any) {
       console.log("ERROR", error);
       socket.emit("training-error", { error });
-      await prisma.trainingSet.update({
+      const res = await prisma.trainingSet.update({
         where: { id: set.id },
         data: { trainingStatus: "ERROR" }
       });
+      return res;
     }
   });
 }

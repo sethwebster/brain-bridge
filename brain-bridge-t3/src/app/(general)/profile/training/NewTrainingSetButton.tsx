@@ -34,12 +34,12 @@ export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
       trainingSources: [],
       version: 0,
       userId: "",
-      trainingIndexId: "",
       missedQuestions: [],
       trainingSetShares: [],
       useOwnPrompt: false,
       trainingOptions: defaultTrainingOptions,
-      trainingStatus: "IDLE"
+      trainingStatus: "IDLE",
+      trainingIndexVersion: 0,
     });
     router.push("/profile/training/" + result.id);
   }, [inputValue, router]);

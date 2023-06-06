@@ -19,10 +19,6 @@ export default class TrainingController {
     });
     invariant(set, "Training set not found");
     try {
-    const result = await createTrainingIndex({ name: set.name, trainingSet: set });
-    delete result.vectors
-    delete result.docStore
-    res.json(result)
     } catch (error: any) {
       console.log("ERROR", error)
       res.json({error})

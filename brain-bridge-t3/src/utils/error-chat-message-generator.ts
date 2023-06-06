@@ -20,7 +20,7 @@ export default function generateChatErrorMessage(error: string): MessageWithRela
       publicChatInstanceId: null,
     },
     text: error
-      ? `❌ So sorry! It looks like we failed to get a respone to your message. We're working on it! Message: "${error}"`
-      : `❌ So sorry! It looks like we failed to get a respone to your message. We're working on it!`,
+      ? `❌ So sorry! It looks like we failed to get a response to your message. We're working on it! Message: "${error}"`
+      : `❌ So sorry! It looks like we failed to get a response to your message. We're working on it!`,
   }
 } 

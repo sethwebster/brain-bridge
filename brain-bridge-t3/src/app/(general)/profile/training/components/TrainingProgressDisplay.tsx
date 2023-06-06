@@ -98,7 +98,7 @@ export function TrainingProgressDisplay({
           <p>{StatusToLabelMap[stage as TrainingStages]}</p>
           <div className="h-5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
             <div
-              className="h-5 rounded-full bg-green-300 "
+              className="h-5 rounded-full bg-green-300 transition-all "
               style={{ width: `${Math.round(progress * 100)}%` }}
             ></div>
             <div className="relative -top-6 mb-1 w-auto truncate text-center">

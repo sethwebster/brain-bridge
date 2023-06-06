@@ -122,14 +122,17 @@ export default function PrivateChat({
         };
         setSelectedChatMessages((messages) => [...messages, newMessageAugment]);
         socket.sendMessage("message", { mode, message: newMessageAugment });
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-        // await getLLMResponse(newMessageAugment, mode);
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       };
       sendMessage();
     },
     [selectedChat, session.user.id, session.user.name, socket]
   );
+
+  useEffect(() => {
+    if (selectedChatMessages.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [selectedChatMessages]);
 
   const handleClearChatClicked = useCallback(() => {
     setSelectedChatMessages([]);

@@ -9,25 +9,24 @@ datasource db {
 }
 
 model TrainingSet {
-  id                  String                    @id @default(cuid())
-  createdAt           DateTime                  @default(now())
-  updatedAt           DateTime                  @updatedAt
-  name                String
-  userId              String
-  version             Int                       @default(0)
-  prompt              String                    @default("")
-  trainingIndexId     String?
-  useOwnPrompt        Boolean                   @default(false)
-  trainingOptions     Json                      @default("{}")
-  trainingStatus      TrainingSetTrainingStatus @default(IDLE)
-  conversations       Conversation[]
-  missedQuestions     MissedQuestions[]
-  publicChats         PublicChat[]
-  questionsAndAnswers QuestionAndAnswer[]
-  trainingIndex       TrainingIndex?
-  user                User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  trainingSetShares   TrainingSetShares[]
-  trainingSources     TrainingSource[]
+  id                   String                    @id @default(cuid())
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  name                 String
+  userId               String
+  version              Int                       @default(0)
+  prompt               String                    @default("")
+  useOwnPrompt         Boolean                   @default(false)
+  trainingOptions      Json                      @default("{}")
+  trainingStatus       TrainingSetTrainingStatus @default(IDLE)
+  trainingIndexVersion Int                       @default(0)
+  conversations        Conversation[]
+  missedQuestions      MissedQuestions[]
+  publicChats          PublicChat[]
+  questionsAndAnswers  QuestionAndAnswer[]
+  user                 User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingSetShares    TrainingSetShares[]
+  trainingSources      TrainingSource[]
 }
 
 model TrainingSetShares {
@@ -45,18 +44,6 @@ model TrainingSetShares {
   acceptedUser     User?            @relation("acceptedUser", fields: [acceptedUserId], references: [id])
   trainingSet      TrainingSet      @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
   user             User             @relation("owner", fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model TrainingIndex {
-  id            String      @id @default(cuid())
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  trainingSetId String      @unique
-  pending       Boolean     @default(true)
-  metaData      Json
-  vectors       Bytes
-  docStore      Bytes
-  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
 }
 
 model TrainingSource {

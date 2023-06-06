@@ -1,5 +1,5 @@
 import { LLMChain, PromptTemplate } from "langchain";
-import { OpenAIEmbeddings } from "langchain/embeddings";
+import { CohereEmbeddings, OpenAIEmbeddings } from "langchain/embeddings";
 import { OpenAIChat } from "langchain/llms";
 import { HNSWLib } from "langchain/vectorstores";
 import fs from "fs";
@@ -24,20 +24,13 @@ const model = new OpenAIChat({
 });
 
 export class BrainBridgeStorage implements LangChainStorage {
+  /**
+   * @deprecated
+   * @param id
+   * @returns
+   */
   async getIndex(id: string): Promise<HNSWLib> {
-    console.log("Getting index for", id)
-    const trainingIndex = await prisma.trainingIndex.findFirst({
-      where: {
-        trainingSetId: id
-      }
-    });
-    invariant(trainingIndex, "Training index must exist");
-    const { tempFilePath, indexPath, docStorePath, argsFilePath } = this.getFilePaths(id);
-    fs.writeFileSync(indexPath, Buffer.from(trainingIndex.vectors));
-    fs.writeFileSync(docStorePath, Buffer.from(trainingIndex.docStore));
-    fs.writeFileSync(argsFilePath, `{"space":"cosine","numDimensions":1536}`);
-    const index = await HNSWLib.load(tempFilePath, new OpenAIEmbeddings())
-    return index;
+    throw new Error("Deprecated");
   }
 
   private getFilePaths(id: string) {
@@ -74,8 +67,10 @@ export class BrainBridgeLangChain implements LangChainStore {
   }
 
   private async getStore(trainingSetId: string): Promise<Milvus> {
+    // const embedder = new OpenAIEmbeddings()
+    const embedder = new CohereEmbeddings({ apiKey: process.env.COHERE_API_KEY });
     const vectorStore = await Milvus.fromExistingCollection(
-      new OpenAIEmbeddings(),
+      embedder,
       {
         collectionName: trainingSetId,
       }
@@ -111,6 +106,8 @@ export class BrainBridgeLangChain implements LangChainStore {
     data.filter(d => d.pageContent.trim().length > 0).forEach((item) => {
       context.push(`Context:\n${item.pageContent.trim()}`)
     });
+
+    console.log("___ CONTEXT ___ ", context);
 
 
     console.log("[llm-request]", userPrompt, context, history, mode);

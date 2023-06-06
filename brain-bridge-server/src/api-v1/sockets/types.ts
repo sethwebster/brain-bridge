@@ -12,14 +12,6 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
 
 export type TrainingSetWithRelations = Prisma.TrainingSetGetPayload<typeof trainingSetWithRelations>
 
-const trainingIndexWithRelations = Prisma.validator<Prisma.TrainingIndexArgs>()({
-  include: {
-    trainingSet: true,
-  }
-});
-
-export type TrainingIndexWithRelations = Prisma.TrainingIndexGetPayload<typeof trainingIndexWithRelations>;
-
 export const messageWithRelations = Prisma.validator<Prisma.MessageArgs>()({
   include: {
     sender: true,

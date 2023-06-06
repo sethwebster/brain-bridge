@@ -23,25 +23,24 @@ enum TrainingSetTrainingStatus {
 }
 
 model TrainingSet {
-  id                  String              @id @default(cuid())
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  name                String
-  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId              String
-  version             Int                 @default(0)
-  prompt              String              @default("") @db.Text
-  trainingSources     TrainingSource[]
-  conversations       Conversation[]
-  questionsAndAnswers QuestionAndAnswer[]
-  trainingIndexId     String?
-  trainingIndex       TrainingIndex?
-  publicChats         PublicChat[]
-  missedQuestions     MissedQuestions[]
-  trainingSetShares   TrainingSetShares[]
-  useOwnPrompt        Boolean             @default(false)
-  trainingOptions     Json              @default("{}")
-  trainingStatus      TrainingSetTrainingStatus @default(IDLE)
+  id                   String                    @id @default(cuid())
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  name                 String
+  user                 User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId               String
+  version              Int                       @default(0)
+  prompt               String                    @default("") @db.Text
+  trainingSources      TrainingSource[]
+  conversations        Conversation[]
+  questionsAndAnswers  QuestionAndAnswer[]
+  trainingIndexVersion Int                       @default(0)
+  publicChats          PublicChat[]
+  missedQuestions      MissedQuestions[]
+  trainingSetShares    TrainingSetShares[]
+  useOwnPrompt         Boolean                   @default(false)
+  trainingOptions      Json                      @default("{}")
+  trainingStatus       TrainingSetTrainingStatus @default(IDLE)
 }
 
 enum TrainingSetRoles {
@@ -67,17 +66,17 @@ model TrainingSetShares {
   role             TrainingSetRoles @default(VIEWER)
 }
 
-model TrainingIndex {
-  id            String      @id @default(cuid())
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  trainingSetId String      @unique
-  pending       Boolean     @default(true)
-  metaData      Json
-  vectors       Bytes
-  docStore      Bytes
-  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
-}
+// model TrainingIndex {
+//   id            String      @id @default(cuid())
+//   createdAt     DateTime    @default(now())
+//   updatedAt     DateTime    @updatedAt
+//   trainingSetId String      @unique
+//   pending       Boolean     @default(true)
+//   metaData      Json
+//   vectors       Bytes
+//   docStore      Bytes
+//   trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+// }
 
 enum TrainingSourceType {
   FILE

@@ -72,7 +72,7 @@ export function privateMessageHandler(socket) {
       const fullPrompt = promptHeader + "\n\n" + conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
 
       console.log(conversation.id, 'llm-response-started');
-      socket.emit('llm-response-started', {});
+      setTimeout(()=>socket.emit('llm-response-started', {}), 2500);
       const response = await llm.getLangChainResponse(
         conversation.trainingSetId,
         userMessage.text,

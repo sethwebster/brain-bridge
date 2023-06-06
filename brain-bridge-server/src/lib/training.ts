@@ -1,10 +1,10 @@
 import fs from 'fs'
 import { Milvus } from "langchain/vectorstores/milvus";
 import { CharacterTextSplitter, RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { OpenAIEmbeddings} from 'langchain/embeddings';
+import { CohereEmbeddings, OpenAIEmbeddings } from 'langchain/embeddings';
 import path from 'path';
 import jsdom from 'jsdom';
-import { MissedQuestions, Prisma, type TrainingIndex, type TrainingSource } from '@prisma/client';
+import { MissedQuestions, Prisma, TrainingSet, type TrainingSource } from '@prisma/client';
 import R2 from './R2';
 import { prisma } from './db';
 import cleanUpHtml from './clean-up-html';
@@ -12,6 +12,8 @@ import { getTempFilePath } from './get-temp-file';
 import PDFToText from './pdf-to-text';
 import { textSplitterMine } from './textSplitterMine';
 import client from './milvus';
+import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus';
+import delay from './delay';
 
 export interface ProgressNotifier {
   (payload: { stage: string; statusText: string, progress: number, additionalInfo?: string }): void;
@@ -148,7 +150,7 @@ function turnQuestionsIntoText(questions: MissedQuestions[]): string {
   return template.replace("{questions}", mapped);
 }
 
-export async function createTrainingIndex({ name, trainingSet, onProgress, options }: { name: string, trainingSet: TrainingSetWithRelations, onProgress?: ProgressNotifier, options?: { maxSegmentLength?: number, overlapBetweenSegments?: number } }): Promise<TrainingIndex> {
+export async function createTrainingIndex({ name, trainingSet, onProgress, options }: { name: string, trainingSet: TrainingSetWithRelations, onProgress?: ProgressNotifier, options?: { maxSegmentLength?: number, overlapBetweenSegments?: number } }): Promise<TrainingSet> {
   const usedOptions = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...(options ?? {}) }
   usedOptions.maxSegmentLength = parseInt(usedOptions.maxSegmentLength.toString());
   usedOptions.overlapBetweenSegments = parseInt(usedOptions.overlapBetweenSegments.toString());
@@ -162,7 +164,6 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
    */
   progressNotifier({ stage: "overall", statusText: "Loading sources...", progress: 0.1 });
   const promises = trainingSources.map((source, index) => {
-    console.log('progress', index / trainingSources.length)
     return new Promise<string>((resolve, reject) => {
       console.log('progress', index / trainingSources.length)
       const result = getSourceText(trainingSet.userId, source, progressNotifier)
@@ -170,76 +171,102 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
       resolve(result);
     });
   });
+  // TODO: Figure out how to incorporate the missed questions into the training set
   const answeredQuestionText = `\n${turnQuestionsIntoText(trainingSet.missedQuestions)}\n`;
+
+  /**
+   * Wait for all the sources to load
+   */
   progressNotifier({ stage: "sources-load", statusText: `Loading all sources.`, progress: 0 });
   const allContent = await Promise.all(promises);
   progressNotifier({ stage: "sources-load", statusText: `Loaded all sources.`, progress: 1 });
 
+  /**
+   * Split the content into chunks
+   */
   progressNotifier({ stage: "overall", statusText: "Splitting documents...", progress: 0.2 });
   progressNotifier({ stage: "split-documents", statusText: `Splitting documents into chunks`, progress: 0 });
   let splitContent = await splitFileData([...allContent], progressNotifier, usedOptions);
-  const tempFilePath = getTempFilePath(name)
+
+  /**
+   * Vectorize the content
+   */
   progressNotifier({ stage: "overall", statusText: "Vectorizing documents...", progress: 0.3 });
   progressNotifier({ stage: "vectorize", statusText: `Vectorizing documents`, progress: 0 });
-  const store = await vectorize(splitContent, trainingSet.id);
+  await vectorize(splitContent, trainingSet.id, progressNotifier);
   progressNotifier({ stage: "vectorize", statusText: `Vectorized documents`, progress: 1 });
-  progressNotifier({ stage: "overall", statusText: "Creating index...", progress: 0.6 });
-  console.log(store);
-  const indexPath = path.join(tempFilePath, `hnswlib.index`);
-  const docStorePath = path.join(tempFilePath, `docstore.json`);
-  const indexData = await fs.promises.readFile(indexPath);
-  const docStoreData = await fs.promises.readFile(docStorePath);
-  progressNotifier({ stage: "overall", statusText: "Deleting existing index", progress: .85 });
-  const existingIndex = await prisma.trainingIndex.findFirst({
-    where: {
-      trainingSetId: trainingSet.id
-    }
-  });
-  if (existingIndex) {
-    console.log('Deleting existing index')
-    await prisma.trainingIndex.delete({
-      where: {
-        id: existingIndex.id,
-      }
-    })
-  }
-  progressNotifier({ stage: "overall", statusText: "Creating new index", progress: 0.95 });
-  console.log("Creating training index")
-  // const trainingIndex = await prisma.trainingIndex.create({
-  //   data: {
-  //     metaData: "",
-  //     docStore: docStoreData,
-  //     vectors: indexData,
-  //     pending: false,
-  //     createdAt: new Date(),
-  //     updatedAt: new Date(),
-  //     trainingSet: {
-  //       connect: {
-  //         id: trainingSet.id
-  //       }
-  //     }
-  //   }
-  // });
+
   console.log("index creation complete");
   progressNotifier({ stage: "overall", statusText: "Index creation complete", progress: 1 });
   return null;
 }
 
-async function vectorize(docs: string[], trainingSetId: string): Promise<Milvus> {
+async function vectorize(docs: string[], trainingSetId: string, progressNotifier: ProgressNotifier): Promise<void> {
   if (docs.length === 0) throw new Error("No documents to vectorize!");
   console.log("Vectorizing documents...")
 
+  const sizeOfDocsData = docs.reduce((acc, doc) => acc + doc.length, 0);
+  console.log(`Total size of docs data: ${sizeOfDocsData} bytes`)
+  const ONE_MEGABYTE = 1000000;
 
-  const vectorStore = Milvus.fromTexts(
-    docs,
-    docs.map((_, i) => ({ id: i })),
-    new OpenAIEmbeddings(),
-    {
-      collectionName: trainingSetId,
+  const batches = docs.reduce((acc, doc, i) => {
+    if (!doc) return acc;
+    console.log(i, doc.length)
+    const lastBatch = acc[acc.length - 1];
+    if (!lastBatch) {
+      acc.push([doc]);
+      return acc;
     }
-  );
+    const lastBatchSize = lastBatch.reduce((acc, doc) => acc + doc.length, 0);
+    if (lastBatchSize + doc.length > ONE_MEGABYTE) {
+      acc.push([doc]);
+    } else {
+      lastBatch.push(doc);
+    }
+    return acc;
+  }, [] as string[][])
+  console.log("Batches", batches.length);
+  const batchCount = batches.length;
 
-  return vectorStore;
+  try {
+    await client.dropCollection({ collection_name: trainingSetId });
+  } catch (e) {
+    console.log("Error dropping collection", e)
+  }
+  // const embedder = new OpenAIEmbeddings();
+  const embedder = new CohereEmbeddings({ apiKey: process.env.COHERE_API_KEY })
+  while (batches.length > 0) {
+    progressNotifier({
+      stage: "vectorize",
+      statusText: `Vectorizing batch ${batchCount - batches.length} of ${batchCount}`,
+      progress: (batchCount - batches.length) / batchCount
+    })
+    console.log("Batches length", batches.length)
+    const batch = batches.shift();
+    if (!batch) break;
+    console.log("Batch size", batch.length);
+    console.log(`Vectorizing batch ${batchCount - batches.length} of ${batchCount}`);
+    const filteredBatch = batch.filter(b => b && b.length > 0);
+    const mappedMeta = filteredBatch.map((_, i) => ({ id: i }));
+    try {
+      await Milvus.fromTexts(filteredBatch, mappedMeta, embedder, {
+        collectionName: trainingSetId,
+      });
+    } catch (e) {
+      console.log("ERROR BATCH", filteredBatch.length, mappedMeta.length);
+      throw e;
+    }
+    const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
+      collection_name: trainingSetId,
+    });
+    console.log("Collection statistics", stats);
+  }
+  await delay(5000);
+  const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
+    collection_name: trainingSetId,
+  });
+  console.log("Collection statistics", stats);
+  console.log("Vectorization complete");
 }
 
 const textSplitter = new CharacterTextSplitter({
