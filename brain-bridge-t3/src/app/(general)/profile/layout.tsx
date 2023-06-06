@@ -3,6 +3,7 @@ import { getServerSession } from "~/server/auth";
 import SideBar from "./components/SideBar";
 import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
 import ServerData from "~/server/server-data";
+import Toast from "~/app/components/Toast";
 
 export default async function Layout({
   children,
@@ -37,6 +38,7 @@ export default async function Layout({
         />
       </div>
       <div className="sm:ml-64 w-full">{children}</div>
+      <Toast />
     </div>
   );
 }

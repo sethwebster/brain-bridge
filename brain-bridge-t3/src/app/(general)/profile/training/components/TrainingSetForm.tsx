@@ -31,6 +31,7 @@ import { ShareIcon, SaveIcon } from "~/app/components/SvgIcons";
 import { useAuthenticatedSocket } from "~/hooks/use-socket";
 import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
 import Tabs from "~/app/components/Tabs";
+import { toast } from "react-toastify";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -65,10 +66,16 @@ function TrainingSetForm({
 
   const handleTrainingComplete = useCallback(() => {
     setIsTraining(false);
+    toast("🎉 Training Complete", {
+      type: "success",
+    });
     router.refresh();
   }, [router]);
 
   const handleTrainingError = useCallback((data: { error: string }) => {
+    toast("⛔️ Training Failed", {
+      type: "error",
+    });
     setIsTraining(false);
     setError(data.error);
   }, []);
@@ -482,7 +489,7 @@ function TrainingSetForm({
       {/* {isSaving ? <p>Saving...</p> : <p>Saved</p>}
       {isTraining ? <p>Training...</p> : <p>Trained</p>}*/}
       {error && <ErrorBox message={error} title="An error has occurred" />}
-      <Modal title="" show={isTraining} icon={<SaveIcon/>}>
+      <Modal title="" show={isTraining} icon={<SaveIcon />}>
         <div className="w-full">
           <TrainingProgressDisplay
             onMessage={socketRef.onMessage}
