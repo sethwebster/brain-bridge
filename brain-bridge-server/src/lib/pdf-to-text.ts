@@ -21,7 +21,7 @@ class PDFToText {
     for (let i = 1; i <= numPages; i++) {
       const page = await pdf.getPage(i);
       const tokenizedText: TextContent = await page.getTextContent();
-      const strings: string[] = tokenizedText.items.map((token: TextContentItem) => token.str);
+      const strings: string[] = tokenizedText.items.map((token: TextContentItem) => token.str.replace(/\s+/g, ' '));
       textContent += strings.join(' ') + '\n';
     }
 

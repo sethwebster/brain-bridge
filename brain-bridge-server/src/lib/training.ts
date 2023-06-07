@@ -198,7 +198,7 @@ async function vectorize(docs: string[], trainingSetId: string, progressNotifier
   const sizeOfDocsData = docs.reduce((acc, doc) => acc + doc.length, 0);
   console.log(`Total size of docs data: ${sizeOfDocsData} bytes`)
   const ONE_MEGABYTE = 1000000;
-  const MAX_BATCH_SIZE = ONE_MEGABYTE * 2;
+  const MAX_BATCH_SIZE = ONE_MEGABYTE * 1;
   const batches = docs.reduce((acc, doc, i) => {
     if (!doc) return acc;
     const lastBatch = acc[acc.length - 1];
@@ -252,6 +252,7 @@ async function vectorize(docs: string[], trainingSetId: string, progressNotifier
   const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
     collection_name: trainingSetId,
   });
+  client.flush({ collection_names: [trainingSetId] });
   console.log("Collection statistics", stats);
   console.log("Vectorization complete");
 }
