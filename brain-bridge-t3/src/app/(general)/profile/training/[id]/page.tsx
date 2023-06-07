@@ -20,7 +20,7 @@ export default async function TrainingPage({
     notFound();
   }
   return (
-    <div className="h-auto w-full mt-20">
+    <div className="w-full mt-20 h-full">
       <TrainingSetPage
         trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
         user={session.user}

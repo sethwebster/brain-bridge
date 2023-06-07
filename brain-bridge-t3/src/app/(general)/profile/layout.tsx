@@ -4,6 +4,7 @@ import SideBar from "./components/SideBar";
 import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
 import ServerData from "~/server/server-data";
 import Toast from "~/app/components/Toast";
+import SidebarContainer from "./components/SidebarContainer";
 
 export default async function Layout({
   children,
@@ -29,16 +30,14 @@ export default async function Layout({
   //   email: session.user.email!,
   // });
   return (
-    <div className="flex h-full w-full flex-row bg-slate-100 dark:bg-slate-700">
-      <div className="h-full">
-        <SideBar
-          setCount={sets.length}
-          chatCount={chats.length}
-          publicChatCount={publicChats.length}
-        />
-      </div>
-      <div className="sm:ml-64 w-full">{children}</div>
-      <Toast />
+    <div className="w-full h-full">
+      <SidebarContainer
+        setsCount={sets.length}
+        chatCount={chats.length}
+        publicChatCount={publicChats.length}
+      >
+        {children}
+      </SidebarContainer>
     </div>
   );
 }

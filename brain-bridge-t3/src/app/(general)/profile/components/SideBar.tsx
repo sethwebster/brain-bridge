@@ -37,7 +37,7 @@ export default function SideBar({
 
       <aside
         id="default-sidebar"
-        className="fixed left-0 z-40 w-64 h-screen transition-transform -translate-x-full top-20 sm:translate-x-0"
+        className=" fixed left-0 z-40 w-64 h-screen transition-transform -translate-x-full top-20 sm:translate-x-0 shadow"
         aria-label="Sidebar"
       >
         <div className="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">

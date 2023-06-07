@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { QuestionsWizard } from "./QuestionsWizard";
 import Sources from "./Sources";
 import Data from "~/utils/data-client";
@@ -32,6 +32,8 @@ import { useAuthenticatedSocket } from "~/hooks/use-socket";
 import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
 import Tabs from "~/app/components/Tabs";
 import { toast } from "react-toastify";
+import Dashboard from "./Dashboard";
+import useKeypress from "react-use-keypress";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -59,7 +61,6 @@ function TrainingSetForm({
   const [error, setError] = useState<string | null>(null);
   const [showUseOwnPromptModal, setShowUseOwnPromptModal] = useState(false);
   const socketRef = useAuthenticatedSocket();
-
   const handleTrainingStarted = useCallback(() => {
     setIsTraining(true);
   }, []);
@@ -73,7 +74,7 @@ function TrainingSetForm({
   }, [router]);
 
   const handleTrainingError = useCallback((data: { error: string }) => {
-    toast("⛔️ Training Failed", {
+    toast(`⛔️ ${error ?? "Training Failed"}`, {
       type: "error",
     });
     setIsTraining(false);
@@ -290,50 +291,47 @@ function TrainingSetForm({
     return options;
   }, [trainingSetData.trainingOptions]);
   return (
-    <div className="mb-10">
-      <div className="w-full overflow-hidden">
+    <div className="h-full bg-slate-50">
+      <div className="w-full bg-slate-100 h-full">
         <Tabs
           header={<h1 className="text-sm">{trainingSet.name}</h1>}
           initialSelectedTab="Details"
-          rightEnd={
-            <div className="flex flex-row ">
+          additionalItems={[
+            <div className="flex h-full flex-col justify-center" key="Save">
               <button
                 // eslint-disable-next-line @typescript-eslint/no-misused-promises
                 onClick={handleSave}
                 disabled={!isDirty || isSaving || !canSave}
-                className="w-24 rounded-md border bg-blue-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
+                className="mr-2 w-24 rounded-md border bg-blue-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
               >
                 {isSaving ? "Saving..." : "Save"}
               </button>
-              {!isNew && (
-                <button
-                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                  onClick={handleTrain}
-                  disabled={
-                    isDirty ||
-                    isTraining ||
-                    trainingSetData.version === trainingSet.trainingIndexVersion
-                  }
-                  className="w-24 rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400"
-                >
-                  Train
-                </button>
-              )}
-            </div>
-          }
+            </div>,
+            <div className="flex h-full flex-col justify-center" key="Save">
+              <button
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                onClick={handleTrain}
+                disabled={
+                  isDirty ||
+                  isTraining ||
+                  trainingSetData.version === trainingSet.trainingIndexVersion
+                }
+                className="w-24 rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400"
+              >
+                Train
+              </button>
+            </div>,
+          ]}
           tabContent={{
             Details: (
-              <div className="p-6">
-                <header className="flex justify-between border-b border-gray-400 pb-2 ">
+              <div className="h-auto p-2 px-4">
+                <header className="flex justify-between border-b border-gray-400">
                   <div>
                     <h1 className="text-2xl">{trainingSet.name}</h1>
                     {isShared ? (
                       <div className="flex flex-row">
                         <div className=" mr-1 flex h-4 w-12  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
-                          <ShareIcon
-                            fillColor="white"
-                            className="h-4 w-4 border-red-800"
-                          />
+                          <ShareIcon fillColor="white" className="h-4 w-4" />
                         </div>
                         <small>Shared with you</small>
                       </div>
@@ -356,10 +354,13 @@ function TrainingSetForm({
                   value={trainingSetData.name}
                   onChange={handleNameChange}
                 />
+                <Suspense fallback={<div>Loading...</div>}>
+                  {/* <Dashboard trainingSet={trainingSet} /> */}
+                </Suspense>
               </div>
             ),
             Prompt: (
-              <div className="p-6">
+              <div className="h-auto p-2 px-4">
                 {!allQuestionsAnswered && (
                   <InfoBoxDisplay
                     hidden={false}
@@ -379,54 +380,29 @@ function TrainingSetForm({
                     onChange={handleUseOwnPromptToggle}
                   />
                 </div>
-                {!trainingSetData.useOwnPrompt && !isNew && (
-                  <div>
-                    <button
-                      onClick={() =>
-                        setShowQuestionsPrompts(!showQuestionsPrompts)
-                      }
-                      className="text-blue-400"
-                    >
-                      {!showQuestionsPrompts
-                        ? "Answer questions"
-                        : "Hide questions"}
-                    </button>
-                  </div>
+                {!trainingSetData.useOwnPrompt && (
+                  <QuestionsWizard
+                    disabled={!canEdit}
+                    onStateChange={handleQnAChange}
+                    questionsAndTokens={trainingSetData.questionsAndAnswers}
+                  />
                 )}
-                {!trainingSetData.useOwnPrompt &&
-                  (showQuestionsPrompts || isNew) && (
-                    <QuestionsWizard
-                      disabled={!canEdit}
-                      onStateChange={handleQnAChange}
-                      questionsAndTokens={trainingSetData.questionsAndAnswers}
-                    />
-                  )}
-                {trainingSetData.useOwnPrompt && !isNew && (
-                  <div>
-                    <button
-                      onClick={() => setShowPrompt(!showPrompt)}
-                      className="text-blue-400"
-                    >
-                      {!showPrompt
-                        ? "Show detailed prompt"
-                        : "Hide detailed prompt"}
-                    </button>
-                  </div>
-                )}
-                {trainingSetData.useOwnPrompt && showPrompt && (
+                {trainingSetData.useOwnPrompt && (
                   <AutoSizingTextArea
-                    className="mt-2 w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
+                    className="mt-2 h-screen w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
                     placeholder="Prompt"
                     name="prompt"
                     value={trainingSetData.prompt}
                     onChange={handlePromptChange}
                     disabled={!trainingSetData.useOwnPrompt}
+                    maxHeight={800}
                   />
                 )}
               </div>
             ),
             Options: (
-              <div className="p-6">
+              <div className="h-auto p-2 px-4">
+
                 <h3 className="text-lg">Training Options</h3>
                 <div className="mb-4 flex flex-col">
                   <label className="text-sm">Maximum Segment Length</label>
@@ -467,7 +443,7 @@ function TrainingSetForm({
               </div>
             ),
             Sources: (
-              <div className="p-6">
+              <div className="h-auto p-2 px-4">
                 <Sources
                   disabled={!canEdit}
                   trainingSetId={trainingSetData.id}

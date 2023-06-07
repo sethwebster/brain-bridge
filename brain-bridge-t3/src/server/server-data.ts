@@ -38,7 +38,7 @@ async function fetchTrainingSet(trainingSetId: string) {
   return set;
 }
 
-async function fetchUserTrainingSet(trainingSetId: string) {
+async function fetchUserTrainingSet(trainingSetId: string): Promise<TrainingSetWithRelations | null> {
   const user = await getServerSession();
   invariant(user, "User must be logged in to fetch training sets");
   const set = await prisma.trainingSet.findFirst({
@@ -48,7 +48,12 @@ async function fetchUserTrainingSet(trainingSetId: string) {
       questionsAndAnswers: true,
       conversations: true,
       missedQuestions: true,
-      trainingSetShares: true
+      trainingSetShares: true,
+      publicChats: {
+        include: {
+          publicChatInstance: true
+        }
+      }
     }
   });
   if (set) return set;
@@ -67,12 +72,17 @@ async function fetchUserTrainingSet(trainingSetId: string) {
         questionsAndAnswers: true,
         conversations: true,
         missedQuestions: true,
-        trainingSetShares: true
+        trainingSetShares: true,
+        publicChats: {
+          include: {
+            publicChatInstance: true
+          }
+        }
       }
     });
     return set;
   }
-
+  return null;
 }
 
 async function acceptInvitation(trainingSetId: string) {

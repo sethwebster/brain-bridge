@@ -3,7 +3,11 @@ import useAutosizeTextArea from "~/hooks/useAutoSizeTextArea";
 import { useEffect, useRef, useState } from "react";
 
 export function AutoSizingTextArea(
-  props: { value: string; } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  props: {
+    value: string;
+    maxHeight?: number;
+  } & React.TextareaHTMLAttributes<HTMLTextAreaElement>
+) {
   const firstLoad = useRef(true);
   const ref = useRef<HTMLTextAreaElement>(null);
   const [deferred, setDeferred] = useState<boolean>(false);
@@ -14,7 +18,13 @@ export function AutoSizingTextArea(
       return;
     }
   }, []);
-  useAutosizeTextArea(ref.current, deferred ? props.value : "", 500);
+  useAutosizeTextArea(ref.current, deferred ? props.value : "", props.maxHeight);
   const additionalClassNames = props.disabled ? "bg-gray-200" : "";
-  return <textarea {...props} className={`${props.className || ""} ${additionalClassNames}`} ref={ref} />;
+  return (
+    <textarea
+      {...props}
+      className={`${props.className || ""} ${additionalClassNames}`}
+      ref={ref}
+    />
+  );
 }

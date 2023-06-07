@@ -6,22 +6,24 @@ interface TabsProps {
   tabContent: Record<string, ReactNode>;
   initialSelectedTab?: string;
   rightEnd?: ReactNode;
+  additionalItems?: (string | ReactNode)[];
 }
 
 export default function Tabs({
   header,
   tabContent,
   initialSelectedTab,
+  additionalItems,
   rightEnd,
 }: TabsProps) {
   const firstTab = initialSelectedTab ?? Object.keys(tabContent)[0] ?? "";
   const [activeTab, setActiveTab] = useState(firstTab);
   return (
-    <div>
-      <div className="fixed sm:w-5/6">
-        <div className="z-50 flex w-full flex-row  bg-slate-100 text-center text-sm font-medium text-gray-500 shadow transition-all dark:border-gray-700 dark:text-gray-400 dark:invert">
-          <ul className="-mb-px flex flex-grow flex-wrap transition-all ">
-            <li className="mr-2 p-4 hover:w-auto truncate">{header}</li>
+    <div className="h-full bg-slate-100">
+      <div className="fixed top-20 z-10 w-full">
+        <div className="z-40 flex w-full flex-row bg-slate-100 bg-opacity-60 text-center text-sm font-medium text-gray-500 shadow backdrop-blur-md backdrop-filter transition-all dark:border-gray-700 dark:bg-slate-600 dark:text-gray-400 ">
+          <ul className="-mb-px flex flex-grow transition-all sm:flex-wrap ">
+            <li className="mr-2 truncate p-4 hover:w-auto">{header}</li>
             {Object.keys(tabContent).map((tab) => (
               <li className="mr-2" key={tab}>
                 <button
@@ -36,15 +38,23 @@ export default function Tabs({
                 </button>
               </li>
             ))}
+            {additionalItems?.map((item, i) => (
+              <li
+                className="mr-2 truncate"
+                key={`addtional${i}`}
+              >
+                {item}
+              </li>
+            )) ?? null}
           </ul>
           <ul>
             <li className="flex flex-row justify-end">
-              <div className="p-2 h-12 overflow-hidden mr-2">{rightEnd}</div>
+              <div className="mr-2 h-12 overflow-hidden p-2">{rightEnd}</div>
             </li>
           </ul>
         </div>
       </div>
-      <div className="w-full">
+      <div className="w-full bg-slate-100 h-auto dark:bg-slate-700">
         <div className="pt-16">
           {Object.keys(tabContent).map((tab) => (
             <div key={tab} className="w-full">
