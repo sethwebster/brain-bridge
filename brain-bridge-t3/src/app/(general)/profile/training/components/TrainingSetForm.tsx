@@ -221,7 +221,6 @@ export function TrainingSetForm({
     const allTokensRemoved = regex.exec(trainingSetData.prompt) === null;
     return trainingSetData.name.trim().length > 0 && allTokensRemoved;
   }, [trainingSetData.name, trainingSetData.prompt]);
-  const isNew = trainingSet.id.length === 0;
   const allQuestionsAnswered = useMemo(
     () =>
       trainingSetData.questionsAndAnswers.length > 0 &&
@@ -380,9 +379,6 @@ export function TrainingSetForm({
         />
       </div>
 
-      {/* {isDirty ? <p>Unsaved changes</p> : <p>No unsaved</p>} */}
-      {/* {isSaving ? <p>Saving...</p> : <p>Saved</p>}
-      {isTraining ? <p>Training...</p> : <p>Trained</p>}*/}
       {error && <ErrorBox message={error} title="An error has occurred" />}
       <Modal title="" show={isTraining} icon={<SaveIcon />}>
         <div className="w-full">
