@@ -19,7 +19,7 @@ export default function Tabs({
   const firstTab = initialSelectedTab ?? Object.keys(tabContent)[0] ?? "";
   const [activeTab, setActiveTab] = useState(firstTab);
   return (
-    <div className="h-full bg-slate-100">
+    <div className="h-full bg-slate-100 dark:bg-slate-700">
       <div className="fixed top-20 z-10 w-full">
         <div className="z-40 flex w-full flex-row bg-slate-100 bg-opacity-60 text-center text-sm font-medium text-gray-500 shadow backdrop-blur-md backdrop-filter transition-all dark:border-gray-700 dark:bg-slate-600 dark:text-gray-400 ">
           <ul className="-mb-px flex flex-grow transition-all sm:flex-wrap ">
@@ -30,7 +30,7 @@ export default function Tabs({
                   onClick={() => setActiveTab(tab)}
                   className={`inline-block rounded-t-lg border-b-2 border-transparent p-4 hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300 ${
                     activeTab === tab
-                      ? "border-gray-300 text-gray-600 dark:text-gray-300"
+                      ? "border-gray-600 dark:border-gray-300 text-gray-600 dark:text-gray-300 border-b -mb-px"
                       : ""
                   }`}
                 >

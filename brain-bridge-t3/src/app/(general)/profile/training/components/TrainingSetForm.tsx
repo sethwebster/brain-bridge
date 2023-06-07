@@ -33,7 +33,6 @@ import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
 import Tabs from "~/app/components/Tabs";
 import { toast } from "react-toastify";
 import Dashboard from "./Dashboard";
-import useKeypress from "react-use-keypress";
 
 interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
@@ -52,8 +51,6 @@ function TrainingSetForm({
 }: TrainingSetFormProps) {
   const session = useSession();
   const router = useRouter();
-  const [showQuestionsPrompts, setShowQuestionsPrompts] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(false);
   const [trainingSetData, setTrainingSetData] =
     useState<TrainingSetWithRelations>(trainingSet);
   const [isSaving, setIsSaving] = useState(false);
@@ -327,7 +324,7 @@ function TrainingSetForm({
               <div className="h-auto p-2 px-4">
                 <header className="flex justify-between border-b border-gray-400">
                   <div>
-                    <h1 className="text-2xl">{trainingSet.name}</h1>
+                    <h1 className="text-xl">{trainingSet.name}</h1>
                     {isShared ? (
                       <div className="flex flex-row">
                         <div className=" mr-1 flex h-4 w-12  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
@@ -346,7 +343,7 @@ function TrainingSetForm({
                 </header>
                 <Input
                   disabled={!canEdit}
-                  className="mt-2 w-full rounded-md border p-2"
+                  className="mt-2 w-full rounded-md border-slate-400 border border-opacity-30 p-2"
                   alt="Training Set Name"
                   placeholder="Training Set Name"
                   type="text"
@@ -354,8 +351,9 @@ function TrainingSetForm({
                   value={trainingSetData.name}
                   onChange={handleNameChange}
                 />
+                <small>The name of the set</small>
                 <Suspense fallback={<div>Loading...</div>}>
-                  {/* <Dashboard trainingSet={trainingSet} /> */}
+                  <Dashboard trainingSet={trainingSet} />
                 </Suspense>
               </div>
             ),

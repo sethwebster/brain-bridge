@@ -233,7 +233,7 @@ function Sources({
   const maxDisplayed = showMore ? sources.length : 20;
 
   return (
-    <div className="mt-2 rounded-lg py-4">
+    <div className="rounded-lg">
       <h1 className="text-lg">Training Data Sources</h1>
       <div className="flex flex-row justify-between">
         <small>
