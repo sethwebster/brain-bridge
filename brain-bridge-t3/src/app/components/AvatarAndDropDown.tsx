@@ -9,8 +9,8 @@ export const AvatarAndDropDown = async () => {
   const avatarComponent = session?.user.image ? (
     <Image
       id="avatarButton"
-      width={10}
-      height={10}
+      width={40}
+      height={40}
       data-dropdown-toggle="userDropdown"
       data-dropdown-placement="bottom-start"
       className="h-10 w-10 cursor-pointer rounded-full"
@@ -23,7 +23,7 @@ export const AvatarAndDropDown = async () => {
       data-dropdown-placement="bottom-start"
       className="h-10 w-10 cursor-pointer rounded-full bg-gray-300"
     >
-      <div className="flex h-10 w-10 flex-col justify-center rounded-full bg-gray-400 text-center text-2xl text-white shadow-md">
+      <div className="flex h-40 w-40 flex-col justify-center rounded-full bg-gray-400 text-center text-2xl text-white shadow-md">
         <div>{(session?.user.name || "User")[0]?.toUpperCase()}</div>
       </div>
     </div>
