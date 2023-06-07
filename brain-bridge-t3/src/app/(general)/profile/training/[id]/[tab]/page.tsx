@@ -5,6 +5,7 @@ import { removeFooter } from "~/utils/prompts";
 import ServerData from "~/server/server-data";
 import TrainingSetPage from "../../components/TrainingSetPage";
 import promptTemplate from "../../PromptTemplate";
+import { type TabsList } from "../../components/TrainingSetForm";
 
 export default async function TrainingPage({
   params: { id, tab },
@@ -20,7 +21,7 @@ export default async function TrainingPage({
     notFound();
   }
 
-  const activeTabTitleCase = tab.charAt(0).toUpperCase() + tab.toLowerCase().slice(1);
+  const activeTabTitleCase = tab.charAt(0).toUpperCase() + tab.toLowerCase().slice(1) as TabsList;
   return (
     <div className="w-full mt-20 h-full">
       <TrainingSetPage

@@ -30,6 +30,7 @@ import { DetailsTab } from "./DetailsTab";
 import { PromptTab } from "./PromptTab";
 import { OptionsTab } from "./OptionsTab";
 
+export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
   promptTemplate: string;
@@ -38,7 +39,7 @@ export interface TrainingSetFormProps {
     name?: string | null | undefined;
   };
   onUpdate?: (trainingSet: TrainingSetWithRelations) => void;
-  activeTab?: "Details" | "Prompt" | "Options" | "Sources";
+  activeTab?: TabsList;
 }
 
 export function TrainingSetForm({
