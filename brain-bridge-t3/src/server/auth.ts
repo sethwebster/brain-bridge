@@ -57,8 +57,14 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.AUTH0_CLIENT_ID || "<notset>",
       clientSecret: process.env.AUTH0_CLIENT_SECRET || "<notset>",
       issuer: process.env.AUTH0_ISSUER || "<notset>",
-
-    }),
+      authorization: {
+        url: `https://${process.env.AUTH0_ISSUER!}/authorize?response_type=code`,
+        params: {
+          prompt: "login",
+        }
+        
+      }
+    })
     /**
      * ...add more providers here.
      *
