@@ -1,12 +1,9 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { QuestionsWizard } from "./QuestionsWizard";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Sources from "./Sources";
 import Data from "~/utils/data-client";
 import { useRouter } from "next/navigation";
-import { AutoSizingTextArea } from "./AutoSizingTextArea";
-import Input from "~/app/components/Input";
 import ErrorBox from "~/app/components/ErrorBox";
 import {
   type TrainingSetShares,
@@ -20,21 +17,20 @@ import {
   type TrainingSetWithRelations,
   defaultTrainingOptions,
 } from "~/server/interfaces/types";
-import { InfoBoxDisplay } from "~/app/components/InfoBox";
 import replaceTokens from "~/utils/replace-tokens";
 import MissedQuestionsList from "./MissedQuestionsList";
-import Shares from "./Shares";
 import { useSession } from "next-auth/react";
-import Toggle from "~/app/components/toggle";
 import Modal from "~/app/components/ModalDialog";
-import { ShareIcon, SaveIcon } from "~/app/components/SvgIcons";
+import { SaveIcon } from "~/app/components/SvgIcons";
 import { useAuthenticatedSocket } from "~/hooks/use-socket";
 import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
 import Tabs from "~/app/components/Tabs";
 import { toast } from "react-toastify";
-import Dashboard from "./Dashboard";
+import { DetailsTab } from "./DetailsTab";
+import { PromptTab } from "./PromptTab";
+import { OptionsTab } from "./OptionsTab";
 
-interface TrainingSetFormProps {
+export interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
   promptTemplate: string;
   user: {
@@ -42,12 +38,14 @@ interface TrainingSetFormProps {
     name?: string | null | undefined;
   };
   onUpdate?: (trainingSet: TrainingSetWithRelations) => void;
+  activeTab?: "Details" | "Prompt" | "Options" | "Sources";
 }
 
-function TrainingSetForm({
+export function TrainingSetForm({
   trainingSet,
   promptTemplate,
   onUpdate,
+  activeTab,
 }: TrainingSetFormProps) {
   const session = useSession();
   const router = useRouter();
@@ -70,13 +68,16 @@ function TrainingSetForm({
     router.refresh();
   }, [router]);
 
-  const handleTrainingError = useCallback((data: { error: string }) => {
-    toast(`⛔️ ${error ?? "Training Failed"}`, {
-      type: "error",
-    });
-    setIsTraining(false);
-    setError(data.error);
-  }, []);
+  const handleTrainingError = useCallback(
+    (data: { error: string }) => {
+      toast(`⛔️ ${error ?? "Training Failed"}`, {
+        type: "error",
+      });
+      setIsTraining(false);
+      setError(data.error);
+    },
+    [error]
+  );
 
   useEffect(() => {
     if (socketRef.socket?.connected) {
@@ -287,12 +288,23 @@ function TrainingSetForm({
       defaultTrainingOptions) as TrainingOptions;
     return options;
   }, [trainingSetData.trainingOptions]);
+
+  const handleTrainingOptionToggle = useCallback(
+    (option: string) => {
+      router.push(
+        `/profile/training/${trainingSetData.id}/${option.toLowerCase()}`
+      );
+    },
+    [router, trainingSetData.id]
+  );
+
   return (
     <div className="h-full bg-slate-50">
-      <div className="w-full bg-slate-100 h-full">
+      <div className="h-full w-full bg-slate-100">
         <Tabs
           header={<h1 className="text-sm">{trainingSet.name}</h1>}
-          initialSelectedTab="Details"
+          initialSelectedTab={activeTab}
+          onSelectNewTab={handleTrainingOptionToggle}
           additionalItems={[
             <div className="flex h-full flex-col justify-center" key="Save">
               <button
@@ -321,124 +333,32 @@ function TrainingSetForm({
           ]}
           tabContent={{
             Details: (
-              <div className="h-auto p-2 px-4">
-                <header className="flex justify-between border-b border-gray-400">
-                  <div>
-                    <h1 className="text-xl">{trainingSet.name}</h1>
-                    {isShared ? (
-                      <div className="flex flex-row">
-                        <div className=" mr-1 flex h-4 w-12  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
-                          <ShareIcon fillColor="white" className="h-4 w-4" />
-                        </div>
-                        <small>Shared with you</small>
-                      </div>
-                    ) : (
-                      <></>
-                    )}
-                  </div>
-                  <Shares
-                    trainingSet={trainingSetData}
-                    onConfirmChanges={handleConfirmShareChanges}
-                  />
-                </header>
-                <Input
-                  disabled={!canEdit}
-                  className="mt-2 w-full rounded-md border-slate-400 border border-opacity-30 p-2"
-                  alt="Training Set Name"
-                  placeholder="Training Set Name"
-                  type="text"
-                  name="name"
-                  value={trainingSetData.name}
-                  onChange={handleNameChange}
-                />
-                <small>The name of the set</small>
-                <Suspense fallback={<div>Loading...</div>}>
-                  <Dashboard trainingSet={trainingSet} />
-                </Suspense>
-              </div>
+              <DetailsTab
+                canEdit={canEdit}
+                handleConfirmShareChanges={handleConfirmShareChanges}
+                handleNameChange={handleNameChange}
+                isShared={isShared}
+                pendingData={trainingSetData}
+                trainingSet={trainingSet}
+              />
             ),
+
             Prompt: (
-              <div className="h-auto p-2 px-4">
-                {!allQuestionsAnswered && (
-                  <InfoBoxDisplay
-                    hidden={false}
-                    handleDismiss={() => {
-                      console.log("dismiss");
-                    }}
-                    title="Questions and Answers"
-                    body="You need to answer all questions before you can save or train."
-                    dismissable={false}
-                  />
-                )}
-                <div className="mt-2">
-                  <Toggle
-                    disabled={!canEdit}
-                    value={trainingSetData.useOwnPrompt}
-                    label="Use custom prompt"
-                    onChange={handleUseOwnPromptToggle}
-                  />
-                </div>
-                {!trainingSetData.useOwnPrompt && (
-                  <QuestionsWizard
-                    disabled={!canEdit}
-                    onStateChange={handleQnAChange}
-                    questionsAndTokens={trainingSetData.questionsAndAnswers}
-                  />
-                )}
-                {trainingSetData.useOwnPrompt && (
-                  <AutoSizingTextArea
-                    className="mt-2 h-screen w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
-                    placeholder="Prompt"
-                    name="prompt"
-                    value={trainingSetData.prompt}
-                    onChange={handlePromptChange}
-                    disabled={!trainingSetData.useOwnPrompt}
-                    maxHeight={800}
-                  />
-                )}
-              </div>
+              <PromptTab
+                {...{
+                  allQuestionsAnswered,
+                  canEdit,
+                  trainingSetData,
+                  handleUseOwnPromptToggle,
+                  handleQnAChange,
+                  handlePromptChange,
+                }}
+              />
             ),
             Options: (
-              <div className="h-auto p-2 px-4">
-
-                <h3 className="text-lg">Training Options</h3>
-                <div className="mb-4 flex flex-col">
-                  <label className="text-sm">Maximum Segment Length</label>
-                  <Input
-                    className="p-2"
-                    disabled={!canEdit}
-                    type="text"
-                    name="maxSegmentLength"
-                    value={trainingOptions.maxSegmentLength}
-                    placeholder="Enter a maximum segment length. Default is 2000."
-                    onChange={(e) =>
-                      handleTrainingOptionChanged("maxSegmentLength", e)
-                    }
-                  />
-                  <small>
-                    This is the maximum length of each document segment when
-                    split.
-                  </small>
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-sm">Document Segment Overlap</label>
-                  <Input
-                    className="p-2"
-                    disabled={!canEdit}
-                    type="text"
-                    name="maxSegmentLength"
-                    value={trainingOptions.overlapBetweenSegments}
-                    placeholder="Enter a desired document overlap. Default is 200."
-                    onChange={(e) =>
-                      handleTrainingOptionChanged("overlapBetweenSegments", e)
-                    }
-                  />
-                  <small>
-                    This is the amount of overlap between each document segment
-                    when split.
-                  </small>
-                </div>
-              </div>
+              <OptionsTab
+                {...{ canEdit, trainingOptions, handleTrainingOptionChanged }}
+              />
             ),
             Sources: (
               <div className="h-auto p-2 px-4">
@@ -493,23 +413,3 @@ function TrainingSetForm({
   );
 }
 
-export default function TrainingSetPage(props: TrainingSetFormProps) {
-  const { trainingSet, onUpdate } = props;
-  const [trainingSetData, setTrainingSetData] = useState(trainingSet);
-
-  const handleUpdate = useCallback(
-    (set: TrainingSetWithRelations) => {
-      setTrainingSetData(set);
-      if (onUpdate) onUpdate(set);
-    },
-    [onUpdate]
-  );
-
-  return (
-    <TrainingSetForm
-      {...props}
-      trainingSet={trainingSetData}
-      onUpdate={handleUpdate}
-    />
-  );
-}

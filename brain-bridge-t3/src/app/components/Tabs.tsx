@@ -1,5 +1,5 @@
 "use client";
-import React, { type ReactNode, useState } from "react";
+import React, { type ReactNode, useState, useCallback } from "react";
 
 interface TabsProps {
   header?: string | ReactNode;
@@ -7,6 +7,7 @@ interface TabsProps {
   initialSelectedTab?: string;
   rightEnd?: ReactNode;
   additionalItems?: (string | ReactNode)[];
+  onSelectNewTab?: (tab: string) => void;
 }
 
 export default function Tabs({
@@ -15,9 +16,15 @@ export default function Tabs({
   initialSelectedTab,
   additionalItems,
   rightEnd,
+  onSelectNewTab
 }: TabsProps) {
   const firstTab = initialSelectedTab ?? Object.keys(tabContent)[0] ?? "";
   const [activeTab, setActiveTab] = useState(firstTab);
+
+  const handleTabSelect = useCallback((tab: string)=>{
+    onSelectNewTab?.(tab) ?? setActiveTab(tab);
+  }, [onSelectNewTab])
+
   return (
     <div className="h-full bg-slate-100 dark:bg-slate-700">
       <div className="fixed top-20 z-10 w-full">
@@ -27,7 +34,7 @@ export default function Tabs({
             {Object.keys(tabContent).map((tab) => (
               <li className="mr-2" key={tab}>
                 <button
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => handleTabSelect(tab)}
                   className={`inline-block rounded-t-lg border-b-2 border-transparent p-4 hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300 ${
                     activeTab === tab
                       ? "border-gray-600 dark:border-gray-300 text-gray-600 dark:text-gray-300 border-b -mb-px"

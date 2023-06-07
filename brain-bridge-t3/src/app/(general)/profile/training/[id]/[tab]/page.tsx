@@ -2,14 +2,14 @@ import { notFound } from "next/navigation";
 import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
 import { removeFooter } from "~/utils/prompts";
-import TrainingSetPage from "../components/TrainingSetPage";
-import promptTemplate from "../PromptTemplate";
 import ServerData from "~/server/server-data";
+import TrainingSetPage from "../../components/TrainingSetPage";
+import promptTemplate from "../../PromptTemplate";
 
 export default async function TrainingPage({
-  params: { id },
+  params: { id, tab },
 }: {
-  params: { id: string };
+  params: { id: string, tab: string };
 }) {
   const session = await getServerSession();
   invariant(session, "Session must exist");
@@ -19,9 +19,12 @@ export default async function TrainingPage({
   if (!set) {
     notFound();
   }
+
+  const activeTabTitleCase = tab.charAt(0).toUpperCase() + tab.toLowerCase().slice(1);
   return (
     <div className="w-full mt-20 h-full">
       <TrainingSetPage
+        activeTab={activeTabTitleCase}
         trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
         user={session.user}
         promptTemplate={promptTemplate}

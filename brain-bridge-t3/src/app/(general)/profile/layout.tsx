@@ -38,6 +38,7 @@ export default async function Layout({
       >
         {children}
       </SidebarContainer>
+      <Toast />
     </div>
   );
 }
