@@ -143,6 +143,7 @@ export default function PrivateChat({
 
   if (!session.user?.email) throw new Error("No user email");
   return (
+    <div className="w-full pt-20">
     <ChatDisplay
       answerPending={answerPending}
       soundPending={false}
@@ -155,5 +156,6 @@ export default function PrivateChat({
       viewer={session.user as Viewer}
       onClearChatClicked={handleClearChatClicked}
     />
+    </div>
   );
 }

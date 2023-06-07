@@ -94,7 +94,7 @@ export default function ChatDisplay({
   }, [answerPending, soundPending]);
 
   return (
-    <div className="mb-20 flex h-full w-full flex-col overflow-scroll bg-slate-100 dark:bg-slate-700 pt-20">
+    <div className="mb-20 flex h-full w-full flex-col overflow-scroll bg-slate-100 dark:bg-slate-700 ">
       <ChatToolbar
         chatMode={chatMode}
         onModeSelectionChanged={handleChatModeSelectionChanged}

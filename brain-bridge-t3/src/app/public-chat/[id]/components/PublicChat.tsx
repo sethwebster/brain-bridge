@@ -92,7 +92,6 @@ export default function PublicChat({
   // );
   const handleNewMessage = useCallback(
     (newMessage: NewMessage, mode: ChatResponseMode) => {
-      setAnswerPending(true);
       const formattedMessage: MessageWithRelations = {
         ...newMessage,
         id: generateId(),
