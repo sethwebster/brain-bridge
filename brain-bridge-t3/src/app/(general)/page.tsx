@@ -6,10 +6,10 @@ export default function Home() {
       <Image
         src="/splash3.png"
         fill
-        className="object-fit"
+        className="object-cover"
         alt="A man peering into a doorway with a science fiction brain inside, glowing."
       />
-      <div className="relative z-50 flex place-items-center before:absolute ">
+      <div className="relative z-50 flex place-items-center before:absolute h-full">
         <h1 className="text-4xl shadow-sm text-slate-100 drop-shadow-sm dark:text-slate-200 ">
           Your brain, in the cloud, for anyone.
         </h1>
