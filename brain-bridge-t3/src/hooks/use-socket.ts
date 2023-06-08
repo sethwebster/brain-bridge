@@ -4,14 +4,10 @@ import ms from 'ms';
 import DataClient from "~/utils/data-client";
 import { SocketContext } from "~/app/components/SocketProvider";
 import invariant from "tiny-invariant";
-import { type Socket } from "socket.io-client";
 
 function logger<T>(message: string, data: T, sendOrReceived: "send" | "received") {
   console.log(`[${sendOrReceived}] Socket Message: `, message, data);
 }
-
-
-
 
 export function useAuthenticatedSocket() {
   const { socket, sendMessage: sendMessageBase, onMessage } = useSocket();

@@ -183,13 +183,20 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
    */
   progressNotifier({ stage: "overall", statusText: "Vectorizing documents...", progress: 0.3 });
   progressNotifier({ stage: "vectorize", statusText: `Vectorizing documents`, progress: 0 });
+  try {
   await vectorize(splitContent, trainingSet.id, progressNotifier);
   progressNotifier({ stage: "vectorize", statusText: `Vectorized documents`, progress: 1 });
-
+  } catch (e) {
+    console.error(e);
+    clearInterval(vectorProgressInterval);
+    throw e;
+  }
   console.log("index creation complete");
   progressNotifier({ stage: "overall", statusText: "Index creation complete", progress: 1 });
   return null;
 }
+
+let vectorProgressInterval: any = null;
 
 async function vectorize(docs: string[], trainingSetId: string, progressNotifier: ProgressNotifier): Promise<void> {
   if (docs.length === 0) throw new Error("No documents to vectorize!");
@@ -224,6 +231,21 @@ async function vectorize(docs: string[], trainingSetId: string, progressNotifier
   }
   // const embedder = new OpenAIEmbeddings();
   const embedder = new CohereEmbeddings({ apiKey: process.env.COHERE_API_KEY })
+  let time = 0;
+  const TIME_PER_BATCH = 9750;
+  const totalTime = TIME_PER_BATCH * batches.length;
+  const INTERVAL_LENGTH = 100;
+  vectorProgressInterval = setInterval(() => {
+   time = time + INTERVAL_LENGTH;
+    progressNotifier({
+      stage: "overall",
+      statusText: "Vectorizing documents...",
+      progress: 0.3 + ((time / totalTime))
+    })
+
+  }, INTERVAL_LENGTH);
+  // takes 10 seconds/batch
+
   while (batches.length > 0) {
     progressNotifier({
       stage: "vectorize",
@@ -248,7 +270,7 @@ async function vectorize(docs: string[], trainingSetId: string, progressNotifier
     });
     console.log("Collection statistics", stats);
   }
-  await delay(5000);
+  clearInterval(vectorProgressInterval);
   const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
     collection_name: trainingSetId,
   });

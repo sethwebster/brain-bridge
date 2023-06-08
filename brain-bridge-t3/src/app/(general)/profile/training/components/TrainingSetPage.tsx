@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useState } from "react";
 import { type TrainingSetWithRelations } from "~/server/interfaces/types";
-import { TrainingSetFormProps, TrainingSetForm } from "./TrainingSetForm";
+import { type TrainingSetFormProps, TrainingSetForm } from "./TrainingSetForm";
 
 
 export default function TrainingSetPage(props: TrainingSetFormProps) {

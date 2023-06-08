@@ -1,15 +1,15 @@
 import { Message } from "@prisma/client";
-import { Socket } from "socket.io";
+import { Server, Socket } from "socket.io";
 import { Prisma, type QuestionAndAnswer } from '@prisma/client';
 import { publicMessageHandler } from "./sockets/publicMessageHandler";
 import { anyMessageHandler } from "./sockets/anyMessageHandler";
 import { trainingHandler } from "./sockets/trainingHandler";
 import { privateMessageHandler } from "./sockets/privateMessageHandler";
 
-export function messageRouter(socket: Socket) {
+export function messageRouter(socket: Socket, io: Server) {
   anyMessageHandler(socket);
   publicMessageHandler(socket);
-  trainingHandler(socket);
+  trainingHandler(socket, io);
   privateMessageHandler(socket);
 
   socket.on("join-private-room", async ({ data: { room } }) => {

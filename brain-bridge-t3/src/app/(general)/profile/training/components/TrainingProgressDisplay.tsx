@@ -2,11 +2,22 @@
 import { useEffect, useRef, useState } from "react";
 import { type Socket } from "socket.io-client";
 
-type TrainingStages = "overall" |
-  "sources-load" |
-  "source-load" |
-  "split-documents" |
-  "vectorize";
+type TrainingStages =
+  | "overall"
+  | "sources-load"
+  | "source-load"
+  | "split-documents"
+  | "vectorize";
+
+interface ProgressPayload {
+  stage: TrainingStages;
+  statusText: string;
+  progress: number;
+  additionalInfo?: string;
+}
+
+type ProgressReport = Record<TrainingStages, ProgressPayload>;
+
 const StatusToLabelMap: Record<TrainingStages, string> = {
   overall: "Overall Progress",
   "sources-load": "Loading Sources",
@@ -15,7 +26,9 @@ const StatusToLabelMap: Record<TrainingStages, string> = {
   vectorize: "Vectorizing",
 };
 export function TrainingProgressDisplay({
-  socket, onMessage, isTraining,
+  socket,
+  onMessage,
+  isTraining,
 }: {
   socket: Socket | undefined | null;
   onMessage: <T>(message: string, callback: (data: T) => void) => () => void;
@@ -24,7 +37,8 @@ export function TrainingProgressDisplay({
   const ref = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<
     Record<
-      TrainingStages, {
+      TrainingStages,
+      {
         stage: TrainingStages;
         statusText: string;
         progress: number;
@@ -34,27 +48,27 @@ export function TrainingProgressDisplay({
   >({
     overall: {
       stage: "overall",
-      statusText: "Waiting to start",
+      statusText: "Waiting for data...",
       progress: 0,
     },
     "sources-load": {
       stage: "sources-load",
-      statusText: "Waiting to start",
+      statusText: "Waiting for data...",
       progress: 0,
     },
     "source-load": {
       stage: "source-load",
-      statusText: "Waiting to start",
+      statusText: "Waiting for data...Waiting for data...Waiting for data...Waiting for data...Waiting for data...Waiting for data...Waiting for data...Waiting for data...Waiting for data...Waiting for data...",
       progress: 0,
     },
     "split-documents": {
       stage: "split-documents",
-      statusText: "Waiting to start",
+      statusText: "Waiting for data...",
       progress: 0,
     },
     vectorize: {
       stage: "vectorize",
-      statusText: "Waiting to start",
+      statusText: "Waiting for data...",
       progress: 0,
     },
   });
@@ -63,17 +77,8 @@ export function TrainingProgressDisplay({
     if (socket) {
       const removeOnMessage = onMessage(
         "training-progress",
-        (payload: {
-          stage: TrainingStages;
-          statusText: string;
-          progress: number;
-          additionalInfo?: string;
-        }) => {
-          console.log(payload.stage, payload.progress)
-          setStatus((s) => ({
-            ...s,
-            [payload.stage]: payload,
-          }));
+        (payload: ProgressReport) => {
+          setStatus(payload);
         }
       );
 
@@ -90,20 +95,24 @@ export function TrainingProgressDisplay({
   }, [isTraining, status]);
 
   return (
-    <div className={`overflow-hidden duration-500 transition-all ${isTraining ? "h-auto opacity-90" : "h-0 opacity-0"}`}>
+    <div className={`max-w-sm overflow-hidden transition-all duration-500 `}>
       <h3 className="text-xl">Training Progress</h3>
       {/* <pre>{JSON.stringify(status, null, 2)}</pre> */}
       {Object.entries(status).map(([stage, { statusText, progress }]) => (
-        <div key={stage} className={`${stage==="split-documents" ? "hidden":""}`}>
+        <div
+          key={stage}
+          className={`${stage === "split-documents" ? "hidden" : ""}`}
+        >
           <p className="text-sm">{StatusToLabelMap[stage as TrainingStages]}</p>
-          <div className="h-5 w-full rounded-full bg-gray-200 dark:bg-gray-400">
+          <div className="h-5 w-full rounded-full bg-gray-200 dark:bg-gray-600">
             <div
-              className="h-5 rounded-full bg-green-300 transition-all shadow-sm "
-              style={{ width: `${Math.round(progress * 100)}%` }}
+              className="h-5 rounded-full bg-green-300 shadow-sm transition-all "
+              style={{ width: `${Math.min(100, Math.round(progress * 100))}%` }}
             ></div>
-            <div className="relative -top-5 h-5  m-auto rounded-lg flex flex-col justify-center truncate text-center ">
-              
-              <div className="truncate w-auto text-xs mix-blend-difference text-slate-100">{statusText}</div>
+            <div className="relative -top-5 m-auto  flex h-5 flex-col justify-center truncate rounded-lg text-center ">
+              <div className="w-auto truncate text-xs text-slate-100 mix-blend-difference px-2">
+                {statusText}
+              </div>
             </div>
           </div>
         </div>

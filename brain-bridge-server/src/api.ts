@@ -48,7 +48,7 @@ class App {
     // });
     this.io.on('connection', (socket) => {
       console.log('a user connected');
-      messageRouter(socket)
+      messageRouter(socket, this.io)
       socket.on('disconnect', () => {
         console.log('user disconnected');
       });

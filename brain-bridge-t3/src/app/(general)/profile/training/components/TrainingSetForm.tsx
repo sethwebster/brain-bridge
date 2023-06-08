@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Sources from "./Sources";
 import Data from "~/utils/data-client";
 import { useRouter } from "next/navigation";
@@ -29,6 +29,7 @@ import { toast } from "react-toastify";
 import { DetailsTab } from "./DetailsTab";
 import { PromptTab } from "./PromptTab";
 import { OptionsTab } from "./OptionsTab";
+import { type Socket } from "socket.io-client";
 
 export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {
@@ -60,6 +61,7 @@ export function TrainingSetForm({
   const handleTrainingStarted = useCallback(() => {
     setIsTraining(true);
   }, []);
+  const joinRef = useRef<Socket>();
 
   const handleTrainingComplete = useCallback(() => {
     setIsTraining(false);
@@ -67,21 +69,39 @@ export function TrainingSetForm({
       type: "success",
     });
     router.refresh();
+    // TODO: Figure out why router.refresh() doesn't work.
   }, [router]);
 
-  const handleTrainingError = useCallback(
-    (data: { error: string }) => {
-      toast(`⛔️ ${error ?? "Training Failed"}`, {
-        type: "error",
-      });
-      setIsTraining(false);
-      setError(data.error);
-    },
-    [error]
-  );
+  const handleTrainingError = useCallback((data: { error: string }) => {
+    console.log(data.error);
+    toast(`⛔️ ${data.error ?? "Training Failed"}`, {
+      type: "error",
+    });
+    setIsTraining(false);
+    setError(data.error);
+  }, []);
+
+  const handleTrainingProgress = useCallback(() => {
+    console.log("HTP");
+    setIsTraining(true);
+  }, []);
 
   useEffect(() => {
     if (socketRef.socket?.connected) {
+      if (!joinRef.current || joinRef.current !== socketRef.socket) {
+        joinRef.current = socketRef.socket;
+        socketRef.socket.emit("join-training", {
+          payload: { id: trainingSet.id },
+        });
+      }
+
+      const leaveTraining = () => {
+        socketRef.socket?.emit("leave-training", {
+          payload: { id: trainingSet.id },
+        });
+        joinRef.current = undefined;
+      };
+
       const removeHandleTrainingStarted = socketRef.onMessage(
         "training-started",
         handleTrainingStarted
@@ -94,21 +114,29 @@ export function TrainingSetForm({
         "training-error",
         handleTrainingError
       );
+      const removeTrainingProgress = socketRef.onMessage(
+        "training-progress",
+        handleTrainingProgress
+      );
       return () => {
         if (socketRef.socket?.connected) {
           removeHandleTrainingComplete();
           removeHandleTrainingStarted();
           removeTrainingError();
+          removeTrainingProgress();
+          leaveTraining();
         }
       };
     }
   }, [
     handleTrainingComplete,
     handleTrainingError,
+    handleTrainingProgress,
     handleTrainingStarted,
     router,
     socketRef,
     socketRef.socket,
+    trainingSet.id,
   ]);
   const handlePromptChange = useCallback(
     (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -409,4 +437,3 @@ export function TrainingSetForm({
     </div>
   );
 }
-
