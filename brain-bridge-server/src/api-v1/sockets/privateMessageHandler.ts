@@ -8,8 +8,11 @@ import replaceTokens from "../../lib/replace-tokens";
 import { WithoutId } from "typeorm";
 import { storeUserMessage } from "./data-helpers";
 import { MessageWithRelations } from "./types";
+import { Server, Socket } from "socket.io";
+import { getRoomId } from "./roomsHandler";
 
-export function privateMessageHandler(socket) {
+export function privateMessageHandler(socket: Socket, io: Server) {
+
   socket.on("message", async (data) => {
     try {
       const { token, data: { message, mode } } = data as { token: string; data: { message: MessageWithRelations; mode: "one-shot" | "critique" | "refine"; }; };
@@ -18,8 +21,6 @@ export function privateMessageHandler(socket) {
         socket.emit("message-error", { error: "Invalid token" });
         return;
       }
-
-      const userData = verifiedToken.body.toJSON() as JSONMap;
 
       const conversation = await prisma.conversation.findUnique({
         where: {
@@ -47,7 +48,7 @@ export function privateMessageHandler(socket) {
       const bot = conversation.participants.find(p => p.name === "Bot");
       invariant(bot, "Bot must exist");
       const userMessage = await storeUserMessage(conversation, message);
-
+      io.in(getRoomId(conversation.id)).emit("message", { message: userMessage });
 
       const questionsAndAnswers = conversation.trainingSet.questionsAndAnswers;
 
@@ -72,7 +73,8 @@ export function privateMessageHandler(socket) {
       const fullPrompt = promptHeader + "\n\n" + conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
 
       console.log(conversation.id, 'llm-response-started');
-      setTimeout(()=>socket.emit('llm-response-started', {}), 2500);
+      console.log((await io.in(getRoomId(message.conversationId)).fetchSockets()).length, "listeners");
+      setTimeout(() => io.in(getRoomId(message.conversationId)).emit('llm-response-started', {}), 2500);
       const response = await llm.getLangChainResponse(
         conversation.trainingSetId,
         userMessage.text,
@@ -93,7 +95,7 @@ export function privateMessageHandler(socket) {
         publicChatInstanceId: null,
       };
       const result = await storeUserMessage(conversation, newMessage);
-      socket.emit("message", { message: result });
+      io.in(getRoomId(message.conversationId)).emit("message", { message: result });
     } catch (error: any) {
       console.error(error);
       socket.emit("message-error", { error: error.message });

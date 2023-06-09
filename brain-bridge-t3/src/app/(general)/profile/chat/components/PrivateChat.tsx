@@ -16,6 +16,7 @@ import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
 import { useAuthenticatedSocket } from "~/hooks/use-socket";
 import generateChatErrorMessage from "~/utils/error-chat-message-generator";
+import { useAuthToken } from "~/hooks/useAuthToken";
 
 export default function PrivateChat({
   selectedChat,
@@ -32,26 +33,27 @@ export default function PrivateChat({
   const [selectedChatMessages, setSelectedChatMessages] = useState(
     selectedChat.messages
   );
+  const [callback, setCallback] = useState<(() => void) | null>(null);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const socket = useAuthenticatedSocket();
+  const { token } = useAuthToken();
 
   useEffect(() => {
+    if (!selectedChat) return;
     if (socket) {
-      socket.sendMessage("join-private-room", { room: selectedChat.id });
-    }
-    // return () => {
-    //   socket.sendMessage("leave-private-room", { room: selectedChat.id });
-    // };
-  }, [selectedChat.id, socket]);
+      if (token) socket.join(selectedChat.id, "private");
+      const leaveRoom = () => {
+        if (!token) return;
+        socket.leave(selectedChat.id, "private");
+      };
 
-  useEffect(() => {
-    if (socket) {
       const removeMessageListener = socket.onMessage(
         "message",
         (payload: { message: MessageWithRelations }) => {
-          console.log("new message received", payload);
           setAnswerPending(false);
           setSelectedChatMessages((messages) => [...messages, payload.message]);
+          callback?.();
         }
       );
 
@@ -65,9 +67,7 @@ export default function PrivateChat({
       const removeErrorListener = socket.onMessage(
         "message-error",
         (payload: { error?: string }) => {
-          console.log("message error received", payload);
           setAnswerPending(false);
-          console.log("payload.error", payload.error);
           if (payload.error) {
             setSelectedChatMessages((messages) => [
               ...messages,
@@ -81,9 +81,10 @@ export default function PrivateChat({
         removeMessageListener();
         removeTypingIndicatorListener();
         removeErrorListener();
+        leaveRoom();
       };
     }
-  }, [selectedChat, selectedChat.id, session.user.id, socket]);
+  }, [callback, selectedChat, selectedChat.id, session.user.id, socket, token]);
   // const playVoice = useCallback(
   //   (fileUrl: string) => {
   //     player.play(fileUrl);
@@ -120,7 +121,7 @@ export default function PrivateChat({
             publicChatInstanceId: null,
           },
         };
-        setSelectedChatMessages((messages) => [...messages, newMessageAugment]);
+        // setSelectedChatMessages((messages) => [...messages, newMessageAugment]);
         socket.sendMessage("message", { mode, message: newMessageAugment });
       };
       sendMessage();
@@ -141,21 +142,26 @@ export default function PrivateChat({
     });
   }, [selectedChat.id]);
 
+  const handleNotifyCallbackSet = useCallback((callback: () => void) => {
+    setCallback(callback);
+  }, []);
+
   if (!session.user?.email) throw new Error("No user email");
   return (
     <div className="w-full pt-20">
-    <ChatDisplay
-      answerPending={answerPending}
-      soundPending={false}
-      // soundPending={soundPending}
-      conversation={{ ...selectedChat, messages: selectedChatMessages }}
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      onNewMessage={handleSend}
-      soundEnabled={soundEnabled}
-      onSoundEnabledChange={(value) => setSoundEnabled(value)}
-      viewer={session.user as Viewer}
-      onClearChatClicked={handleClearChatClicked}
-    />
+      <ChatDisplay
+        answerPending={answerPending}
+        soundPending={false}
+        // soundPending={soundPending}
+        conversation={{ ...selectedChat, messages: selectedChatMessages }}
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        onNewMessage={handleSend}
+        soundEnabled={soundEnabled}
+        onSoundEnabledChange={(value) => setSoundEnabled(value)}
+        viewer={session.user as Viewer}
+        onClearChatClicked={handleClearChatClicked}
+        notifyNewMessage={handleNotifyCallbackSet}
+      />
     </div>
   );
 }

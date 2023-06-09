@@ -10,7 +10,7 @@ function createJwt(user: User, expiration?: number) {
 }
 
 function verifyJWT(token: string) {
-  console.log("Verifying token", token)
+  // console.log("Verifying token", token)
   try {
     return jwt.verify(token, process.env.NEXTAUTH_SECRET as string);
   } catch {

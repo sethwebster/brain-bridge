@@ -61,7 +61,6 @@ export function TrainingSetForm({
   const handleTrainingStarted = useCallback(() => {
     setIsTraining(true);
   }, []);
-  const joinRef = useRef<Socket>();
 
   const handleTrainingComplete = useCallback(() => {
     setIsTraining(false);
@@ -81,26 +80,35 @@ export function TrainingSetForm({
     setError(data.error);
   }, []);
 
+  /**
+   * If a training progress update is received, set the training state to true.
+   * This is used to handle when a user navigates away from the page while training is in progress, and returns,
+   * or when another user (Shared!) visits the page while training is in progress.
+   */
   const handleTrainingProgress = useCallback(() => {
-    console.log("HTP");
     setIsTraining(true);
   }, []);
 
   useEffect(() => {
     if (socketRef.socket?.connected) {
-      if (!joinRef.current || joinRef.current !== socketRef.socket) {
-        joinRef.current = socketRef.socket;
-        socketRef.socket.emit("join-training", {
-          payload: { id: trainingSet.id },
-        });
-      }
+      // if (!joinRef.current || joinRef.current !== socketRef.socket) {
+      //   joinRef.current = socketRef.socket;
+      //   socketRef.socket.emit("join-training", {
+      //     payload: { id: trainingSet.id },
+      //   });
+      // }
 
-      const leaveTraining = () => {
-        socketRef.socket?.emit("leave-training", {
-          payload: { id: trainingSet.id },
-        });
-        joinRef.current = undefined;
-      };
+      // const leaveTraining = () => {
+      //   socketRef.socket?.emit("leave-training", {
+      //     payload: { id: trainingSet.id },
+      //   });
+      //   joinRef.current = undefined;
+      // };
+
+      const leaveTraining = socketRef.join(
+        `training-${trainingSet.id}`,
+        "private"
+      );
 
       const removeHandleTrainingStarted = socketRef.onMessage(
         "training-started",

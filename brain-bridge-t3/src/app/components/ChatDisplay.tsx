@@ -41,6 +41,7 @@ interface ChatProps {
   onNewMessage: (newMessage: NewMessage, mode: ChatResponseMode) => void;
   onSoundEnabledChange: (soundEnabled: boolean) => void;
   onClearChatClicked: () => void;
+  notifyNewMessage: (callback: () => void) => void;
 }
 
 export default function ChatDisplay({
@@ -58,17 +59,21 @@ export default function ChatDisplay({
   const handleSoundEnabledChange = useCallback(() => {
     onSoundEnabledChange(!soundEnabled);
   }, [onSoundEnabledChange, soundEnabled]);
-
+  
   const handleClearChatClicked = useCallback(() => {
     onClearChatClicked();
   }, [onClearChatClicked]);
 
   const handleNewMessage = useCallback(
     (message: string) => {
-      onNewMessage({
-        text: message,
-        sender: viewer,
-      }, chatMode);
+      onNewMessage(
+        {
+          text: message,
+          sender: viewer,
+        },
+        chatMode
+      );
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     },
     [chatMode, onNewMessage, viewer]
   );
@@ -121,7 +126,7 @@ export default function ChatDisplay({
             <FakeSpeakerIndicator />
           </div>
         )}
-        <div ref={bottomRef} className="m-2" />
+        <div ref={bottomRef} className="m-6" />
         <div className="h-20 opacity-0" />
       </div>
       <div className="fixed bottom-0 ml-4 w-10/12 sm:ml-3 sm:w-4/5 ">

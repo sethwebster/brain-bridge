@@ -4,6 +4,7 @@ import { createTrainingIndex } from "../../lib/training";
 import { verifyJWT } from "../../lib/jwt";
 import { Server, Socket } from "socket.io";
 import Mutex from "../../lib/mutex";
+import { getRoomId } from "./roomsHandler";
 
 type TrainingStages = "overall" |
   "sources-load" |
@@ -35,48 +36,50 @@ const trainingApiStatus: TrainingApiStatus = {
 }
 
 export function trainingSetRoomName(id: string) {
-  return `training-room-${id}`;
+  return getRoomId(`training-${id}`);
 }
 
 const mutex = new Mutex();
 
 export function trainingHandler(socket: Socket, io: Server) {
 
-  socket.on("join-training", async (data: { payload: TrainingSetPayload }) => {
-    const { payload: { id } } = data;
-    invariant(id, "id is required");
-    await socket.join(trainingSetRoomName(id));
-    console.log((await io.in(trainingSetRoomName(id)).fetchSockets()).length, "listeners");
-  });
+  // socket.on("join-training", async (data: { payload: TrainingSetPayload }) => {
+  //   const { payload: { id } } = data;
+  //   invariant(id, "id is required");
+  //   await socket.join(trainingSetRoomName(id));
+  //   console.log((await io.in(trainingSetRoomName(id)).fetchSockets()).length, "listeners");
+  // });
 
-  socket.on("leave-training", async (data: { payload: TrainingSetPayload }) => {
-    const { payload: { id } } = data;
-    invariant(id, "id is required");
-    await socket.leave(trainingSetRoomName(id));
-    console.log((await io.in(trainingSetRoomName(id)).fetchSockets()).length, "listeners");
-  });
+  // socket.on("leave-training", async (data: { payload: TrainingSetPayload }) => {
+  //   const { payload: { id } } = data;
+  //   invariant(id, "id is required");
+  //   await socket.leave(trainingSetRoomName(id));
+  //   console.log((await io.in(trainingSetRoomName(id)).fetchSockets()).length, "listeners");
+  // });
 
   async function isTraining(id: string) {
-    await mutex.lock();
-    const is = trainingApiStatus.inProgress[id];
-    mutex.unlock();
+    const is = await mutex.run(async () => {
+      const is = trainingApiStatus.inProgress[id];
+      return is;
+    })
     return is;
   }
 
   async function addTraining(id: string) {
-    await mutex.lock();
-    trainingApiStatus.inProgress[id] = true;
-    mutex.unlock();
+    await mutex.run(async () => {
+      trainingApiStatus.inProgress[id] = true;
+    })
   }
 
   async function removeTraining(id: string) {
-    await mutex.lock();
-    delete trainingApiStatus.inProgress[id];
-    mutex.unlock();
+    await mutex.run(async () => {
+      delete trainingApiStatus.inProgress[id];
+    });
   }
 
   async function doTraining(id: string, token) {
     const roomName = trainingSetRoomName(id);
+    console.log("training started", id, roomName  )
     const emit = (message: string, data: any) => io.in(roomName).emit(message, data);
     invariant(id, "trainingSetId is required");
     const verifiedToken = verifyJWT(token);

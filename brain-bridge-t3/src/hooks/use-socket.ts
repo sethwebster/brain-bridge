@@ -1,53 +1,112 @@
-import { useContext, useEffect, useState } from "react";
-import ms from 'ms';
+import { useCallback, useContext } from "react";
 
-import DataClient from "~/utils/data-client";
 import { SocketContext } from "~/app/components/SocketProvider";
 import invariant from "tiny-invariant";
+import { type Socket } from "socket.io-client";
+import socket from "~/lib/socket";
+import { useAuthToken } from "./useAuthToken";
 
 function logger<T>(message: string, data: T, sendOrReceived: "send" | "received") {
   console.log(`[${sendOrReceived}] Socket Message: `, message, data);
 }
 
-export function useAuthenticatedSocket() {
-  const { socket, sendMessage: sendMessageBase, onMessage } = useSocket();
-  const [token, setToken] = useState<string | null>(null);
-  const [tokenExpiration, setTokenExpiration] = useState<number | null>(Date.now() - ms("1m"));
+type JoinPayload = {
+  room: string;
+  type: "public" | "private";
+} & (
+    | { type: "public" }
+    | { type: "private"; auth: string }
+  )
 
-  async function getToken() {
-    const result = await DataClient.getToken();
-    setToken(result.token);
-    setTokenExpiration(Date.now() + ms("1m"));
-    return result.token;
+class RoomManager {
+  rooms: JoinPayload[] = [];
+  socket: Socket;
+
+  constructor(socket: Socket) {
+    this.socket = socket;
   }
 
-  useEffect(() => {
-    if (Date.now() > (tokenExpiration ?? 0)) {
-      getToken().catch(console.error);
-    }
-  }, [tokenExpiration]);
+  joinRoom(payload: JoinPayload) {
+    invariant(payload.room, "room is required");
+    invariant(payload.type, "type is required");
+    if (!this.hasJoined(payload.room, payload.type)) {
+      switch (payload.type) {
+        case "public":
+          this.socket.emit(`join-${payload.type}-room`, { data: { room: payload.room } });
+          break;
+        case "private":
+          this.socket.emit(`join-${payload.type}-room`, { data: { room: payload.room }, token: payload.auth });
+          break;
+      }
 
-  function sendTheMessage<T>(message: string, data: T, token: string) {
+      this.rooms.push(payload);
+    }
+  }
+
+  leaveRoom(payload: JoinPayload) {
+    if (!this.hasJoined(payload.room, payload.type)) {
+      return;
+    }
+    switch (payload.type) {
+      case "public":
+        this.socket.emit(`leave-${payload.type}-room`, { data: { room: payload.room } });
+        break;
+      case "private":
+        this.socket.emit(`leave-${payload.type}-room`, { data: { room: payload.room }, token: payload.auth });
+        break;
+    }
+    this.rooms = this.rooms.filter((r) => r.room !== payload.room && r.type !== payload.type);
+  }
+
+  hasJoined(room: string, type: "public" | "private") {
+    return this.rooms.find((r) => r.room === room && r.type === type);
+  }
+}
+
+
+const roomManager = new RoomManager(socket);
+
+export function useAuthenticatedSocket() {
+  const { socket, sendMessage: sendMessageBase, onMessage } = useSocket();
+  const { token } = useAuthToken();
+
+  const sendTheMessage = useCallback(<T>(message: string, data: T, token: string) => {
     invariant(socket, "Socket is not connected");
     invariant(token, "Token is not set");
     sendMessageBase(message, { data, token });
-  }
+  }, [sendMessageBase, socket]);
 
-  function sendMessage<T>(message: string, data: T) {
-    const tokenExpired = Date.now() > (tokenExpiration ?? 0);
-    if (tokenExpired || !token) {
-      getToken().then((token) => {
-        sendTheMessage(message, data, token);
-      }).catch(console.error);
-    } else {
-      sendTheMessage(message, data, token);
+  const sendMessage = useCallback(<T>(message: string, data: T) => {
+    invariant(token, "Token is not set");
+    sendTheMessage(message, data, token);
+
+  }, [sendTheMessage, token]);
+
+  const leave = useCallback((room: string, type: "public" | "private") => {
+    invariant(token, "Token is not set");
+    roomManager.leaveRoom({
+      room,
+      type,
+      auth: token
+    });
+  }, [token]);
+
+  const join = useCallback((room: string, type: "public" | "private") => {
+    if (!token) return () => { console.log("Token is not set") };
+    invariant(token, "Token is not set");
+    roomManager.joinRoom({ room, type, auth: token });
+    return () => {
+      invariant(token, "Token is not set");
+      leave(room, type);
     }
-  }
+  }, [leave, token]);
 
   return {
     socket,
     sendMessage,
-    onMessage
+    onMessage,
+    join,
+    leave
   }
 }
 
@@ -66,6 +125,14 @@ export default function useSocket() {
     }
   }
 
+  function join(room: string, type: "public") {
+    roomManager.joinRoom({ room, type });
+  }
+
+  function leave(room: string, type: "public") {
+    roomManager.leaveRoom({ room, type });
+  }
+
   function onMessage<T>(message: string, callback: (data: T) => void) {
     const wrapper = (data: T) => {
       logger(message, data, "received");
@@ -82,7 +149,9 @@ export default function useSocket() {
   return {
     socket,
     sendMessage,
-    onMessage
+    onMessage,
+    join,
+    leave
   }
 
 }

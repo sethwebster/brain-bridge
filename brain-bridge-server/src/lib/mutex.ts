@@ -7,10 +7,10 @@ export default class Mutex {
   lock() {
     return new Promise<void>(resolve => {
       if (this.isLocked) {
-        console.log("Mutex locked, adding to queue")
+        console.log("[mutex] Mutex locked, adding to queue")
         this.queue.push(resolve);
       } else {
-        console.log("Locking mutex")
+        console.log("[mutex] Locking mutex")
         this.isLocked = true;
         resolve();
       }
@@ -19,12 +19,22 @@ export default class Mutex {
 
   unlock() {
     if (this.queue.length > 0) {
-      console.log("Unlocking mutex, running next in queue")
+      console.log("[mutex] Unlocking mutex, running next in queue")
       const next = this.queue.shift();
       invariant(next);
       next();
     } else {
+      console.log("[mutex] Unlocking mutex")
       this.isLocked = false;
+    }
+  }
+
+  async run<T>(fn: () => Promise<T>) {
+    await this.lock();
+    try {
+      return await fn();
+    } finally {
+      this.unlock();
     }
   }
 }
