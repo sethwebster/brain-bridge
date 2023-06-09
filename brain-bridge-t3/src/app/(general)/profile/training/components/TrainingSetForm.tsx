@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Sources from "./Sources";
 import Data from "~/utils/data-client";
 import { useRouter } from "next/navigation";
@@ -29,7 +29,6 @@ import { toast } from "react-toastify";
 import { DetailsTab } from "./DetailsTab";
 import { PromptTab } from "./PromptTab";
 import { OptionsTab } from "./OptionsTab";
-import { type Socket } from "socket.io-client";
 
 export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {

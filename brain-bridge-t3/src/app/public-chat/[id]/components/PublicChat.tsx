@@ -30,6 +30,8 @@ export default function PublicChat({
   const [loadedMessages, setLoadedMessages] = useState<MessageWithRelations[]>(
     publicChatInstance.messages
   );
+  const [callback, setCallback] = useState<(() => void) | null>(null);
+
   // const player = useAudioPlayer();
   const socket = useSocket();
 
@@ -51,6 +53,7 @@ export default function PublicChat({
           console.log("new message received", payload);
           setAnswerPending(false);
           setLoadedMessages((messages) => [...messages, payload.message]);
+          callback?.();
         }
       );
 
@@ -82,7 +85,7 @@ export default function PublicChat({
         removeErrorListener();
       };
     }
-  }, [socket]);
+  }, [callback, socket]);
 
   // const playVoice = useCallback(
   //   (fileUrl: string) => {
@@ -119,6 +122,11 @@ export default function PublicChat({
     (enabled: boolean) => setSoundEnabled(enabled),
     []
   );
+
+  const handleNotifyCallbackSet = useCallback((callback: () => void) => {
+    setCallback(callback);
+  }, []);
+
   return (
     <ChatDisplay
       viewer={viewer}
@@ -131,6 +139,7 @@ export default function PublicChat({
       soundPending={soundPending}
       // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-misused-promises
       onClearChatClicked={handleClearChatClicked}
+      notifyNewMessage={handleNotifyCallbackSet}
     />
   );
 }
