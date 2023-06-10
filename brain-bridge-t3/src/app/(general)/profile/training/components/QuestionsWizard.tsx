@@ -159,7 +159,7 @@ export function QuestionsWizard({
               onChange={handleQuestionChange}
               onKeyUp={handleKeyDown}
               disabled={disabled}
-            />
+    />
           </div>
         </div>
         <div className="flex flex-row">

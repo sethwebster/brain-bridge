@@ -187,7 +187,6 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
     data: {
       name: trainingSet.name,
       prompt: trainingSet.prompt,
-      useOwnPrompt: trainingSet.useOwnPrompt,
       trainingOptions: { ...defaultTrainingOptions, ...incomingTrainingOptions },
       questionsAndAnswers: {
         deleteMany: {},
@@ -268,7 +267,6 @@ async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
     data: {
       name: trainingSet.name,
       prompt: trainingSet.prompt,
-      useOwnPrompt: trainingSet.useOwnPrompt,
       conversations: {
         create: [],
       },

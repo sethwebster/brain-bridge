@@ -19,10 +19,14 @@ export function AutoSizingTextArea(
     }
   }, []);
   useAutosizeTextArea(ref.current, deferred ? props.value : "", props.maxHeight);
+  const pps = {
+    ...props
+  }
+  delete pps.maxHeight;
   const additionalClassNames = props.disabled ? "bg-gray-200" : "";
   return (
     <textarea
-      {...props}
+      {...pps}
       className={`${props.className || ""} ${additionalClassNames}`}
       ref={ref}
     />

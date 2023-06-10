@@ -60,6 +60,7 @@ export function TrainingSetForm({
   const handleTrainingStarted = useCallback(() => {
     setIsTraining(true);
   }, []);
+  const [isAutoTraining, setIsAutoTraining] = useState(false);
 
   const handleTrainingComplete = useCallback(() => {
     setIsTraining(false);
@@ -241,6 +242,74 @@ export function TrainingSetForm({
     }
   }, [socketRef, trainingSetData.id]);
 
+  const handleConfirmShareChanges = useCallback(
+    (shares: TrainingSetShares[]) => {
+      setTrainingSetData({
+        ...trainingSetData,
+        trainingSetShares: shares,
+      });
+    },
+    [trainingSetData]
+  );
+
+  const handleUseOwnPromptConfirm = useCallback(() => {
+    setTrainingSetData({
+      ...trainingSetData,
+    });
+    setShowUseOwnPromptModal(false);
+  }, [trainingSetData]);
+
+  const handleTrainingOptionChanged = useCallback(
+    (option: string, e: React.ChangeEvent<HTMLInputElement>) => {
+      setTrainingSetData((trainingSetData) => ({
+        ...trainingSetData,
+        trainingOptions: {
+          ...((trainingSetData.trainingOptions ||
+            defaultTrainingOptions) as TrainingOptions),
+          [option]: e.target.value,
+        },
+      }));
+    },
+    []
+  );
+
+  const handlePromptGenerated = useCallback(
+    (prompt: string) => {
+      setTrainingSetData({
+        ...trainingSetData,
+        prompt,
+      });
+      setIsAutoTraining(false);
+      toast("🎉 Prompt Generated!", { type: "success" });
+    },
+    [trainingSetData]
+  );
+
+  const trainingOptions = useMemo(() => {
+    const options: TrainingOptions = (trainingSetData.trainingOptions ??
+      defaultTrainingOptions) as TrainingOptions;
+    return options;
+  }, [trainingSetData.trainingOptions]);
+
+  const handleTrainingOptionToggle = useCallback(
+    (option: string) => {
+      router.push(
+        `/profile/training/${trainingSetData.id}/${option.toLowerCase()}`
+      );
+    },
+    [router, trainingSetData.id]
+  );
+
+  const handleAutoTrainClicked = useCallback(() => {
+    setIsAutoTraining((isAutoTraining) => !isAutoTraining);
+  }, []);
+
+  const shared = trainingSetData.trainingSetShares.find(
+    (s) => s.acceptedUserId === session.data?.user.id
+  );
+  const role = shared?.role ?? "OWNER";
+  const isShared = shared !== undefined;
+  const canEdit = role === "OWNER" || role === "EDITOR";
   /**
    * Check if the training set has been modified
    */
@@ -263,74 +332,6 @@ export function TrainingSetForm({
         (q) => q.answer.trim().length > 0
       ),
     [trainingSetData.questionsAndAnswers]
-  );
-
-  const handleConfirmShareChanges = useCallback(
-    (shares: TrainingSetShares[]) => {
-      setTrainingSetData({
-        ...trainingSetData,
-        trainingSetShares: shares,
-      });
-    },
-    [trainingSetData]
-  );
-
-  const handleUseOwnPromptConfirm = useCallback(() => {
-    setTrainingSetData({
-      ...trainingSetData,
-      useOwnPrompt: true,
-    });
-    setShowUseOwnPromptModal(false);
-  }, [trainingSetData]);
-
-  const handleUseOwnPromptToggle = useCallback(
-    (useOwnPrompt: boolean) => {
-      if (useOwnPrompt) {
-        setShowUseOwnPromptModal(true);
-      } else {
-        setTrainingSetData({
-          ...trainingSetData,
-          useOwnPrompt: false,
-        });
-      }
-    },
-    [trainingSetData]
-  );
-
-  const handleTrainingOptionChanged = useCallback(
-    (option: string, e: React.ChangeEvent<HTMLInputElement>) => {
-      setTrainingSetData((trainingSetData) => ({
-        ...trainingSetData,
-        trainingOptions: {
-          ...((trainingSetData.trainingOptions ||
-            defaultTrainingOptions) as TrainingOptions),
-          [option]: e.target.value,
-        },
-      }));
-    },
-    []
-  );
-
-  const shared = trainingSetData.trainingSetShares.find(
-    (s) => s.acceptedUserId === session.data?.user.id
-  );
-  const role = shared?.role ?? "OWNER";
-  const isShared = shared !== undefined;
-  const canEdit = role === "OWNER" || role === "EDITOR";
-
-  const trainingOptions = useMemo(() => {
-    const options: TrainingOptions = (trainingSetData.trainingOptions ??
-      defaultTrainingOptions) as TrainingOptions;
-    return options;
-  }, [trainingSetData.trainingOptions]);
-
-  const handleTrainingOptionToggle = useCallback(
-    (option: string) => {
-      router.push(
-        `/profile/training/${trainingSetData.id}/${option.toLowerCase()}`
-      );
-    },
-    [router, trainingSetData.id]
   );
 
   return (
@@ -380,13 +381,15 @@ export function TrainingSetForm({
 
             Prompt: (
               <PromptTab
+                onPromptGenerated={handlePromptGenerated}
                 {...{
                   allQuestionsAnswered,
                   canEdit,
                   trainingSetData,
-                  handleUseOwnPromptToggle,
                   handleQnAChange,
                   handlePromptChange,
+                  onAutoTrainClicked: handleAutoTrainClicked,
+                  isAutoTraining,
                 }}
               />
             ),

@@ -4,6 +4,7 @@ import { anyMessageHandler } from "./sockets/anyMessageHandler";
 import { trainingHandler } from "./sockets/trainingHandler";
 import { privateMessageHandler } from "./sockets/privateMessageHandler";
 import { roomsHandler } from "./sockets/roomsHandler";
+import { promptGeneratorHandler } from "./sockets/promptGeneratorHandler";
 
 export function messageRouter(socket: Socket, io: Server) {
   anyMessageHandler(socket);
@@ -11,4 +12,5 @@ export function messageRouter(socket: Socket, io: Server) {
   publicMessageHandler(socket);
   trainingHandler(socket, io);
   privateMessageHandler(socket, io);
+  promptGeneratorHandler(socket, io);
 }

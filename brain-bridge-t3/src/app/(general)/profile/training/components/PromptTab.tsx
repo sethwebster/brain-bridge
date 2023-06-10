@@ -1,55 +1,61 @@
 "use client";
-import { QuestionsWizard } from "./QuestionsWizard";
 import { AutoSizingTextArea } from "./AutoSizingTextArea";
-import {
-  type QuestionAndAnswerPartial,
-  type TrainingSetWithRelations
-} from "~/server/interfaces/types";
-import { InfoBoxDisplay } from "~/app/components/InfoBox";
-import Toggle from "~/app/components/toggle";
+import { type TrainingSetWithRelations } from "~/server/interfaces/types";
+import { AutoTraining } from "./AutoTraining";
 
-export function PromptTab({ allQuestionsAnswered, canEdit, trainingSetData, handleUseOwnPromptToggle, handleQnAChange, handlePromptChange }: {
-  allQuestionsAnswered: boolean;
+export function PromptTab({
+  trainingSetData,
+  isAutoTraining,
+  handlePromptChange,
+  onPromptGenerated,
+  onAutoTrainClicked,
+}: {
   canEdit: boolean;
+  isAutoTraining: boolean;
   trainingSetData: TrainingSetWithRelations;
-  handleUseOwnPromptToggle: (useOwnPrompt: boolean) => void;
-  handleQnAChange: (questionsAndTokens: QuestionAndAnswerPartial[]) => void;
   handlePromptChange: (evt: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onPromptGenerated: (prompt: string) => void;
+  onAutoTrainClicked: () => void;
 }) {
   return (
     <div className="h-auto p-2 px-4">
-      {!trainingSetData.useOwnPrompt && !allQuestionsAnswered && (
-        <InfoBoxDisplay
-          hidden={false}
-          handleDismiss={() => {
-            console.log("dismiss");
-          }}
-          title="Questions and Answers"
-          body="You need to answer all questions before you can save or train."
-          dismissable={false} />
+      {!isAutoTraining && (
+        <div className="mt-2">
+          <button
+            className="rounded bg-blue-500 p-2 text-blue-100 shadow"
+            onClick={onAutoTrainClicked}
+          >
+            {trainingSetData.prompt.trim().length > 0
+              ? "Refine Prompt with Help"
+              : "Generate Prompt"}
+          </button>
+        </div>
       )}
-      <div className="mt-2">
-        <Toggle
-          disabled={!canEdit}
-          value={trainingSetData.useOwnPrompt}
-          label="Use custom prompt"
-          onChange={handleUseOwnPromptToggle} />
-      </div>
-      {!trainingSetData.useOwnPrompt && (
-        <QuestionsWizard
-          disabled={!canEdit}
-          onStateChange={handleQnAChange}
-          questionsAndTokens={trainingSetData.questionsAndAnswers} />
+      {isAutoTraining && (
+        <div className="mt-2">
+          <button
+            className="rounded bg-amber-500 p-2 text-amber-100 shadow"
+            onClick={onAutoTrainClicked}
+          >
+            Cancel
+          </button>
+        </div>
       )}
-      {trainingSetData.useOwnPrompt && (
+      {isAutoTraining && (
+        <AutoTraining
+          onPromptGenerated={onPromptGenerated}
+          oldPrompt={trainingSetData.prompt}
+        />
+      )}
+      {!isAutoTraining && (
         <AutoSizingTextArea
           className="mt-2 h-screen w-full rounded-md border p-2 dark:border-slate-600 dark:bg-slate-700"
           placeholder="Prompt"
           name="prompt"
           value={trainingSetData.prompt}
           onChange={handlePromptChange}
-          disabled={!trainingSetData.useOwnPrompt}
-          maxHeight={800} />
+          maxHeight={800}
+        />
       )}
     </div>
   );

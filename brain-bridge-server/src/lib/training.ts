@@ -176,11 +176,15 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
    */
   progressNotifier({ stage: "overall", statusText: "Splitting documents...", progress: 0.2 });
   progressNotifier({ stage: "split-documents", statusText: `Splitting documents into chunks`, progress: 0 });
+
+  const listDoc = generateDocumentList(allContent);
+
   const mapped = allContent.map(({ source, result }) => (JSON.stringify({
     source: source.name,
     content: result
   }, null, 2)));
-  let splitContent = await splitFileData(mapped, progressNotifier, usedOptions);
+
+  let splitContent = await splitFileData([...mapped, listDoc], progressNotifier, usedOptions);
 
   /**
    * Vectorize the content
@@ -201,6 +205,14 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
 }
 
 let vectorProgressInterval: any = null;
+
+function generateDocumentList(allContent: { source: TrainingSource; result: string; }[]) {
+  const documentsList = allContent.map(({ source, result }) => {
+    return `* ${source.name} - ${source.mimeType} - ${source.createdAt}`;
+  }).join("\n");
+  const listDoc = `Documents used in training:\n${documentsList}\n\n`;
+  return listDoc;
+}
 
 async function vectorize(docs: string[], trainingSetId: string, progressNotifier: ProgressNotifier): Promise<void> {
   if (docs.length === 0) throw new Error("No documents to vectorize!");

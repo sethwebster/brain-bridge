@@ -16,7 +16,6 @@ model TrainingSet {
   userId               String
   version              Int                       @default(0)
   prompt               String                    @default("")
-  useOwnPrompt         Boolean                   @default(false)
   trainingOptions      Json                      @default("{}")
   trainingStatus       TrainingSetTrainingStatus @default(IDLE)
   trainingIndexVersion Int                       @default(0)

@@ -38,7 +38,6 @@ model TrainingSet {
   publicChats          PublicChat[]
   missedQuestions      MissedQuestions[]
   trainingSetShares    TrainingSetShares[]
-  useOwnPrompt         Boolean                   @default(false)
   trainingOptions      Json                      @default("{}")
   trainingStatus       TrainingSetTrainingStatus @default(IDLE)
 }

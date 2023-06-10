@@ -78,9 +78,8 @@ export function privateMessageHandler(socket: Socket, io: Server) {
       const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)));
       const fullPrompt = promptHeader + "\n\n" + conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
 
-      console.log(conversation.id, 'llm-response-started');
       console.log((await io.in(getRoomId(message.conversationId)).fetchSockets()).length, "listeners");
-      setTimeout(() => io.in(getRoomId(message.conversationId)).emit('llm-response-started', {}), 2500);
+      io.in(getRoomId(message.conversationId)).emit('llm-response-started', {})
       const response = await llm.getLangChainResponse(
         conversation.trainingSetId,
         userMessage.text,

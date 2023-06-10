@@ -96,7 +96,7 @@ export class BrainBridgeLangChain implements LangChainStore {
     }
     const promptTemplate = new PromptTemplate({
       template: basePrompt.replace("{name}", ""),
-      inputVariables: ["history", "context", "prompt", "name"]
+      inputVariables: ["history", "context", "prompt"]
     });
 
     const llmChain = new LLMChain({

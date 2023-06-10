@@ -21,7 +21,7 @@ export default function SidebarContainer({
         />
       </div>
       <div className="ml-0 h-full w-full pl-0 sm:ml-64 ">
-        <div className="h-full mb-10">{children}</div>
+        <div className="h-auto mb-10">{children}</div>
       </div>
     </div>
   );
