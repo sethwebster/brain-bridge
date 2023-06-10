@@ -1,10 +1,11 @@
 import { Socket } from "socket.io";
 import invariant from "tiny-invariant";
 import { prisma } from "../../lib/db";
-import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse, promptFooter, promptHeader } from "../../lib/llm";
+import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm";
 import replaceTokens from "../../lib/replace-tokens";
 import { storeBotMessage } from "./data-helpers";
 import { MessageWithRelations, PublicChatInstanceWithRelations } from "./types";
+import { promptFooter, promptHeader } from "../../lib/prompt-templates";
 
 export async function publicMessageHandler(socket: Socket) {
   socket.on("message-public", async (data) => {

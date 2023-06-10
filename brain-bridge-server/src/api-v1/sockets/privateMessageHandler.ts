@@ -3,13 +3,14 @@ import { verifyJWT } from "../../lib/jwt";
 import { JSONMap } from "njwt";
 import { prisma } from "../../lib/db";
 import { Prisma } from '@prisma/client';
-import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse, promptFooter, promptHeader } from "../../lib/llm";
+import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm";
 import replaceTokens from "../../lib/replace-tokens";
 import { WithoutId } from "typeorm";
 import { storeUserMessage } from "./data-helpers";
 import { MessageWithRelations } from "./types";
 import { Server, Socket } from "socket.io";
 import { getRoomId } from "./roomsHandler";
+import { promptFooter, promptHeader } from "../../lib/prompt-templates";
 
 export function privateMessageHandler(socket: Socket, io: Server) {
 
@@ -52,6 +53,11 @@ export function privateMessageHandler(socket: Socket, io: Server) {
 
       const questionsAndAnswers = conversation.trainingSet.questionsAndAnswers;
 
+      /**
+       * Called when a low-confidence answer is returned
+       * @param questionAndAnswer
+       * @returns
+       */
       const handleMissedQuestion = async (questionAndAnswer: LLMBrainBridgeResponse) => {
         const missedQuestion = await prisma.missedQuestions.create({
           data: {

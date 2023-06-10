@@ -76,7 +76,7 @@ export function TrainingSetForm({
       type: "error",
     });
     setIsTraining(false);
-    setError(data.error);
+    // setError(data.error);
   }, []);
 
   /**

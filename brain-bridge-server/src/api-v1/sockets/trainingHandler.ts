@@ -79,7 +79,7 @@ export function trainingHandler(socket: Socket, io: Server) {
 
   async function doTraining(id: string, token) {
     const roomName = trainingSetRoomName(id);
-    console.log("training started", id, roomName  )
+    console.log("training started", id, roomName)
     const emit = (message: string, data: any) => io.in(roomName).emit(message, data);
     invariant(id, "trainingSetId is required");
     const verifiedToken = verifyJWT(token);
@@ -174,6 +174,7 @@ export function trainingHandler(socket: Socket, io: Server) {
       }
       await addTraining(data.trainingSetId);
       await doTraining(id, token);
+
     } catch (e) {
       console.log("ERROR", e);
       socket.emit("training-error", { error: e });

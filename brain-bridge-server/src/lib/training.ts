@@ -184,8 +184,8 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
   progressNotifier({ stage: "overall", statusText: "Vectorizing documents...", progress: 0.3 });
   progressNotifier({ stage: "vectorize", statusText: `Vectorizing documents`, progress: 0 });
   try {
-  await vectorize(splitContent, trainingSet.id, progressNotifier);
-  progressNotifier({ stage: "vectorize", statusText: `Vectorized documents`, progress: 1 });
+    await vectorize(splitContent, trainingSet.id, progressNotifier);
+    progressNotifier({ stage: "vectorize", statusText: `Vectorized documents`, progress: 1 });
   } catch (e) {
     console.error(e);
     clearInterval(vectorProgressInterval);
@@ -236,7 +236,7 @@ async function vectorize(docs: string[], trainingSetId: string, progressNotifier
   const totalTime = TIME_PER_BATCH * batches.length;
   const INTERVAL_LENGTH = 100;
   vectorProgressInterval = setInterval(() => {
-   time = time + INTERVAL_LENGTH;
+    time = time + INTERVAL_LENGTH;
     progressNotifier({
       stage: "overall",
       statusText: "Vectorizing documents...",

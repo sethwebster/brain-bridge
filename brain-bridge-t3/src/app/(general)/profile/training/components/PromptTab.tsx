@@ -18,7 +18,7 @@ export function PromptTab({ allQuestionsAnswered, canEdit, trainingSetData, hand
 }) {
   return (
     <div className="h-auto p-2 px-4">
-      {!allQuestionsAnswered && (
+      {!trainingSetData.useOwnPrompt && !allQuestionsAnswered && (
         <InfoBoxDisplay
           hidden={false}
           handleDismiss={() => {

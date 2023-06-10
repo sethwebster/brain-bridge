@@ -25,6 +25,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.341.0",
     "@aws-sdk/s3-request-presigner": "3.341.0",
+    "@dqbd/tiktoken": "1.0.7",
     "@huggingface/inference": "1.8.0",
     "@prisma/client": "4.15.0",
     "@types/jsdom": "21.1.1",
