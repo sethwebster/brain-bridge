@@ -159,7 +159,7 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
     const result = await getSourceText(trainingSet.userId, source, progressNotifier)
     countKeeper.completed++;
     progressNotifier({ stage: "sources-load", statusText: ``, progress: countKeeper.completed / trainingSources.length });
-    return result;
+    return { source, result }
   });
   // TODO: Figure out how to incorporate the missed questions into the training set
   const answeredQuestionText = `\n${turnQuestionsIntoText(trainingSet.missedQuestions)}\n`;
@@ -176,7 +176,11 @@ export async function createTrainingIndex({ name, trainingSet, onProgress, optio
    */
   progressNotifier({ stage: "overall", statusText: "Splitting documents...", progress: 0.2 });
   progressNotifier({ stage: "split-documents", statusText: `Splitting documents into chunks`, progress: 0 });
-  let splitContent = await splitFileData([...allContent], progressNotifier, usedOptions);
+  const mapped = allContent.map(({ source, result }) => (JSON.stringify({
+    source: source.name,
+    content: result
+  }, null, 2)));
+  let splitContent = await splitFileData(mapped, progressNotifier, usedOptions);
 
   /**
    * Vectorize the content
