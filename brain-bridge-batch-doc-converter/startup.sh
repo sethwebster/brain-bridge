@@ -101,7 +101,7 @@ function process_file {
     output_file="/docs/md-output/${filename%.*}.md"
 
     # Create indent string based on depth of child directory
-    indent=$(printf "%${2}s" "")
+    # indent=$(printf "%${2}s" "")
     log "Checking $filename" "$indent"  # log filename only
 
     # Check if the file is a Word, Powerpoint, Excel, PDF, HTML, or text file
