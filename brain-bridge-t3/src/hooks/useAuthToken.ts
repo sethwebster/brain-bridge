@@ -34,15 +34,17 @@ class AuthTokenManager {
   }
 
   private refreshTokenIfNecessary() {
-    console.log("Refreshing token if necessary")
     if (!this.tokenIsValid) {
+      console.log("Refreshing token")
       this.getToken().catch(console.error);
     }
   }
 
   private async getToken() {
     if (this.tokenIsValid) this._token;
-    if (this._refreshingToken) {
+    const isRefreshing = this._refreshingToken;
+    if (isRefreshing) {
+      console.log("Already refreshing")
       return new Promise<string | null>((resolve) => {
         const interval = setInterval(() => {
           if (this.tokenIsValid) {
@@ -51,15 +53,18 @@ class AuthTokenManager {
           }
         }, 100);
       });
+    } else {
+      this._refreshingToken = true;
+      console.log("Getting new token")
+      const result = await DataClient.getToken();
+      this._token = result.token;
+      this._tokenExpiration = Date.now() + ms("1m");
+      this.authTokenSubscribers.forEach((callback) => {
+        callback(this._token)
+      });
+      this._refreshingToken = false;
+      return result.token;
     }
-    const result = await DataClient.getToken();
-    this._token = result.token;
-    this._tokenExpiration = Date.now() + ms("1m");
-    this.authTokenSubscribers.forEach((callback) => {
-      callback(this._token)
-    });
-    this._refreshingToken = false;
-    return result.token;
   }
 }
 
