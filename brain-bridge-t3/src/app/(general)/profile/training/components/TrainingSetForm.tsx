@@ -55,7 +55,7 @@ export function TrainingSetForm({
   const [isSaving, setIsSaving] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showUseOwnPromptModal, setShowUseOwnPromptModal] = useState(false);
+  const [showRefinePromptModal, setShowRefinePromptModal] = useState(false);
   const socketRef = useAuthenticatedSocket();
   const handleTrainingStarted = useCallback(() => {
     setIsTraining(true);
@@ -252,12 +252,10 @@ export function TrainingSetForm({
     [trainingSetData]
   );
 
-  const handleUseOwnPromptConfirm = useCallback(() => {
-    setTrainingSetData({
-      ...trainingSetData,
-    });
-    setShowUseOwnPromptModal(false);
-  }, [trainingSetData]);
+  const handleRefinePromptConfirmed = useCallback(() => {
+    setIsAutoTraining((isAutoTraining) => !isAutoTraining);
+    setShowRefinePromptModal(false);
+  }, []);
 
   const handleTrainingOptionChanged = useCallback(
     (option: string, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,8 +299,16 @@ export function TrainingSetForm({
   );
 
   const handleAutoTrainClicked = useCallback(() => {
-    setIsAutoTraining((isAutoTraining) => !isAutoTraining);
-  }, []);
+    if (trainingSetData.prompt.length === 0) {
+      setIsAutoTraining((isAutoTraining) => !isAutoTraining);
+    } else {
+      if (isAutoTraining) {
+        setIsAutoTraining(false);
+        return;
+      }
+      setShowRefinePromptModal(true);
+    }
+  }, [isAutoTraining, trainingSetData.prompt.length]);
 
   const shared = trainingSetData.trainingSetShares.find(
     (s) => s.acceptedUserId === session.data?.user.id
@@ -428,19 +434,20 @@ export function TrainingSetForm({
         </div>
       </Modal>
       <Modal
-        title="Use your own prompt"
-        show={showUseOwnPromptModal}
-        onCancel={() => setShowUseOwnPromptModal(false)}
-        confirmText="Use my own prompt"
-        onConfirm={handleUseOwnPromptConfirm}
-        closeText="Use default prompt"
+        title="Refining Your Prompt"
+        show={showRefinePromptModal}
+        onCancel={() => setShowRefinePromptModal(false)}
+        confirmText="Continue"
+        onConfirm={handleRefinePromptConfirmed}
+        closeText="Cancel"
       >
-        <p>Use your own prompt, but some things to keep in mind:</p>
+        <p>A note on refining your prompt:</p>
         <ul className="ml-4 list-disc">
           <li>The prompt used dramatically influences your results.</li>
           <li>
-            We prepend front and back matter to control the output which may
-            interfere with your desired results.
+            This functionality is experimental and may not work as expected. As
+            such, you should copy and save your current prompt somewhere in case
+            you want to come back to it.
           </li>
         </ul>
       </Modal>

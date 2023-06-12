@@ -36,7 +36,6 @@ export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
       userId: "",
       missedQuestions: [],
       trainingSetShares: [],
-      useOwnPrompt: false,
       trainingOptions: defaultTrainingOptions,
       trainingStatus: "IDLE",
       trainingIndexVersion: 0,

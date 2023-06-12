@@ -150,7 +150,7 @@ export function AutoTraining({
         Ask the user what seems to be working, and what isn't. Then, generate a new prompt that follows the original format, but incorporates their feedback. Think step-by-step.
         Do not just generate a new prompt automatically, talk with the human about it first. And make sure to FILL OUT ALL SECTIONS with HUMAN input.
 
-        Your next response should be:
+        Your next response should be THIS, and nothing different:
 
         Let's work on refining your prompt. For reference, here is your current prompt:
         \`\`\`  
