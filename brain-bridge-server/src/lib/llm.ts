@@ -18,7 +18,8 @@ export interface LangChainStore {
 const model = new OpenAIChat({
   temperature: 0,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: 'gpt-3.5-turbo'
+  modelName: 'gpt-3.5-turbo',
+  maxTokens: -1,
 });
 
 export class BrainBridgeStorage implements LangChainStorage {

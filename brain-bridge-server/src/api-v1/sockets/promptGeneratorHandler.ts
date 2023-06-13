@@ -1,24 +1,20 @@
-import invariant from "tiny-invariant";
 import { verifyJWT } from "../../lib/jwt";
-import { JSONMap } from "njwt";
-import { prisma } from "../../lib/db";
-import { Prisma } from '@prisma/client';
-import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse, LLMResponse } from "../../lib/llm";
-import replaceTokens from "../../lib/replace-tokens";
-import { WithoutId } from "typeorm";
-import { storeUserMessage } from "./data-helpers";
 import { MessageWithRelations } from "./types";
 import { Server, Socket } from "socket.io";
-import { promptFooter, promptGeneratorPrompt, promptHeader } from "../../lib/prompt-templates";
 import { LLMChain, PromptTemplate } from "langchain";
 import { OpenAIChat } from "langchain/llms";
+import { LLMResponse } from "../../lib/llm";
+import { promptGeneratorPrompt } from "../../lib/prompt-templates";
 
 
 const model = new OpenAIChat({
   temperature: 0,
   openAIApiKey: process.env.OPENAI_API_KEY,
   modelName: 'gpt-3.5-turbo',
+  maxTokens: -1
 });
+
+
 
 const additionalHistory = [
   "gen-bot: How can I help you?",

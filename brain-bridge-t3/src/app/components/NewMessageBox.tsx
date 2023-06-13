@@ -14,11 +14,11 @@ export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
 
   const handleKeyUp = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      event.preventDefault();
       switch (event.key) {
         case "Enter":
+          event.preventDefault();
           if (event.shiftKey) {
-            setCurrentMessageText(currentMessageText + "\n");
+            // setCurrentMessageText(currentMessageText + "\n");
             return;
           } else {
             if (currentMessageText.trim().length === 0) return;
@@ -32,8 +32,8 @@ export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
 
   const handleTextChanged = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const lastCharacterIsNewline = event.target.value.endsWith("\n");
-      if (lastCharacterIsNewline) return;
+      // const lastCharacterIsNewline = event.target.value.endsWith("\n");
+      // if (lastCharacterIsNewline) return;
       setCurrentMessageText(event.target.value);
     },
     []
