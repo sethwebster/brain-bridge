@@ -1,30 +1,39 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Input from "./Input";
-import { AutoSizingTextArea } from "../(general)/profile/training/components/AutoSizingTextArea";
+import AutoSizingTextArea from "../(general)/profile/training/components/AutoSizingTextArea";
 
 interface NewMessageBoxProps {
   onMessageSend: (text: string) => void;
 }
+
+const ALL_POSSIBLE_TYPEABLE_CHARACTERS =
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+-=[]{}\\|;:'\",./<>?`~ ";
+
 export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
   const [currentMessageText, setCurrentMessageText] = useState("");
-
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const handleSend = useCallback(() => {
     onMessageSend(currentMessageText.trim());
   }, [currentMessageText, onMessageSend]);
 
-  const handleKeyUp = useCallback(
+  const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // if (ALL_POSSIBLE_TYPEABLE_CHARACTERS.includes(event.key)) {
+      //   setCurrentMessageText((text) => text + event.key);
+      //   return;
+      // }
       switch (event.key) {
         case "Enter":
           event.preventDefault();
           if (event.shiftKey) {
-            // setCurrentMessageText(currentMessageText + "\n");
+            setCurrentMessageText(currentMessageText + "\n");
             return;
           } else {
             if (currentMessageText.trim().length === 0) return;
             handleSend();
             setCurrentMessageText("");
           }
+          break;
       }
     },
     [currentMessageText, handleSend]
@@ -41,11 +50,12 @@ export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
 
   return (
     <AutoSizingTextArea
+      ref={textRef}
       name="message"
       placeholder="Type your message here"
-      className="mb-4 flex-grow rounded border bg-slate-400 dark:bg-slate-500 bg-opacity-95 p-2 shadow-inner outline-none"
+      className="mb-4 flex-grow rounded border bg-slate-400 bg-opacity-95 p-2 shadow-inner outline-none dark:bg-slate-500"
       value={currentMessageText}
-      onKeyUp={handleKeyUp}
+      onKeyDown={handleKeyDown}
       onChange={handleTextChanged}
     />
   );

@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import Modal from "~/app/components/ModalDialog";
 import { type TrainingSetWithRelations } from "~/server/interfaces/types";
-import { AutoSizingTextArea } from "./AutoSizingTextArea";
+import AutoSizingTextArea from "./AutoSizingTextArea";
 import { type MissedQuestions } from "@prisma/client";
 import Toggle from "~/app/components/toggle";
 

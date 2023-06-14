@@ -1,14 +1,13 @@
 import { LLMChain, PromptTemplate } from "langchain";
-import { CohereEmbeddings, OpenAIEmbeddings } from "langchain/embeddings";
+import { CohereEmbeddings } from "langchain/embeddings";
 import { OpenAIChat } from "langchain/llms";
-import { HNSWLib } from "langchain/vectorstores";
 import path from "path";
 import { getTempFilePath } from "./get-temp-file";
 import { Milvus } from "langchain/vectorstores/milvus";
 import { encoding_for_model } from "@dqbd/tiktoken";
 
-interface LangChainStorage {
-  getIndex(id: string): Promise<HNSWLib>;
+interface LangChainStorage<T> {
+  getIndex<T>(id: string): Promise<T>;
 }
 
 export interface LangChainStore {
@@ -18,18 +17,26 @@ export interface LangChainStore {
 const model = new OpenAIChat({
   temperature: 0,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: 'gpt-3.5-turbo',
+  modelName: 'gpt-3.5-turbo-0613',
   maxTokens: -1,
 });
 
-export class BrainBridgeStorage implements LangChainStorage {
+export class BrainBridgeStorage<Milvus> implements LangChainStorage<Milvus> {
   /**
    * @deprecated
    * @param id
    * @returns
    */
-  async getIndex(id: string): Promise<HNSWLib> {
-    throw new Error("Deprecated");
+  async getIndex<Milvus>(id: string): Promise<Milvus> {
+    // const embedder = new OpenAIEmbeddings()
+    const embedder = new CohereEmbeddings({ apiKey: process.env.COHERE_API_KEY });
+    const vectorStore = await Milvus.fromExistingCollection(
+      embedder,
+      {
+        collectionName: id,
+      }
+    ) as Milvus;
+    return vectorStore;
   }
 
   private getFilePaths(id: string) {
@@ -50,6 +57,7 @@ export class BrainBridgeStorage implements LangChainStorage {
 export interface LLMResponse {
   text: string;
 }
+
 export interface LLMBrainBridgeResponse {
   question: string;
   answer: string;
@@ -57,24 +65,12 @@ export interface LLMBrainBridgeResponse {
 }
 
 export class BrainBridgeLangChain implements LangChainStore {
-  storage: LangChainStorage
-  _store: HNSWLib | null = null;
+  storage: LangChainStorage<Milvus>
+  _store: Milvus | null = null;
   private _lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void;
-  constructor(storage: LangChainStorage = new BrainBridgeStorage(), lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void) {
+  constructor(storage: LangChainStorage<Milvus> = new BrainBridgeStorage(), lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void) {
     this.storage = storage;
     this._lowConfidenceAnswerHandler = lowConfidenceAnswerHandler;
-  }
-
-  private async getStore(trainingSetId: string): Promise<Milvus> {
-    // const embedder = new OpenAIEmbeddings()
-    const embedder = new CohereEmbeddings({ apiKey: process.env.COHERE_API_KEY });
-    const vectorStore = await Milvus.fromExistingCollection(
-      embedder,
-      {
-        collectionName: trainingSetId,
-      }
-    );
-    return vectorStore;
   }
 
   /**
@@ -105,7 +101,7 @@ export class BrainBridgeLangChain implements LangChainStore {
       prompt: promptTemplate,
     });
 
-    const store = await this.getStore(indexId)
+    const store = await this.storage.getIndex<Milvus>(indexId);
 
     const data = await store.similaritySearch(userPrompt, 2);
     const context: string[] = [];

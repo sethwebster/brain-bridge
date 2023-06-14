@@ -5,12 +5,13 @@ import { LLMChain, PromptTemplate } from "langchain";
 import { OpenAIChat } from "langchain/llms";
 import { LLMResponse } from "../../lib/llm";
 import { promptGeneratorPrompt } from "../../lib/prompt-templates";
+import { ConversationalRetrievalQAChain } from "langchain/chains";
 
 
 const model = new OpenAIChat({
   temperature: 0,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: 'gpt-3.5-turbo',
+  modelName: 'gpt-3.5-turbo-0613',
   maxTokens: -1
 });
 

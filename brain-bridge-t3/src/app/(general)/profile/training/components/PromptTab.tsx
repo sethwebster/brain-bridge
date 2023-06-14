@@ -1,5 +1,5 @@
 "use client";
-import { AutoSizingTextArea } from "./AutoSizingTextArea";
+import AutoSizingTextArea from "./AutoSizingTextArea";
 import { type TrainingSetWithRelations } from "~/server/interfaces/types";
 import { AutoTraining } from "./AutoTraining";
 
