@@ -1,10 +1,10 @@
 import { LLMChain, PromptTemplate } from "langchain";
-import { CohereEmbeddings } from "langchain/embeddings";
-import { OpenAIChat } from "langchain/llms";
+import { OpenAIChat } from "langchain/llms/openai";
 import path from "path";
 import { getTempFilePath } from "./get-temp-file";
 import { Milvus } from "langchain/vectorstores/milvus";
 import { encoding_for_model } from "@dqbd/tiktoken";
+import { CohereEmbeddings } from "langchain/embeddings/cohere";
 
 interface LangChainStorage<T> {
   getIndex<T>(id: string): Promise<T>;
@@ -23,13 +23,14 @@ const model = new OpenAIChat({
 
 export class BrainBridgeStorage<Milvus> implements LangChainStorage<Milvus> {
   /**
-   * @deprecated
    * @param id
    * @returns
    */
   async getIndex<Milvus>(id: string): Promise<Milvus> {
     // const embedder = new OpenAIEmbeddings()
-    const embedder = new CohereEmbeddings({ apiKey: process.env.COHERE_API_KEY });
+    const embedder = new CohereEmbeddings({
+      apiKey: process.env.COHERE_API_KEY!,
+    });
     const vectorStore = await Milvus.fromExistingCollection(
       embedder,
       {
@@ -82,7 +83,7 @@ export class BrainBridgeLangChain implements LangChainStore {
    * @returns
    */
   async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine" = "one-shot") {
-
+    let attempts = 0;
     console.log("base-prompt", basePrompt)
 
     const enc = encoding_for_model("gpt-3.5-turbo-0301");
@@ -101,7 +102,10 @@ export class BrainBridgeLangChain implements LangChainStore {
       prompt: promptTemplate,
     });
 
+
+
     const store = await this.storage.getIndex<Milvus>(indexId);
+
 
     const data = await store.similaritySearch(userPrompt, 2);
     const context: string[] = [];

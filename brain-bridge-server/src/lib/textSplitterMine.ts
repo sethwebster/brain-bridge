@@ -1,9 +1,9 @@
-export function textSplitterMine(str: string, chunkSize: number, chunkOverlap: number, separator: string[] = [" ", ",", "\n"]) {
-  console.log("Splitting a string of ", str.length, "Characters");
+export function textSplitterMine(str: { source: string, content: string }, chunkSize: number, chunkOverlap: number, separator: string[] = [" ", ",", "\n"]) {
+  console.log("Splitting a string of ", str.content.length, "Characters");
   console.log("Chunk size", chunkSize);
   console.log("Chunk overlap", chunkOverlap);
 
-  let chunks: string[] = [str];
+  let chunks: string[] = [str.content];
   const maxLen = (chunks: string[]) => {
     const lengths = chunks.map((c) => c.length);
     const maxLen = Math.max(...lengths);
@@ -43,5 +43,5 @@ export function textSplitterMine(str: string, chunkSize: number, chunkOverlap: n
   }
   const filtered = chunks.filter((c) => c && c.length > 0);
   console.log("Split into", filtered.length, "chunks", Array.isArray(filtered));
-  return filtered;
+  return filtered.map((c) => ({ source: str.source, content: c }))
 }

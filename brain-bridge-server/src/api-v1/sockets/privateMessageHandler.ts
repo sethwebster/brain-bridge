@@ -13,8 +13,10 @@ import { getRoomId } from "./roomsHandler";
 import { promptFooter, promptHeader } from "../../lib/prompt-templates";
 
 export function privateMessageHandler(socket: Socket, io: Server) {
+  let attempts = 0;
 
-  socket.on("message", async (data) => {
+  async function handleMessage(data: Record<string, any>, recursive?: boolean, prevMessage?: Omit<MessageWithRelations, "publicChatInstanceId" | "publicChatInstance"> | null) {
+    let userMessage: Omit<MessageWithRelations, "publicChatInstanceId" | "publicChatInstance"> | null = null;
     try {
       const { token, data: { message, mode } } = data as { token: string; data: { message: MessageWithRelations; mode: "one-shot" | "critique" | "refine"; }; };
       const verifiedToken = verifyJWT(token);
@@ -48,9 +50,13 @@ export function privateMessageHandler(socket: Socket, io: Server) {
       console.log("conversation", conversation);
       const bot = conversation.participants.find(p => p.name === "Bot");
       invariant(bot, "Bot must exist");
-      const userMessage = await storeUserMessage(conversation, message);
-      io.in(getRoomId(conversation.id)).emit("message", { message: userMessage });
 
+      if (!recursive) {
+        userMessage = await storeUserMessage(conversation, message);
+        io.in(getRoomId(conversation.id)).emit("message", { message: userMessage });
+      } else {
+        userMessage = prevMessage;
+      }
       const questionsAndAnswers = conversation.trainingSet.questionsAndAnswers;
 
       /**
@@ -80,14 +86,15 @@ export function privateMessageHandler(socket: Socket, io: Server) {
 
       console.log((await io.in(getRoomId(message.conversationId)).fetchSockets()).length, "listeners");
       io.in(getRoomId(message.conversationId)).emit('llm-response-started', {})
-      const response = await llm.getLangChainResponse(
+
+      let response = "";
+      response = await llm.getLangChainResponse(
         conversation.trainingSetId,
         userMessage.text,
         fullPrompt,
         conversation.messages.map(m => `${m.sender.name}: ${m.text}`),
         mode
       );
-
       const newMessage: MessageWithRelations = {
         id: "",
         conversationId: conversation.id,
@@ -102,8 +109,15 @@ export function privateMessageHandler(socket: Socket, io: Server) {
       const result = await storeUserMessage(conversation, newMessage);
       io.in(getRoomId(message.conversationId)).emit("message", { message: result });
     } catch (error: any) {
-      console.error(error);
-      socket.emit("message-error", { error: error.message });
+      attempts++;
+      console.error("privateMessageHandlerError", error, "attempts", attempts);
+      if (attempts > 3) {
+        socket.emit("message-error", { error: "Unable to connect to Vector Database" });
+      } else {
+        return handleMessage(data, true, userMessage)
+      }
     }
-  });
+  }
+
+  socket.on("message", handleMessage);
 }

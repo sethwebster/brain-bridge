@@ -1,10 +1,10 @@
 import { PrismaClient, TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { createTrainingIndex } from "../../lib/training";
 import { verifyJWT } from "../../lib/jwt";
 import { Server, Socket } from "socket.io";
 import Mutex from "../../lib/mutex";
 import { getRoomId } from "./roomsHandler";
+import { TrainingSetBuilder } from "../../lib/training";
 
 type TrainingStages = "overall" |
   "sources-load" |
@@ -40,6 +40,10 @@ export function trainingSetRoomName(id: string) {
 }
 
 const mutex = new Mutex();
+
+setInterval(() => {
+  console.log("trainingApiStatus", trainingApiStatus);
+}, 5000);
 
 export function trainingHandler(socket: Socket, io: Server) {
 
@@ -83,6 +87,7 @@ export function trainingHandler(socket: Socket, io: Server) {
     const emit = (message: string, data: any) => io.in(roomName).emit(message, data);
     invariant(id, "trainingSetId is required");
     const verifiedToken = verifyJWT(token);
+    console.log(verifiedToken);
     if (!verifiedToken) {
       console.log("Invalid token");
       emit("training-error", { error: "Invalid token" });
@@ -143,12 +148,21 @@ export function trainingHandler(socket: Socket, io: Server) {
 
     function progressNotifiier(progress: ProgressPayload) {
       progressState[progress.stage] = progress;
+      console.log("progress", progress);
       emit("training-progress", progressState);
     }
 
     try {
       const options = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...((set.trainingOptions as object) ?? {}) }
-      await createTrainingIndex({ name: set.name, trainingSet: set, onProgress: progressNotifiier, options }) as Partial<TrainingSet>;
+      const builder = new TrainingSetBuilder(
+        {
+          trainingSet: set,
+          onProgress: progressNotifiier,
+          options,
+          userId: (verifiedToken.body as unknown as { sub: string }).sub
+        }
+      );
+      await builder.build();
       await prisma.trainingSet.update({
         where: { id: set.id },
         data: { trainingStatus: "IDLE", trainingIndexVersion: set.version }
@@ -172,7 +186,7 @@ export function trainingHandler(socket: Socket, io: Server) {
         socket.emit("training-error", { error: "Training already in progress" });
         return;
       }
-      await addTraining(data.trainingSetId);
+      await addTraining(id);
       await doTraining(id, token);
 
     } catch (e) {

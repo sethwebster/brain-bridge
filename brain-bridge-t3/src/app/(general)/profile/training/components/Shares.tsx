@@ -42,8 +42,6 @@ function Shares({
     []
   );
 
-  console.log("shareData", shareData);
-
   const handleAddButtonClick = useCallback(() => {
     if (!newEmailText || newEmailText.trim().length === 0) {
       return;

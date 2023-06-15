@@ -3,12 +3,12 @@ RUN apk --update add --no-cache  python3 make g++ && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-COPY ./package.json .
-COPY ./pnpm-lock.yaml .
+COPY ./brain-bridge-server/package.json .
+COPY ./brain-bridge-server/pnpm-lock.yaml .
 RUN npm install -g pnpm
 RUN pnpm install
 
-COPY . .
+COPY ./brain-bridge-server/ .
 
 RUN pnpm install
 RUN pnpm run build

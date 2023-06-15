@@ -1,6 +1,5 @@
 import { PrismaClient, TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { createTrainingIndex } from "../../lib/training";
 import { verifyJWT } from "../../lib/jwt";
 import { Server, Socket } from "socket.io";
 import Mutex from "../../lib/mutex";

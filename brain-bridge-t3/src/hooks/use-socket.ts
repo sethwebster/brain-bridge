@@ -1,4 +1,4 @@
-import { useCallback, useContext } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 
 import { SocketContext } from "~/app/components/SocketProvider";
 import invariant from "tiny-invariant";
@@ -67,11 +67,11 @@ class RoomManager {
 const roomManager = new RoomManager(socket);
 
 export function useAuthenticatedSocket() {
-  const { socket, sendMessage: sendMessageBase, onMessage } = useSocket();
+  const { socket, sendMessage: sendMessageBase, onMessage, connected } = useSocket();
   const { token } = useAuthToken();
 
   const sendTheMessage = useCallback(<T>(message: string, data: T, token: string) => {
-    invariant(socket, "Socket is not connected");
+    invariant(socket, "Socket is not set");
     invariant(token, "Token is not set");
     sendMessageBase(message, { data, token });
   }, [sendMessageBase, socket]);
@@ -102,6 +102,7 @@ export function useAuthenticatedSocket() {
   }, [leave, token]);
 
   return {
+    connected,
     socket,
     sendMessage,
     onMessage,
@@ -113,6 +114,7 @@ export function useAuthenticatedSocket() {
 export default function useSocket() {
   const context = useContext(SocketContext);
   const { socket } = context;
+  const [connected, setConnected] = useState(false);
 
   function sendMessage<T extends object>(message: string, data: T) {
     logger(message, data, "send");
@@ -146,7 +148,25 @@ export default function useSocket() {
     }
   }
 
+  const handleConnected = useCallback(() => {
+    console.log("-- Socket is connected")
+    setConnected(true);
+  }, []);
+
+  const handleDisconnected = useCallback(() => {
+    console.log("-- Socket is disconnected")
+    setConnected(false);
+  }, []);
+
+  useEffect(() => {
+    if (socket) {
+      console.log("useSocket: Socket Set,", socket.connected ? "connected" : "disconnected")
+      setConnected(socket.connected);
+    }
+  }, [handleConnected, handleDisconnected, socket]);
+
   return {
+    connected,
     socket,
     sendMessage,
     onMessage,

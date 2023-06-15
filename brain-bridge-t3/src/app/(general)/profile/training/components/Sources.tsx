@@ -41,10 +41,16 @@ function Sources({
 
   const handleFileAdded = useCallback(
     async (file: FileWithDirectoryAndFileHandle) => {
-      const fileName = file.webkitRelativePath || file.name;
+      console.log(file);
+      const fileName =
+        file.webkitRelativePath.length > 0
+          ? file.webkitRelativePath
+          : file.name;
       setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);
       const parts = [trainingSetId, fileName].filter((p) => p.length > 0);
+      console.log("parts", parts);
       const fileKey = parts.join("/");
+      console.log("fileKey", fileKey);
       const { url } = await DataClient.getSignedUrl(fileKey);
       const final = `${fileKey}`;
       let response = await R2Client.uploadFile(url, file);
@@ -71,6 +77,7 @@ function Sources({
           return item;
         })
       );
+
       return { url: final, file };
     },
     [trainingSetId]
@@ -116,14 +123,33 @@ function Sources({
           const updated: Omit<TrainingSource, "trainingSetId">[] = [...sources];
 
           files.forEach((file) => {
-            const parts = [file.file.name, file.file.webkitRelativePath].filter(
-              (p) => p.length > 0
-            );
-            const name = parts.join("/");
+            const name =
+              file.file.webkitRelativePath.length > 0
+                ? file.file.webkitRelativePath
+                : file.file.name;
             let mimeType = file.file.type;
-            if (file.file.name.endsWith(".md")) {
-              mimeType = "text/markdown";
+            const ext = path.extname(file.file.name);
+            switch (ext) {
+              case ".txt":
+                mimeType = "text/plain";
+                break;
+              case ".md":
+                mimeType = "text/markdown";
+                break;
+              case ".csv":
+                mimeType = "text/csv";
+                break;
+              case ".json":
+                mimeType = "application/json";
+                break;
+              case ".html":
+                mimeType = "text/html";
+                break;
+              case ".pdf":
+                mimeType = "application/pdf";
+                break;
             }
+
             updated.push({
               name: name,
               content: file.url,
