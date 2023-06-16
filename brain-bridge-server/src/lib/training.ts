@@ -72,9 +72,16 @@ export class TrainingSetBuilder {
     if (trainingSources.length === 0) throw new Error("No documents to vectorize!");
     console.log("Vectorizing documents...");
 
+    const getDocumentsSize = (docs: Document<Record<string, any>>[]) => {
+      return docs.reduce((acc, doc) => acc + doc.pageContent.length, 0);
+    }
+
     const sizeOfDocsData = trainingSources.reduce((acc, doc) => {
-      return acc + doc.loadedContent.reduce((acc, doc) => acc + doc.pageContent.length, 0);
+      return acc + getDocumentsSize(doc.loadedContent);
     }, 0);
+
+
+
     console.log(`Total size of docs data: ${sizeOfDocsData} bytes`)
     const ONE_MEGABYTE = 1000000;
     const MAX_BATCH_SIZE = ONE_MEGABYTE * 1;
@@ -85,8 +92,8 @@ export class TrainingSetBuilder {
         acc.push([doc]);
         return acc;
       }
-      const lastBatchSize = lastBatch.reduce((acc, doc) => acc + doc.content.length, 0);
-      if (lastBatchSize + doc.content.length > MAX_BATCH_SIZE) {
+      const lastBatchSize = lastBatch.reduce((acc, doc) => acc + getDocumentsSize(doc.loadedContent), 0);
+      if (lastBatchSize + getDocumentsSize(doc.loadedContent) > MAX_BATCH_SIZE) {
         acc.push([doc]);
       } else {
         lastBatch.push(doc);
