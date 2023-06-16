@@ -319,7 +319,9 @@ export class TrainingSetBuilder {
       // write to temp file
       const blob = await response.blob();
       const buffer = await blob.arrayBuffer();
+      console.log("Writing to temp file at", tempFilePath, "with buffer length", buffer.byteLength, "bytes")
       fs.writeFileSync(tempFilePath, Buffer.from(buffer));
+
       return tempFilePath;
     } else {
       throw new Error(`Failed to download file: ${url}`);
