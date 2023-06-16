@@ -12,7 +12,13 @@ const model = new OpenAIChat({
   temperature: 0,
   openAIApiKey: process.env.OPENAI_API_KEY,
   modelName: 'gpt-3.5-turbo-0613',
-  maxTokens: -1
+  maxTokens: -1,
+  prefixMessages: [
+    {
+      role: "gen-bot",
+
+    }
+  ]
 });
 
 
@@ -73,7 +79,7 @@ export function promptGeneratorHandler(socket: Socket, io: Server) {
       }
       setTimeout(() => socket.emit('llm-response-started', {}), 100);
 
-      console.log("GENPROMPT", promptGeneratorPrompt, history)
+      console.log("GENPROMPT", {promptGeneratorPrompt, history})
 
       const promptTemplate = new PromptTemplate({
         template: promptGeneratorPrompt,
