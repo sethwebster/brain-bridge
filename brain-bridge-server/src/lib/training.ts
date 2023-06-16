@@ -295,7 +295,7 @@ export class TrainingSetBuilder {
     // TODO: Rename source.content to something that isn't confusing
     // content sounds like it's the actual content of the file and is a
     // holdover from when we used to store the content in the database
-    const key = `${this.userId}/${source.content}`;
+    const key = `${this.trainingSet.userId}/${source.content}`;
     let url = "";
 
     // Some sources are literally a URL, so we don't need to do anything
