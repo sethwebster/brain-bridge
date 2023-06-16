@@ -119,15 +119,15 @@ export class TrainingSetBuilder {
     const TIME_PER_BATCH = 9750;
     const totalTime = TIME_PER_BATCH * batches.length;
     const INTERVAL_LENGTH = 100;
-    // vectorProgressInterval = setInterval(() => {
-    //   time = time + INTERVAL_LENGTH;
-    //   this.onProgress({
-    //     stage: "overall",
-    //     statusText: "Vectorizing documents...",
-    //     progress: 0.3 + ((time / totalTime))
-    //   })
+    vectorProgressInterval = setInterval(() => {
+      time = time + INTERVAL_LENGTH;
+      this.onProgress({
+        stage: "overall",
+        statusText: "Vectorizing documents...",
+        progress: 0.3 + ((time / totalTime))
+      })
 
-    // }, INTERVAL_LENGTH);
+    }, INTERVAL_LENGTH);
 
     while (batches.length > 0) {
       this.onProgress({
