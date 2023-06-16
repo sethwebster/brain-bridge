@@ -308,9 +308,6 @@ export class TrainingSetBuilder {
       // Otherwise, we need to get a signed URL from R2
       url = await R2.getSignedUrlForRetrieval(key)
     }
-
-    console.log("Downloading file from", url, "for", source, "with options", this.options);
-
     const tempFilePath = getTempFilePath(source.name, { mkdir: true });
 
     // Download the file and write to tempFilePath

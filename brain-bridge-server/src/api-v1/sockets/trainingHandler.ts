@@ -148,7 +148,6 @@ export function trainingHandler(socket: Socket, io: Server) {
 
     function progressNotifiier(progress: ProgressPayload) {
       progressState[progress.stage] = progress;
-      console.log("progress", progress);
       emit("training-progress", progressState);
     }
 
