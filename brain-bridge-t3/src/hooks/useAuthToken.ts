@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { AuthTokenManager } from "./AuthTokenManager";
-import { verifyJWT } from "~/lib/jwt";
 
 const authTokenManager = new AuthTokenManager();
 
@@ -18,9 +17,7 @@ export function useAuthToken() {
 
   const isTokenValid = useCallback(() => {
     if (!token) return false;
-    const result = verifyJWT(token);
-    return !!result;
-
+    return authTokenManager.tokenIsValid;
   }, [token]);
 
   return {

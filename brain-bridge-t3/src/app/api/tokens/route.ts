@@ -13,7 +13,7 @@ async function tryGetServerSession() {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   console.log("GET /api/tokens", req.referrer);
   console.time("Token");
   const session: Session | null = await tryGetServerSession();
@@ -34,5 +34,4 @@ export async function GET(req: NextRequest) {
     console.error("TODO: Figure out why there is a request coming to this API (/api/tokens) endpoint without a user ON the session", req.referrer);
     return new NextResponse(JSON.stringify({ error: "no user" }), { status: 403 });
   }
-
 }

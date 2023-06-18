@@ -204,9 +204,21 @@ async function getSignedUrl(fileName: string): Promise<{ url: string }> {
   return data;
 }
 
+async function verifyToken(token: string): Promise<{ valid: boolean }> {
+  const response = await fetch(makeApiUrl(`/api/tokens`), {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token }),
+  })
+  const data = await response.json() as { valid: boolean };
+  return data;
+}
+
 async function getToken() {
   const response = await fetch(makeApiUrl(`/api/tokens`), {
-    method: "GET",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
@@ -233,7 +245,8 @@ const DataClient = {
   sendPublicInstanceChatMessage,
   deletePublicChat,
   getSignedUrl,
-  getToken
+  getToken,
+  verifyToken
 }
 
 export default DataClient;

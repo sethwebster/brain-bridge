@@ -92,9 +92,14 @@ export function useAuthenticatedSocket() {
   }, [token]);
 
   const join = useCallback((room: string, type: "public" | "private") => {
+    console.log("Joining room before check", room, type)
     if (!token) return () => { console.log("Token is not set") };
+    console.log("Joining room before valid check", room, type)
     if (!isTokenValid()) return () => { console.log("Token is not valid") };
+    console.log("Joining room before invriant", room, type)
+
     invariant(token, "Token is not set");
+    console.log("Joining room", room, type);
     roomManager.joinRoom({ room, type, auth: token });
     return () => {
       invariant(token, "Token is not set");

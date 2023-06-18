@@ -28,10 +28,11 @@ export function roomsHandler(socket: Socket, io: Server) {
 
   socket.on("leave-private-room", async ({ data: { room }, token }) => {
     try {
+      console.log('leave-private-room', room)
       invariant(room, "room is required");
       const verifiedToken = verifyJWT(token);
       if (!verifiedToken) {
-        console.warn("Invalid token, leaving room");
+        console.warn("Invalid token, leaving room anyway");
       }
       console.log('leaving room', getRoomId(room))
       socket.leave(getRoomId(room));

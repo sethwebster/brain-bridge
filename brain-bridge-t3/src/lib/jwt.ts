@@ -11,11 +11,8 @@ function createJwt(user: Partial<User>, expiration?: number) {
 }
 
 function verifyJWT(token: string) {
-  try {
+    console.log('verifying token', token, jwt.verify(token, process.env.NEXTAUTH_SECRET as string));
     return jwt.verify(token, process.env.NEXTAUTH_SECRET as string);
-  } catch {
-    return null;
-  }
 
 }
 
