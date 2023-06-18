@@ -31,8 +31,7 @@ export function roomsHandler(socket: Socket, io: Server) {
       invariant(room, "room is required");
       const verifiedToken = verifyJWT(token);
       if (!verifiedToken) {
-        socket.emit("message-error", { error: "Invalid token" });
-        return;
+        console.warn("Invalid token, leaving room");
       }
       console.log('leaving room', getRoomId(room))
       socket.leave(getRoomId(room));

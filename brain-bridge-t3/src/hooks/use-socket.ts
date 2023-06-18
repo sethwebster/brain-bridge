@@ -68,7 +68,7 @@ const roomManager = new RoomManager(socket);
 
 export function useAuthenticatedSocket() {
   const { socket, sendMessage: sendMessageBase, onMessage, connected } = useSocket();
-  const { token } = useAuthToken();
+  const { token, isTokenValid } = useAuthToken();
 
   const sendTheMessage = useCallback(<T>(message: string, data: T, token: string) => {
     invariant(socket, "Socket is not set");
@@ -93,13 +93,14 @@ export function useAuthenticatedSocket() {
 
   const join = useCallback((room: string, type: "public" | "private") => {
     if (!token) return () => { console.log("Token is not set") };
+    if (!isTokenValid()) return () => { console.log("Token is not valid") };
     invariant(token, "Token is not set");
     roomManager.joinRoom({ room, type, auth: token });
     return () => {
       invariant(token, "Token is not set");
       leave(room, type);
     }
-  }, [leave, token]);
+  }, [isTokenValid, leave, token]);
 
   return {
     connected,
@@ -162,6 +163,8 @@ export default function useSocket() {
     if (socket) {
       console.log("useSocket: Socket Set,", socket.connected ? "connected" : "disconnected")
       setConnected(socket.connected);
+    } else {
+      setConnected(false);
     }
   }, [handleConnected, handleDisconnected, socket]);
 

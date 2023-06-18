@@ -42,6 +42,7 @@ interface ChatProps {
   onSoundEnabledChange: (soundEnabled: boolean) => void;
   onClearChatClicked: () => void;
   notifyNewMessage: (callback: () => void) => void;
+  isConnected: boolean;
 }
 
 export default function ChatDisplay({
@@ -53,6 +54,7 @@ export default function ChatDisplay({
   onNewMessage,
   onSoundEnabledChange,
   onClearChatClicked,
+  isConnected
 }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [chatMode, setChatMode] = useState<ChatResponseMode>("one-shot");
@@ -131,7 +133,7 @@ export default function ChatDisplay({
       </div>
       <div className="fixed bottom-0 ml-4 w-10/12 sm:ml-3 sm:w-4/5 ">
         <div className="sticky bottom-0 mt-4 flex w-full bg-opacity-0 p-2 outline-none">
-          <NewMessageBox onMessageSend={handleNewMessage} />
+          <NewMessageBox onMessageSend={handleNewMessage} isConnected={isConnected} />
         </div>
       </div>
     </div>

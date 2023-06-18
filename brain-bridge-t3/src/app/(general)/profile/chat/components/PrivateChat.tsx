@@ -161,6 +161,7 @@ export default function PrivateChat({
         viewer={session.user as Viewer}
         onClearChatClicked={handleClearChatClicked}
         notifyNewMessage={handleNotifyCallbackSet}
+        isConnected={socket?.connected ?? false}
       />
     </div>
   );

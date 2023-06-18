@@ -4,12 +4,13 @@ import AutoSizingTextArea from "../(general)/profile/training/components/AutoSiz
 
 interface NewMessageBoxProps {
   onMessageSend: (text: string) => void;
+  isConnected: boolean;
 }
 
-const ALL_POSSIBLE_TYPEABLE_CHARACTERS =
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+-=[]{}\\|;:'\",./<>?`~ ";
-
-export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
+export default function NewMessageBox({
+  onMessageSend,
+  isConnected,
+}: NewMessageBoxProps) {
   const [currentMessageText, setCurrentMessageText] = useState("");
   const textRef = useRef<HTMLTextAreaElement>(null);
   const handleSend = useCallback(() => {
@@ -50,10 +51,11 @@ export default function NewMessageBox({ onMessageSend }: NewMessageBoxProps) {
 
   return (
     <AutoSizingTextArea
+      disabled={!isConnected}
       ref={textRef}
       name="message"
-      placeholder="Type your message here"
-      className="mb-4 flex-grow rounded border bg-slate-400 bg-opacity-95 p-2 shadow-inner outline-none dark:bg-slate-500"
+      placeholder={isConnected ? "Type your message here" : "Offline"}
+      className="transition-all mb-4 flex-grow rounded border bg-slate-400 bg-opacity-95 p-2 shadow-inner outline-none disabled:opacity-50 dark:bg-slate-500"
       value={currentMessageText}
       onKeyDown={handleKeyDown}
       onChange={handleTextChanged}

@@ -84,7 +84,7 @@ export class TrainingSetBuilder {
 
     console.log(`Total size of docs data: ${sizeOfDocsData} bytes`)
     const ONE_MEGABYTE = 1000000;
-    const MAX_BATCH_SIZE = ONE_MEGABYTE * 1;
+    const MAX_BATCH_SIZE = ONE_MEGABYTE * 1.5;
     const batches = trainingSources.reduce((acc, doc, i) => {
       if (!doc) return acc;
       const lastBatch = acc[acc.length - 1];
@@ -116,18 +116,18 @@ export class TrainingSetBuilder {
 
     let time = 0;
     // takes 10 seconds/batch
-    const TIME_PER_BATCH = 9750;
+    const TIME_PER_BATCH = 7500;
     const totalTime = TIME_PER_BATCH * batches.length;
     const INTERVAL_LENGTH = 100;
-    vectorProgressInterval = setInterval(() => {
-      time = time + INTERVAL_LENGTH;
-      this.onProgress({
-        stage: "overall",
-        statusText: "Vectorizing documents...",
-        progress: 0.3 + ((time / totalTime))
-      })
+      vectorProgressInterval = setInterval(() => {
+        time = time + INTERVAL_LENGTH;
+        this.onProgress({
+          stage: "overall",
+          statusText: "Vectorizing documents...",
+          progress: 0.3 + ((time / totalTime))
+        })
 
-    }, INTERVAL_LENGTH);
+      }, INTERVAL_LENGTH);
 
     while (batches.length > 0) {
       this.onProgress({
