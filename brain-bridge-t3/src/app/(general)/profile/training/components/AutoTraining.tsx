@@ -248,6 +248,7 @@ export function AutoTraining({
 
   return (
     <ChatDisplay
+      isConnected={socket.connected}
       viewer={user}
       answerPending={answerPending}
       conversation={conversation}
