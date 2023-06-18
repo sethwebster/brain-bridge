@@ -129,6 +129,7 @@ export default function PublicChat({
 
   return (
     <ChatDisplay
+      isConnected={socket.connected}
       viewer={viewer}
       conversation={{ ...publicChatInstance, messages: loadedMessages }}
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
