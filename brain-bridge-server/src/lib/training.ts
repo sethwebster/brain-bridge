@@ -13,6 +13,7 @@ import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import { CountKeeper } from './count-keeper';
 import tiktoken from '@dqbd/tiktoken';
 import cleanUpHtml from './clean-up-html';
+import path from 'path';
 interface TrainingSetBuilderOptions {
   maxSegmentLength?: number;
   overlapBetweenSegments?: number;
@@ -278,7 +279,10 @@ export class TrainingSetBuilder {
             const source = await fs.readFileSync(tempFilePath, "utf-8");
             const cleaned = cleanUpHtml(source);
             const blob = new Blob([cleaned], { type: "text/markdown" });
-            documents = await (new TextLoader(blob).loadAndSplit(
+            const ext = path.extname(tempFilePath);
+            const name = path.join(path.basename(tempFilePath, ext) + ".md");
+            await fs.writeFileSync(name, cleaned, "utf-8");
+            documents = await (new TextLoader(name).loadAndSplit(
               splitter
             ));
             break;

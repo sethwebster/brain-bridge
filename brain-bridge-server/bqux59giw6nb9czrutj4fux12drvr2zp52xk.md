@@ -1,0 +1,332 @@
+hydrate – React
+
+(function () )();
+
+Support Ukraine 🇺🇦
+
+[
+
+🇺🇦
+
+Help Provide Humanitarian Aid to Ukraine.](https://opensource.fb.com/support-ukraine)
+
+[React](../../index.html)
+
+Search⌘CtrlK
+
+[Learn](../../learn.html)
+
+[Reference](../react.html)
+
+[Community](../../community.html)
+
+[Blog](../../blog.html)
+
+[](https://github.com/facebook/react/releases)
+
+### react@18.2.0
+
+*   [Hooks](../react.html "Hooks")
+    
+    *   [useCallback](../react/useCallback.html "useCallback")
+    *   [useContext](../react/useContext.html "useContext")
+    *   [useDebugValue](../react/useDebugValue.html "useDebugValue")
+    *   [useDeferredValue](../react/useDeferredValue.html "useDeferredValue")
+    *   [useEffect](../react/useEffect.html "useEffect")
+    *   [useId](../react/useId.html "useId")
+    *   [useImperativeHandle](../react/useImperativeHandle.html "useImperativeHandle")
+    *   [useInsertionEffect](../react/useInsertionEffect.html "useInsertionEffect")
+    *   [useLayoutEffect](../react/useLayoutEffect.html "useLayoutEffect")
+    *   [useMemo](../react/useMemo.html "useMemo")
+    *   [useReducer](../react/useReducer.html "useReducer")
+    *   [useRef](../react/useRef.html "useRef")
+    *   [useState](../react/useState.html "useState")
+    *   [useSyncExternalStore](../react/useSyncExternalStore.html "useSyncExternalStore")
+    *   [useTransition](../react/useTransition.html "useTransition")
+    
+*   [Components](../react/components.html "Components")
+    
+    *   [<Fragment> (<>)](../react/Fragment.html "<Fragment> (<>)")
+    *   [<Profiler>](../react/Profiler.html "<Profiler>")
+    *   [<StrictMode>](../react/StrictMode.html "<StrictMode>")
+    *   [<Suspense>](../react/Suspense.html "<Suspense>")
+    
+*   [APIs](../react/apis.html "APIs")
+    
+    *   [createContext](../react/createContext.html "createContext")
+    *   [forwardRef](../react/forwardRef.html "forwardRef")
+    *   [lazy](../react/lazy.html "lazy")
+    *   [memo](../react/memo.html "memo")
+    *   [startTransition](../react/startTransition.html "startTransition")
+    
+
+### react-dom@18.2.0
+
+*   [Components](components.html "Components")
+    
+    *   [Common (e.g. <div>)](components/common.html "Common (e.g. <div>)")
+    *   [<input>](components/input.html "<input>")
+    *   [<option>](components/option.html "<option>")
+    *   [<progress>](components/progress.html "<progress>")
+    *   [<select>](components/select.html "<select>")
+    *   [<textarea>](components/textarea.html "<textarea>")
+    
+*   [APIs](../react-dom.html "APIs")
+    
+    *   [createPortal](createPortal.html "createPortal")
+    *   [flushSync](flushSync.html "flushSync")
+    *   [findDOMNode](findDOMNode.html "findDOMNode")
+    *   [hydrate](hydrate.html "hydrate")
+    *   [render](render.html "render")
+    *   [unmountComponentAtNode](unmountComponentAtNode.html "unmountComponentAtNode")
+    
+*   [Client APIs](client.html "Client APIs")
+    
+    *   [createRoot](client/createRoot.html "createRoot")
+    *   [hydrateRoot](client/hydrateRoot.html "hydrateRoot")
+    
+*   [Server APIs](server.html "Server APIs")
+    
+    *   [renderToNodeStream](server/renderToNodeStream.html "renderToNodeStream")
+    *   [renderToPipeableStream](server/renderToPipeableStream.html "renderToPipeableStream")
+    *   [renderToReadableStream](server/renderToReadableStream.html "renderToReadableStream")
+    *   [renderToStaticMarkup](server/renderToStaticMarkup.html "renderToStaticMarkup")
+    *   [renderToStaticNodeStream](server/renderToStaticNodeStream.html "renderToStaticNodeStream")
+    *   [renderToString](server/renderToString.html "renderToString")
+    
+
+### Legacy APIs
+
+*   [Legacy React APIs](../react/legacy.html "Legacy React APIs")
+    
+    *   [Children](../react/Children.html "Children")
+    *   [cloneElement](../react/cloneElement.html "cloneElement")
+    *   [Component](../react/Component.html "Component")
+    *   [createElement](../react/createElement.html "createElement")
+    *   [createFactory](../react/createFactory.html "createFactory")
+    *   [createRef](../react/createRef.html "createRef")
+    *   [isValidElement](../react/isValidElement.html "isValidElement")
+    *   [PureComponent](../react/PureComponent.html "PureComponent")
+    
+
+Is this page useful?
+
+[API Reference](../react.html)
+
+[APIs](../react-dom.html)
+
+hydrate[](#undefined "Link for this heading")
+=============================================
+
+### Deprecated
+
+This API will be removed in a future major version of React.
+
+In React 18, `hydrate` was replaced by [`hydrateRoot`.](client/hydrateRoot.html) Using `hydrate` in React 18 will warn that your app will behave as if it’s running React 17. Learn more [here.](../../blog/2022/03/08/react-18-upgrade-guide.html#updates-to-client-rendering-apis)
+
+`hydrate` lets you display React components inside a browser DOM node whose HTML content was previously generated by [`react-dom/server`](server.html) in React 17 and below.
+
+    hydrate(reactNode, domNode, callback?)
+
+*   [Reference](#reference)
+    *   [`hydrate(reactNode, domNode, callback?)`](#hydrate)
+*   [Usage](#usage)
+    *   [Hydrating server-rendered HTML](#hydrating-server-rendered-html)
+    *   [Suppressing unavoidable hydration mismatch errors](#suppressing-unavoidable-hydration-mismatch-errors)
+    *   [Handling different client and server content](#handling-different-client-and-server-content)
+
+* * *
+
+Reference[](#reference "Link for Reference ")
+---------------------------------------------
+
+### `hydrate(reactNode, domNode, callback?)`[](#hydrate "Link for this heading")
+
+Call `hydrate` in React 17 and below to “attach” React to existing HTML that was already rendered by React in a server environment.
+
+    import  from 'react-dom';hydrate(reactNode, domNode);
+
+React will attach to the HTML that exists inside the `domNode`, and take over managing the DOM inside it. An app fully built with React will usually only have one `hydrate` call with its root component.
+
+[See more examples below.](#usage)
+
+#### Parameters[](#parameters "Link for Parameters ")
+
+*   `reactNode`: The “React node” used to render the existing HTML. This will usually be a piece of JSX like `<App />` which was rendered with a `ReactDOM Server` method such as `renderToString(<App />)` in React 17.
+    
+*   `domNode`: A [DOM element](https://developer.mozilla.org/en-US/docs/Web/API/Element) that was rendered as the root element on the server.
+    
+*   **optional**: `callback`: A function. If passed, React will call it after your component is hydrated.
+    
+
+#### Returns[](#returns "Link for Returns ")
+
+`hydrate` returns null.
+
+#### Caveats[](#caveats "Link for Caveats ")
+
+*   `hydrate` expects the rendered content to be identical with the server-rendered content. React can patch up differences in text content, but you should treat mismatches as bugs and fix them.
+*   In development mode, React warns about mismatches during hydration. There are no guarantees that attribute differences will be patched up in case of mismatches. This is important for performance reasons because in most apps, mismatches are rare, and so validating all markup would be prohibitively expensive.
+*   You’ll likely have only one `hydrate` call in your app. If you use a framework, it might do this call for you.
+*   If your app is client-rendered with no HTML rendered already, using `hydrate()` is not supported. Use [render()](render.html) (for React 17 and below) or [createRoot()](client/createRoot.html) (for React 18+) instead.
+
+* * *
+
+Usage[](#usage "Link for Usage ")
+---------------------------------
+
+Call `hydrate` to attach a React component into a server-rendered browser DOM node.
+
+    import  from 'react-dom';hydrate(<App />, document.getElementById('root'));
+
+Using `hydrate()` to render a client-only app (an app without server-rendered HTML) is not supported. Use [`render()`](render.html) (in React 17 and below) or [`createRoot()`](client/createRoot.html) (in React 18+) instead.
+
+### Hydrating server-rendered HTML[](#hydrating-server-rendered-html "Link for Hydrating server-rendered HTML ")
+
+In React, “hydration” is how React “attaches” to existing HTML that was already rendered by React in a server environment. During hydration, React will attempt to attach event listeners to the existing markup and take over rendering the app on the client.
+
+In apps fully built with React, **you will usually only hydrate one “root”, once at startup for your entire app**.
+
+index.htmlindex.jsApp.js
+
+index.js
+
+Reset[Fork](https://codesandbox.io/api/v1/sandboxes/define?undefined "Open in CodeSandbox")
+
+import './styles.css';
+import  from 'react-dom';
+import App from './App.js';
+
+hydrate(<App />, document.getElementById('root'));
+
+Usually you shouldn’t need to call `hydrate` again or to call it in more places. From this point on, React will be managing the DOM of your application. To update the UI, your components will [use state.](../react/useState.html)
+
+For more information on hydration, see the docs for [`hydrateRoot`.](client/hydrateRoot.html)
+
+* * *
+
+### Suppressing unavoidable hydration mismatch errors[](#suppressing-unavoidable-hydration-mismatch-errors "Link for Suppressing unavoidable hydration mismatch errors ")
+
+If a single element’s attribute or text content is unavoidably different between the server and the client (for example, a timestamp), you may silence the hydration mismatch warning.
+
+To silence hydration warnings on an element, add `suppressHydrationWarning=`:
+
+index.htmlindex.jsApp.js
+
+App.js
+
+Reset[Fork](https://codesandbox.io/api/v1/sandboxes/define?undefined "Open in CodeSandbox")
+
+export default function App() {
+  return (
+    <h1 suppressHydrationWarning\=\>
+      Current Date: 
+    </h1\>
+  );
+}
+
+This only works one level deep, and is intended to be an escape hatch. Don’t overuse it. Unless it’s text content, React still won’t attempt to patch it up, so it may remain inconsistent until future updates.
+
+* * *
+
+### Handling different client and server content[](#handling-different-client-and-server-content "Link for Handling different client and server content ")
+
+If you intentionally need to render something different on the server and the client, you can do a two-pass rendering. Components that render something different on the client can read a [state variable](../react/useState.html) like `isClient`, which you can set to `true` in an [effect](../react/useEffect.html):
+
+index.htmlindex.jsApp.js
+
+App.js
+
+Reset[Fork](https://codesandbox.io/api/v1/sandboxes/define?undefined "Open in CodeSandbox")
+
+import  from "react";
+
+export default function App() {
+  const \[isClient, setIsClient\] = useState(false);
+
+  useEffect(() \=> {
+    setIsClient(true);
+  }, \[\]);
+
+  return (
+    <h1\>
+      
+    </h1\>
+  );
+}
+
+This way the initial render pass will render the same content as the server, avoiding mismatches, but an additional pass will happen synchronously right after hydration.
+
+### Pitfall
+
+This approach makes hydration slower because your components have to render twice. Be mindful of the user experience on slow connections. The JavaScript code may load significantly later than the initial HTML render, so rendering a different UI immediately after hydration may feel jarring to the user.
+
+[PreviousfindDOMNode](findDOMNode.html)[Nextrender](render.html)
+
+* * *
+
+How do you like these docs?
+
+[Take our survey!](https://www.surveymonkey.co.uk/r/PYRPF3X)
+
+* * *
+
+[
+
+](https://opensource.fb.com/)
+
+©2023
+
+[Learn React](../../learn.html)
+
+[Quick Start](../../learn.html)
+
+[Installation](../../learn/installation.html)
+
+[Describing the UI](../../learn/describing-the-ui.html)
+
+[Adding Interactivity](../../learn/adding-interactivity.html)
+
+[Managing State](../../learn/managing-state.html)
+
+[Escape Hatches](../../learn/escape-hatches.html)
+
+[API Reference](../react.html)
+
+[React APIs](../react.html)
+
+[React DOM APIs](../react-dom.html)
+
+[Community](../../community.html)
+
+[Code of Conduct](https://github.com/facebook/react/blob/main/CODE_OF_CONDUCT.md)
+
+[Meet the Team](../../community/team.html)
+
+[Docs Contributors](../../community/docs-contributors.html)
+
+[Acknowledgements](../../community/acknowledgements.html)
+
+More
+
+[Blog](../../blog.html)
+
+[React Native](https://reactnative.dev/)
+
+[Privacy](https://opensource.facebook.com/legal/privacy)
+
+[Terms](https://opensource.fb.com/legal/terms/)
+
+[](https://www.facebook.com/react)[](https://twitter.com/reactjs)[](https://github.com/facebook/react)
+
+On this page
+------------
+
+*   [Overview](#)
+*   [Reference](#reference)
+*   [`hydrate(reactNode, domNode, callback?)`](#hydrate)
+*   [Usage](#usage)
+*   [Hydrating server-rendered HTML](#hydrating-server-rendered-html)
+*   [Suppressing unavoidable hydration mismatch errors](#suppressing-unavoidable-hydration-mismatch-errors)
+*   [Handling different client and server content](#handling-different-client-and-server-content)
+
