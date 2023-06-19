@@ -16,12 +16,17 @@ export default async function Layout({
   const setsRequest = ServerData.fetchUserTrainingSets();
   const chatsRequest = ServerData.fetchChats();
   const publicChatsRequest = ServerData.fetchPublicChats();
-
-  const [sets, chats, publicChats] = await Promise.all([
+  const costsRequest = ServerData.fetchCurrentCosts();
+  const [sets, chats, publicChats, costs] = await Promise.all([
     setsRequest,
     chatsRequest,
     publicChatsRequest,
+    costsRequest
   ]);
+  const totalCurrentCosts = Object.keys(costs).reduce((acc, key) => {
+    const toAdd = costs[key]?.cost ?? 0;
+    return acc + toAdd;
+  }, 0);
   // invariant(session, "Session must exist");
   // invariant(session.user, "User must exist");
   // const sets = await Data.fetchTrainingSets({ email: session.user.email! });
@@ -30,11 +35,12 @@ export default async function Layout({
   //   email: session.user.email!,
   // });
   return (
-    <div className="w-full h-full">
+    <div className="h-full w-full">
       <SidebarContainer
         setsCount={sets.length}
         chatCount={chats.length}
         publicChatCount={publicChats.length}
+        currentCosts={totalCurrentCosts}
       >
         {children}
       </SidebarContainer>

@@ -5,10 +5,12 @@ export default function SidebarContainer({
   setsCount,
   chatCount,
   publicChatCount,
+  currentCosts,
 }: {
   setsCount: number;
   chatCount: number;
   publicChatCount: number;
+  currentCosts: number;
   children: React.ReactNode;
 }) {
   return (
@@ -18,6 +20,7 @@ export default function SidebarContainer({
           setCount={setsCount}
           chatCount={chatCount}
           publicChatCount={publicChatCount}
+          currentCosts={currentCosts}
         />
       </div>
       <div className="ml-0 h-full w-full pl-0 sm:ml-64 ">

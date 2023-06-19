@@ -1,4 +1,3 @@
-"use client";
 import { type Usage } from "@prisma/client";
 import invariant from "tiny-invariant";
 

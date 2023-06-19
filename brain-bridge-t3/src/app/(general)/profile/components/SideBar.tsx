@@ -4,11 +4,13 @@ import { UrlIcon } from "~/app/components/SvgIcons";
 export default function SideBar({
   setCount,
   chatCount,
-  publicChatCount
+  publicChatCount,
+  currentCosts
 }: {
   setCount: number;
   chatCount: number;
   publicChatCount: number;
+  currentCosts: number;
 }) {
   return (
     <>
@@ -153,6 +155,22 @@ export default function SideBar({
                 </span>
                 <span className="inline-flex items-center justify-center w-3 h-3 p-3 ml-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">
                   {publicChatCount}
+                </span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/profile/billing"
+                className="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <div className="mr-2 text-black">
+                  <UrlIcon color="darkgray" />
+                </div>
+                <span className="flex-1 ml-3 whitespace-nowrap">
+                  Billing
+                </span>
+                <span className="inline-flex items-center justify-center w-auto h-3 p-3 ml-3 text-sm font-medium text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-300">
+                  ${currentCosts.toFixed(2)}
                 </span>
               </Link>
             </li>

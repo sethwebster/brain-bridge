@@ -14,8 +14,9 @@ import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";
 import { prisma } from "./db";
-import { type Participant } from "@prisma/client";
+import { Prisma, type Participant } from "@prisma/client";
 import Mail from "~/lib/mail";
+import { calculateCost } from "~/lib/calculate-costs";
 
 ///////////////////
 // Training Sets //
@@ -605,6 +606,26 @@ async function sendMessage(message: MessageWithRelations): Promise<MessageWithRe
   return newMessage;
 }
 
+async function fetchCurrentCosts(dateRange?: DateRange) {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to fetch current costs");
+  let where = { userId: session.user.id } as Prisma.UsageWhereInput;
+  if (dateRange) {
+    where = {
+      ...where,
+      createdAt: {
+        gte: dateRange.start,
+        lte: dateRange.end,
+      }
+    }
+  }
+  const costs = await prisma.usage.findMany({
+    where
+  })
+  const byMonth = calculateCost(costs);
+  return byMonth;
+}
+
 
 
 const ServerData = {
@@ -628,7 +649,14 @@ const ServerData = {
   newPublicChatInstance,
   fetchPublicChatInstance,
   fetchPublicChatInstanceForViewer,
-  acceptInvitation
+  acceptInvitation,
+  fetchCurrentCosts
 }
 
 export default ServerData;
+
+
+export interface DateRange {
+  start: Date;
+  end: Date;
+}
