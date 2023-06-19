@@ -278,7 +278,6 @@ export class TrainingSetBuilder {
           case "text/html":
             const source = await fs.readFileSync(tempFilePath, "utf-8");
             const cleaned = cleanUpHtml(source);
-            const blob = new Blob([cleaned], { type: "text/markdown" });
             const ext = path.extname(tempFilePath);
             const name = path.join(path.basename(tempFilePath, ext) + ".md");
             await fs.writeFileSync(name, cleaned, "utf-8");
