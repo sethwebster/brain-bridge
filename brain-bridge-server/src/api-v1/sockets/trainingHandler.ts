@@ -103,7 +103,7 @@ export function trainingHandler(socket: Socket, io: Server) {
         trainingSources: true,
         questionsAndAnswers: true,
         missedQuestions: true,
-        Usage: true
+        usage: true
       }
     });
 

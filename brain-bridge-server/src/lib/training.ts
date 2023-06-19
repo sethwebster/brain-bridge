@@ -367,7 +367,7 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
     questionsAndAnswers: true,
     conversations: true,
     missedQuestions: true,
-    Usage: true,
+    usage: true,
   }
 })
 
