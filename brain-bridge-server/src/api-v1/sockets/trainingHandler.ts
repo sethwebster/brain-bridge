@@ -4,7 +4,7 @@ import { verifyJWT } from "../../lib/jwt";
 import { Server, Socket } from "socket.io";
 import Mutex from "../../lib/mutex";
 import { getRoomId } from "./roomsHandler";
-import { TrainingSetBuilder } from "../../lib/training";
+import { BuildResult, TrainingSetBuilder } from "../../lib/training";
 
 type TrainingStages = "overall" |
   "sources-load" |
@@ -103,6 +103,7 @@ export function trainingHandler(socket: Socket, io: Server) {
         trainingSources: true,
         questionsAndAnswers: true,
         missedQuestions: true,
+        Usage: true
       }
     });
 
@@ -161,11 +162,47 @@ export function trainingHandler(socket: Socket, io: Server) {
           userId: (verifiedToken.body as unknown as { sub: string }).sub
         }
       );
-      await builder.build();
+
+      let buildResult: BuildResult = {
+        tokensUsed: 0,
+        cost: 0
+      }
+      const onTokensUsed = (buildResultEvent: BuildResult) => {
+        buildResult = buildResultEvent;
+      }
+
+      await builder.build(onTokensUsed);
       await prisma.trainingSet.update({
         where: { id: set.id },
         data: { trainingStatus: "IDLE", trainingIndexVersion: set.version }
       });
+
+      console.log("Build Result Costs", {
+        tokens: buildResult.tokensUsed,
+        cost: buildResult.tokensUsed * 0.0000004
+      })
+
+      await prisma.usage.create({
+        data: {
+          id: undefined,
+          user: {
+            connect: {
+              id: (verifiedToken.body as unknown as { sub: string }).sub
+            }
+          },
+          trainingSet: {
+            connect: {
+              id: set.id
+            }
+          },
+          type: "COHERE_TOKEN",
+          purpose: "EMBEDDING",
+          count: buildResult.tokensUsed,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      })
+
       emit("training-complete", { trainingSetId: set.id });
     } catch (error: any) {
       console.log("ERROR", error);

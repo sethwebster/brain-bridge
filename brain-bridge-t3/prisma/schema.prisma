@@ -40,6 +40,7 @@ model TrainingSet {
   trainingSetShares    TrainingSetShares[]
   trainingOptions      Json                      @default("{}")
   trainingStatus       TrainingSetTrainingStatus @default(IDLE)
+  usage                Usage[]
 }
 
 enum TrainingSetRoles {
@@ -65,17 +66,28 @@ model TrainingSetShares {
   role             TrainingSetRoles @default(VIEWER)
 }
 
-// model TrainingIndex {
-//   id            String      @id @default(cuid())
-//   createdAt     DateTime    @default(now())
-//   updatedAt     DateTime    @updatedAt
-//   trainingSetId String      @unique
-//   pending       Boolean     @default(true)
-//   metaData      Json
-//   vectors       Bytes
-//   docStore      Bytes
-//   trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
-// }
+enum UsageType {
+  TOKEN
+  COHERE_TOKEN
+}
+
+enum UsagePurpose {
+  EMBEDDING
+  GENERATE
+}
+
+model Usage {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingSetId String
+  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  type          UsageType
+  purpose       UsagePurpose
+  count         Int         @default(0)
+}
 
 enum TrainingSourceType {
   FILE
@@ -224,6 +236,7 @@ model User {
   publicChats               PublicChat[]
   trainingSetSharesOutgoing TrainingSetShares[] @relation(name: "owner")
   trainingSetSharesAccepted TrainingSetShares[] @relation(name: "acceptedUser")
+  usage                     Usage[]
 }
 
 model VerificationToken {

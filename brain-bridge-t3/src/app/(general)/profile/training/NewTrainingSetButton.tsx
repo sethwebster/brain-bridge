@@ -40,6 +40,7 @@ export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
       trainingStatus: "IDLE",
       trainingIndexVersion: 0,
       publicChats: [],
+      usage: []
     });
     router.push("/profile/training/" + result.id);
   }, [inputValue, router]);

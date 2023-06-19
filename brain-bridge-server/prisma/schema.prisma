@@ -26,6 +26,7 @@ model TrainingSet {
   user                 User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   trainingSetShares    TrainingSetShares[]
   trainingSources      TrainingSource[]
+  Usage                Usage[]
 }
 
 model TrainingSetShares {
@@ -180,6 +181,7 @@ model User {
   trainingSets              TrainingSet[]
   trainingSetSharesAccepted TrainingSetShares[] @relation("acceptedUser")
   trainingSetSharesOutgoing TrainingSetShares[] @relation("owner")
+  usage                     Usage[]
 }
 
 model VerificationToken {
@@ -188,6 +190,19 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Usage {
+  id            String       @id @default(cuid())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime
+  userId        String
+  type          UsageType
+  count         Int          @default(0)
+  purpose       UsagePurpose
+  trainingSetId String
+  trainingSet   TrainingSet  @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum TrainingSetTrainingStatus {
@@ -210,4 +225,14 @@ enum TrainingSourceType {
 enum ParticipantType {
   BOT
   HUMAN
+}
+
+enum UsageType {
+  TOKEN
+  COHERE_TOKEN
+}
+
+enum UsagePurpose {
+  EMBEDDING
+  GENERATE
 }

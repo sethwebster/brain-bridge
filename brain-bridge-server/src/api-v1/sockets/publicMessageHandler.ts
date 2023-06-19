@@ -78,7 +78,15 @@ export async function publicMessageHandler(socket: Socket) {
         return missedQuestion;
       };
 
-      const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)));
+      const cost = {
+        tokens: 0,
+      }
+
+      const onTokensUsed = (tokens: number) => {
+        cost.tokens += tokens;
+      }
+
+      const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)), onTokensUsed);
       const fullPrompt = promptHeader + "\n\n" + publicChatInstance.publicChat.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
 
       socket.emit('llm-response-started');

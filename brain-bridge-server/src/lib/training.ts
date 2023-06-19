@@ -1,28 +1,17 @@
 import fs from 'fs'
 import { Milvus } from "langchain/vectorstores/milvus";
-import { CharacterTextSplitter, MarkdownTextSplitter, RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { CohereEmbeddings } from 'langchain/embeddings/cohere';
-import path from 'path';
-import jsdom from 'jsdom';
-import { MissedQuestions, Prisma, TrainingSet, type TrainingSource } from '@prisma/client';
+import Cohere from "cohere-ai";
+import { Prisma, type TrainingSource } from '@prisma/client';
 import R2 from './R2';
-import { prisma } from './db';
-import cleanUpHtml from './clean-up-html';
 import { getTempFilePath } from './get-temp-file';
-import PDFToText from './pdf-to-text';
-import { textSplitterMine } from './textSplitterMine';
 import client from './milvus';
-import delay from './delay';
 import { Document } from "langchain/document";
-import { JSONLoader } from "langchain/document_loaders/fs/json"
 import { TextLoader } from "langchain/document_loaders/fs/text"
-import { UnstructuredLoader } from "langchain/document_loaders/fs/unstructured"
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import { CountKeeper } from './count-keeper';
-import * as R from 'ramda';
-import * as pdfjs from 'pdfjs-dist'
-import { Embeddings } from 'langchain/dist/embeddings/base';
-
+import tiktoken from '@dqbd/tiktoken';
 interface TrainingSetBuilderOptions {
   maxSegmentLength?: number;
   overlapBetweenSegments?: number;
@@ -38,6 +27,11 @@ interface TrainingSetBuilderParams {
 
 type TrainingSourceInProgress = TrainingSource & {
   loadedContent: Document[]
+}
+
+export interface BuildResult {
+  tokensUsed: number;
+  cost: number;
 }
 
 export class TrainingSetBuilder {
@@ -56,22 +50,40 @@ export class TrainingSetBuilder {
     }
   }
 
-  async build(): Promise<void> {
+  async build(onTokensUsed?: (buildResult: BuildResult) => void): Promise<BuildResult> {
     const { trainingSources, questionsAndAnswers, conversations, missedQuestions } = this.trainingSet;
     const sources = await this.buildTrainingSources(trainingSources);
     // throw new Error("Not implemented");
-    await this.vectorize(sources);
+    const buildResult: BuildResult = {
+      tokensUsed: 0,
+      cost: 0
+    }
+
+    const onTokensUsedLocal = (buildResultEvent: BuildResult) => {
+      buildResult.tokensUsed = buildResultEvent.tokensUsed;
+      buildResult.cost = buildResultEvent.cost;
+      if (onTokensUsed) onTokensUsed(buildResult);
+    }
+    try {
+      await this.vectorize(sources, onTokensUsedLocal);
+    } catch (e) {
+      console.error(e);
+    }
+    return buildResult;
   }
 
   ///////////////
   // VECTORIZE //
   ///////////////////////////////////////////////////////////////////////////////////////////
-  private async vectorize(trainingSources: TrainingSourceInProgress[]): Promise<void> {
+  private async vectorize(trainingSources: TrainingSourceInProgress[], onTokensUsed: (buildResult: BuildResult) => void): Promise<BuildResult> {
     const list = generateDocumentList(trainingSources);
-
+    Cohere.init(process.env.COHERE_API_KEY!)
     if (trainingSources.length === 0) throw new Error("No documents to vectorize!");
     console.log("Vectorizing documents...");
-
+    const buildResult: BuildResult = {
+      tokensUsed: 0,
+      cost: 0
+    }
     const getDocumentsSize = (docs: Document<Record<string, any>>[]) => {
       return docs.reduce((acc, doc) => acc + doc.pageContent.length, 0);
     }
@@ -79,7 +91,6 @@ export class TrainingSetBuilder {
     const sizeOfDocsData = trainingSources.reduce((acc, doc) => {
       return acc + getDocumentsSize(doc.loadedContent);
     }, 0);
-
 
 
     console.log(`Total size of docs data: ${sizeOfDocsData} bytes`)
@@ -119,15 +130,15 @@ export class TrainingSetBuilder {
     const TIME_PER_BATCH = 7500;
     const totalTime = TIME_PER_BATCH * batches.length;
     const INTERVAL_LENGTH = 100;
-      vectorProgressInterval = setInterval(() => {
-        time = time + INTERVAL_LENGTH;
-        this.onProgress({
-          stage: "overall",
-          statusText: "Vectorizing documents...",
-          progress: 0.3 + ((time / totalTime))
-        })
+    vectorProgressInterval = setInterval(() => {
+      time = time + INTERVAL_LENGTH;
+      this.onProgress({
+        stage: "overall",
+        statusText: "Vectorizing documents...",
+        progress: 0.3 + ((time / totalTime))
+      })
 
-      }, INTERVAL_LENGTH);
+    }, INTERVAL_LENGTH);
 
     while (batches.length > 0) {
       this.onProgress({
@@ -140,11 +151,17 @@ export class TrainingSetBuilder {
       if (!batch) break;
       try {
         const documents = batch.map((b, i) => b.loadedContent).flat();
-
         // console.log("Documents", documents)
-        await Milvus.fromDocuments(documents, embedder, {
+        const encoding = tiktoken.get_encoding("cl100k_base");
+        const encoded = encoding.encode(documents.map(doc => doc.pageContent).join("\n"));
+        buildResult.tokensUsed += encoded.length;
+        buildResult.cost = buildResult.cost * 0.0000004;
+        onTokensUsed(buildResult);
+        const res = await Milvus.fromDocuments(documents, embedder, {
           collectionName: this.trainingSet.id,
         });
+        console.log("AFTER FROMDOCS", res);
+
       } catch (e) {
         console.log("ERROR BATCH", batch.length);
         throw e;
@@ -155,6 +172,9 @@ export class TrainingSetBuilder {
       console.log("Collection statistics", stats);
     }
 
+    /**
+     * This adds our list of documents to the Milvus database.
+     */
     await Milvus.fromDocuments([list], embedder, {
       collectionName: this.trainingSet.id,
     });
@@ -166,6 +186,7 @@ export class TrainingSetBuilder {
     client.flush({ collection_names: [this.trainingSet.id] });
     console.log("Collection statistics", stats);
     console.log("Vectorization complete");
+    return buildResult;
   }
 
   /////////////
@@ -346,6 +367,7 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
     questionsAndAnswers: true,
     conversations: true,
     missedQuestions: true,
+    Usage: true,
   }
 })
 

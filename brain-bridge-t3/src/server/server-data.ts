@@ -49,6 +49,7 @@ async function fetchUserTrainingSet(trainingSetId: string): Promise<TrainingSetW
       conversations: true,
       missedQuestions: true,
       trainingSetShares: true,
+      usage: true,
       publicChats: {
         include: {
           publicChatInstance: true
@@ -77,7 +78,8 @@ async function fetchUserTrainingSet(trainingSetId: string): Promise<TrainingSetW
           include: {
             publicChatInstance: true
           }
-        }
+        },
+        usage: true,
       }
     });
     return set;

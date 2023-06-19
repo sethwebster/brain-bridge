@@ -81,7 +81,15 @@ export function privateMessageHandler(socket: Socket, io: Server) {
         return missedQuestion;
       };
 
-      const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)));
+      const cost = {
+        tokens: 0,
+      }
+
+      const onTokensUsed = (tokens: number) => {
+        cost.tokens += tokens;
+      }
+
+      const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)), onTokensUsed);
       const fullPrompt = promptHeader + "\n\n" + conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
 
       console.log((await io.in(getRoomId(message.conversationId)).fetchSockets()).length, "listeners");
@@ -95,6 +103,29 @@ export function privateMessageHandler(socket: Socket, io: Server) {
         conversation.messages.map(m => `${m.sender.name}: ${m.text}`),
         mode
       );
+
+      prisma.usage.create({
+        data: {
+          user: {
+            connect: {
+              id: conversation.trainingSet.userId,
+            },
+          },
+          trainingSet: {
+            connect: {
+              id: conversation.trainingSet.id,
+            },
+          },
+          count: cost.tokens,
+          type: "TOKEN",
+          purpose: "GENERATE",
+          updatedAt: new Date(),
+          createdAt: new Date(),
+          id: undefined,
+
+        }
+      }).catch(err => console.error(err));
+
       const newMessage: MessageWithRelations = {
         id: "",
         conversationId: conversation.id,
