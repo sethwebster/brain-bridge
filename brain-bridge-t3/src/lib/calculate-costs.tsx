@@ -18,8 +18,8 @@ function markup(price: number): number {
 
 export function calculateCost(usage: Usage[]): Record<string, MonthlyCosts> {
   const costGroupedByMonth = usage.reduce((acc, curr) => {
-    const month = `${curr.createdAt.getFullYear()}-${
-      curr.createdAt.getMonth() + 1
+    const month = `${new Date(curr.createdAt).getFullYear()}-${
+      new Date(curr.createdAt).getMonth() + 1
     }`;
     if (acc[month]) {
       const currMonth = acc[month];
