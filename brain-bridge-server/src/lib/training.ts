@@ -279,7 +279,7 @@ export class TrainingSetBuilder {
             const source = await fs.readFileSync(tempFilePath, "utf-8");
             const cleaned = cleanUpHtml(source);
             const ext = path.extname(tempFilePath);
-            const name = path.join(path.basename(tempFilePath, ext) + ".md");
+            const name = getTempFilePath(".md");
             await fs.writeFileSync(name, cleaned, "utf-8");
             documents = await (new TextLoader(name).loadAndSplit(
               splitter
