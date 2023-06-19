@@ -2,6 +2,8 @@ import { Usage } from "@prisma/client";
 import invariant from "tiny-invariant";
 import { type MonthlyCosts } from "~/lib/calculate-costs";
 import { type DateRange } from "~/server/server-data";
+import { DateRangeDisplay } from "./DateRangeDisplay";
+import { BillingGrid } from "./BillingGrid";
 
 interface BillingTableProps {
   dateRange: DateRange;
@@ -60,7 +62,7 @@ export default function BillingTable({ dateRange, usage }: BillingTableProps) {
 
   return (
     <div className="">
-      <small className="flex flex-row">
+      <small className="flex flex-row dark:bg-slate-700">
         <h2>Date Range:</h2>
         &nbsp;
         <DateRangeDisplay
@@ -72,96 +74,14 @@ export default function BillingTable({ dateRange, usage }: BillingTableProps) {
           moreThanOneYearInList={moreThanOneYearInList}
         />
       </small>
-      <ul
-        className={`grid grid-cols-1 sm:grid-cols-${datesBetweenStartAndEnd.length.toString()} gap-4 pt-2 `}
-      >
-        {datesBetweenStartAndEnd.map((date) => (
-          <li
-            key={date.toString()}
-            className="col-span-1 flex h-auto sm:h-96 flex-row justify-center  pb-2 text-center text-sm bg-slate-200 shadow-md"
-          >
-            <div className="flex h-full flex-col">
-              <div className="border-b">
-                {date.toLocaleDateString(
-                  "en-US",
-                  moreThanOneYearInList
-                    ? {
-                        month: "short",
-                        year: "numeric",
-                      }
-                    : {
-                        month: "short",
-                      }
-                )}
-              </div>
-              <div className="hidden h-full flex-row items-end justify-center border sm:flex">
-                <div
-                  style={{
-                    height: `${
-                      ((
-                        usage[
-                          `${date.getUTCFullYear()}-${date.getUTCMonth() + 1}`
-                        ] ?? {
-                          cost: 0.0001,
-                        }
-                      ).cost /
-                        maxCost) *
-                      100
-                    }%`,
-                  }}
-                  className="w-2 bg-green-400 bg-opacity-70 rounded-md"
-                ></div>
-              </div>
-              <div className="text-sm">
-                $
-                {`${(
-                  usage[
-                    `${date.getUTCFullYear()}-${date.getUTCMonth() + 1}`
-                  ] ?? {
-                    cost: 0.0001,
-                  }
-                ).cost.toFixed(2)}`}
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <BillingGrid
+        datesBetweenStartAndEnd={datesBetweenStartAndEnd}
+        moreThanOneYearInList={moreThanOneYearInList}
+        usage={usage}
+        maxCost={maxCost}
+      />
     </div>
   );
 }
 
-function DateRangeDisplay({
-  dateRange,
-  moreThanOneYearInList,
-}: {
-  dateRange: DateRange;
-  moreThanOneYearInList: boolean;
-}) {
-  const startDate = new Date(dateRange.start); //.toDateString());
-  const endDate = new Date(dateRange.end); //.toDateString());
-  return (
-    <div className="flex flex-row">
-      <div>
-        {startDate.toLocaleDateString(
-          "en-US",
-          moreThanOneYearInList
-            ? {
-                timeZone: "US/Eastern",
-                month: "short",
-                year: "numeric",
-              }
-            : {
-                month: "short",
-              }
-        )}
-      </div>
-      &#8212;
-      <div>
-        {endDate.toLocaleDateString("en-US", {
-          month: "short",
-          year: "numeric",
-        })}
-      </div>
-    </div>
-  );
-}
+

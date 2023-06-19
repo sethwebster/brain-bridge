@@ -8,4 +8,7 @@ export default {
   plugins: [
     require('@tailwindcss/typography')
   ],
+  safelist: [
+    'grid-cols-*'
+  ]
 } satisfies Config;
