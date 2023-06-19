@@ -9,7 +9,7 @@ RUN npm install -g pnpm
 RUN pnpm install
 
 COPY ./brain-bridge-server/ .
-
+COPY ./brain-bridge-t3/prisma/schema.prisma ./prisma/schema.prisma
 RUN pnpm install
 RUN pnpm run build
 
