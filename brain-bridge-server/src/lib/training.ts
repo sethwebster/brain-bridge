@@ -12,6 +12,7 @@ import { TextLoader } from "langchain/document_loaders/fs/text"
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import { CountKeeper } from './count-keeper';
 import tiktoken from '@dqbd/tiktoken';
+import cleanUpHtml from './clean-up-html';
 interface TrainingSetBuilderOptions {
   maxSegmentLength?: number;
   overlapBetweenSegments?: number;
@@ -227,8 +228,6 @@ export class TrainingSetBuilder {
       case "URL":
         const tempFilePath = await this.loadFile(source);
         switch (source.mimeType) {
-
-
           case "text/markdown":
             console.log("[load-training-source] Loading markdown file")
             documents = (await (new TextLoader(tempFilePath).loadAndSplit(
@@ -276,6 +275,13 @@ export class TrainingSetBuilder {
           // ));
           // break;
           case "text/html":
+            const source = await fs.readFileSync(tempFilePath, "utf-8");
+            const cleaned = cleanUpHtml(source);
+            const blob = new Blob([cleaned], { type: "text/markdown" });
+            documents = await (new TextLoader(blob).loadAndSplit(
+              splitter
+            ));
+            break;
           case "text/plain":
           case "application/json":
           default:
