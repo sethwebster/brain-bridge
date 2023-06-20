@@ -1,10 +1,14 @@
 import { LLMChain, PromptTemplate } from "langchain";
 import { OpenAIChat } from "langchain/llms/openai";
-import path from "path";
-import { getTempFilePath } from "./get-temp-file";
-import { Milvus } from "langchain/vectorstores/milvus";
-import { encoding_for_model } from "@dqbd/tiktoken";
 import { CohereEmbeddings } from "langchain/embeddings/cohere";
+import { Milvus } from "langchain/vectorstores/milvus";
+import path from "path";
+import { getTempFilePath } from "./get-temp-file.ts";
+import { encoding_for_model } from "@dqbd/tiktoken";
+import { SerpAPI, Tool } from "langchain/tools";
+
+import { initializeAgentExecutorWithOptions } from "langchain/agents";
+
 
 interface LangChainStorage<T> {
   getIndex<T>(id: string): Promise<T>;
@@ -66,6 +70,7 @@ export interface LLMBrainBridgeResponse {
   confidence: number;
 }
 
+
 export class BrainBridgeLangChain implements LangChainStore {
   storage: LangChainStorage<Milvus>
   _store: Milvus | null = null;
@@ -89,13 +94,12 @@ export class BrainBridgeLangChain implements LangChainStore {
     let attempts = 0;
     console.log("base-prompt", basePrompt)
 
-    const enc = encoding_for_model("gpt-3.5-turbo-0301");
-    const encoded = enc.encode(userPrompt);
-    if (encoded.length > 4000) {
+    const encodedLength = this.getTokensForStringWithRetry(userPrompt);
+    if (encodedLength > 4000) {
       throw new Error("Input too long");
     }
     if (this._onTokensUsed) {
-      this._onTokensUsed(encoded.length);
+      this._onTokensUsed(encodedLength);
     }
     const promptTemplate = new PromptTemplate({
       template: basePrompt.replace("{name}", ""),
@@ -108,7 +112,6 @@ export class BrainBridgeLangChain implements LangChainStore {
     });
 
 
-
     const store = await this.storage.getIndex<Milvus>(indexId);
 
 
@@ -119,9 +122,9 @@ export class BrainBridgeLangChain implements LangChainStore {
       context.push(`Context:\n${item.pageContent.trim()}`)
     });
 
-    console.log("[llm-request]", userPrompt, context, history, mode);
+
+    // console.log("[llm-request]", userPrompt, context, history, mode);
     let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history });
-    console.log("RAW RESPONSE", userPrompt, rawResponse)
     let response = this.tryParseResponse(userPrompt, rawResponse);
     let usedMode = mode;
 
@@ -175,34 +178,44 @@ export class BrainBridgeLangChain implements LangChainStore {
   }
 
   private async langChainCall(llmChain: LLMChain<string>, fields: Record<string, string | string[]>) {
+
     const tokenCountsForAllFields = this.countTokensForLangChainCall(fields);
+
     const result = await llmChain.call(fields) as Promise<LLMResponse>;
     this._onTokensUsed(tokenCountsForAllFields)
     return result;
   }
 
+  private getTokensForStringWithRetry(str: string) {
+    let tokens = 0;
+    let retry = 0;
+    while (retry < 3) {
+      try {
+        tokens = encoding_for_model("gpt-3.5-turbo-0301").encode_ordinary(str).length;
+        break;
+      } catch (e) {
+        retry++;
+      }
+    }
+    if (str.length > 0 && tokens === 0) {
+      console.log("TikTokEncoding Failed: Defaulting to local count");
+      tokens = Math.floor(str.length * 1.1);
+    }
+    return tokens;
+  }
+
   private countTokensForLangChainCall(fields: Record<string, string | string[]>) {
     const tokenCountsForAllFields = Object.values(fields).map((field) => {
       if (Array.isArray(field)) {
-        return field.map((f) => encoding_for_model("gpt-3.5-turbo-0301").encode_ordinary(f as string).length).reduce((a, b) => a + b, 0);
+        return field.map((f) => this.getTokensForStringWithRetry(f as string)).reduce((a, b) => a + b, 0);
       }
-      return encoding_for_model("gpt-3.5-turbo-0301").encode_ordinary(field as string).length;
+      if (typeof field !== "string") {
+        throw new Error("Unexpected field type");
+      }
+      return this.getTokensForStringWithRetry(field as string);
     }).reduce((a, b) => a + b, 0);
     return tokenCountsForAllFields;
   }
-
-  // private async makeLangChainCall(llmChain: LLMChain<string>, userPrompt: string, context: string[], history: string[]) {
-  //   // console.log("CALLING LLM CHAIN", userPrompt, context, history)
-  //   try {
-  //     const result = await llmChain.call({ prompt: userPrompt, context: context.join('\n\n'), history }) as LLMResponse;
-  //     result.tokens = encoding_for_model("gpt-3.5-turbo-0301").encode_ordinary(result.text).length;
-  //     this._onTokensUsed(result.tokens);
-  //     return result;
-  //   } catch (err: unknown) {
-  //     // console.error("THIS IS THE", JSON.stringify(err, null, 2))
-  //     throw err;
-  //   }
-  // }
 
   private tryParseResponse(userPrompt: string, rawResponse: LLMResponse) {
     // UGH
@@ -232,7 +245,7 @@ export class BrainBridgeLangChain implements LangChainStore {
       const cleanInCase = rawResponse.text.replaceAll(parseable, "");
       response = this.tryParsePayload(userPrompt, cleanInCase);
     }
-    console.log("FINAL RESPONSE", response)
+
     return response;
   }
 

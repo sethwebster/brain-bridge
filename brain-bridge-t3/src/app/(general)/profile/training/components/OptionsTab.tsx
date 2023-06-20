@@ -1,6 +1,6 @@
 "use client";
 import Input from "~/app/components/Input";
-import { type TrainingOptions } from "~/server/interfaces/types";
+import { type TrainingOptions } from "~/data/interfaces/types";
 
 export function OptionsTab({
   canEdit, trainingOptions, handleTrainingOptionChanged,

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { NewChatButton } from "./NewChatButton";
 import { DeleteChat } from "./DeleteChatButton";
 import { type TrainingSet } from "@prisma/client";
-import { type ConversationWithRelations } from "~/server/interfaces/types";
+import { type ConversationWithRelations } from "~/data/interfaces/types";
 import ContentBoxWithHeading from "../../components/ContentBoxWithHeading";
 
 export async function ChatListing({

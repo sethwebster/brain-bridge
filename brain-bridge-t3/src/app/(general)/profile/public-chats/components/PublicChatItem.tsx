@@ -9,7 +9,7 @@ import Link from "next/link";
 import {
   type PublicChatWithRelations,
   type TrainingSetWithRelations,
-} from "~/server/interfaces/types";
+} from "~/data/interfaces/types";
 import DataClient from "~/utils/data-client";
 import DeleteButton from "../../components/DeleteButton";
 import { TrashCan } from "~/app/components/SvgIcons";

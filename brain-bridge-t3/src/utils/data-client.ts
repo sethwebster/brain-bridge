@@ -1,7 +1,7 @@
 "use client";
 import { type PublicChat, type TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type PublicChatWithRelations, type ChatResponseMode } from "~/server/interfaces/types";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type PublicChatWithRelations, type ChatResponseMode } from "~/data/interfaces/types";
 
 const makeApiUrl = (endpoint: string) => {
   const base = process.env.NEXT_PUBLIC_BASE_URL

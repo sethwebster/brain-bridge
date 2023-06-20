@@ -1,6 +1,6 @@
 "use client";
 import AutoSizingTextArea from "./AutoSizingTextArea";
-import { type TrainingSetWithRelations } from "~/server/interfaces/types";
+import { type TrainingSetWithRelations } from "~/data/interfaces/types";
 import { AutoTraining } from "./AutoTraining";
 
 export function PromptTab({

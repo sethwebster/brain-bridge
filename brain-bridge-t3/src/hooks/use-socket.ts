@@ -4,7 +4,6 @@ import { SocketContext } from "~/app/components/SocketProvider";
 import invariant from "tiny-invariant";
 import { type Socket } from "socket.io-client";
 import socket from "~/lib/socket";
-import { useAuthToken } from "./useAuthToken";
 
 function logger<T>(message: string, data: T, sendOrReceived: "send" | "received") {
   console.log(`[${sendOrReceived}] Socket Message: `, message, data);
@@ -13,10 +12,7 @@ function logger<T>(message: string, data: T, sendOrReceived: "send" | "received"
 type JoinPayload = {
   room: string;
   type: "public" | "private";
-} & (
-    | { type: "public" }
-    | { type: "private"; auth: string }
-  )
+}
 
 class RoomManager {
   rooms: JoinPayload[] = [];
@@ -30,15 +26,7 @@ class RoomManager {
     invariant(payload.room, "room is required");
     invariant(payload.type, "type is required");
     if (!this.hasJoined(payload.room, payload.type)) {
-      switch (payload.type) {
-        case "public":
-          this.socket.emit(`join-${payload.type}-room`, { data: { room: payload.room } });
-          break;
-        case "private":
-          this.socket.emit(`join-${payload.type}-room`, { data: { room: payload.room }, token: payload.auth });
-          break;
-      }
-
+      this.socket.emit(`join-${payload.type}-room`, { data: { room: payload.room } });
       this.rooms.push(payload);
     }
   }
@@ -47,14 +35,9 @@ class RoomManager {
     if (!this.hasJoined(payload.room, payload.type)) {
       return;
     }
-    switch (payload.type) {
-      case "public":
-        this.socket.emit(`leave-${payload.type}-room`, { data: { room: payload.room } });
-        break;
-      case "private":
-        this.socket.emit(`leave-${payload.type}-room`, { data: { room: payload.room }, token: payload.auth });
-        break;
-    }
+
+    this.socket.emit(`leave-${payload.type}-room`, { data: { room: payload.room } });
+
     this.rooms = this.rooms.filter((r) => r.room !== payload.room && r.type !== payload.type);
   }
 
@@ -63,65 +46,13 @@ class RoomManager {
   }
 }
 
-
 const roomManager = new RoomManager(socket);
-
-export function useAuthenticatedSocket() {
-  const { socket, sendMessage: sendMessageBase, onMessage, connected } = useSocket();
-  const { token, isTokenValid } = useAuthToken();
-
-  const sendTheMessage = useCallback(<T>(message: string, data: T, token: string) => {
-    invariant(socket, "Socket is not set");
-    invariant(token, "Token is not set");
-    sendMessageBase(message, { data, token });
-  }, [sendMessageBase, socket]);
-
-  const sendMessage = useCallback(<T>(message: string, data: T) => {
-    invariant(token, "Token is not set");
-    sendTheMessage(message, data, token);
-
-  }, [sendTheMessage, token]);
-
-  const leave = useCallback((room: string, type: "public" | "private") => {
-    invariant(token, "Token is not set");
-    roomManager.leaveRoom({
-      room,
-      type,
-      auth: token
-    });
-  }, [token]);
-
-  const join = useCallback((room: string, type: "public" | "private") => {
-    console.log("Joining room before check", room, type)
-    if (!token) return () => { console.log("Token is not set") };
-    console.log("Joining room before valid check", room, type)
-    if (!isTokenValid()) return () => { console.log("Token is not valid") };
-    console.log("Joining room before invriant", room, type)
-
-    invariant(token, "Token is not set");
-    console.log("Joining room", room, type);
-    roomManager.joinRoom({ room, type, auth: token });
-    return () => {
-      invariant(token, "Token is not set");
-      leave(room, type);
-    }
-  }, [isTokenValid, leave, token]);
-
-  return {
-    connected,
-    socket,
-    sendMessage,
-    onMessage,
-    join,
-    leave
-  }
-}
 
 export default function useSocket() {
   const context = useContext(SocketContext);
-  const { socket } = context;
+  const { socket, status } = context;
   const [connected, setConnected] = useState(false);
-
+  console.log("SocketAuth", socket?.auth)
   function sendMessage<T extends object>(message: string, data: T) {
     logger(message, data, "send");
     if (
@@ -133,11 +64,16 @@ export default function useSocket() {
     }
   }
 
-  function join(room: string, type: "public") {
+  function join(room: string, type: PublicPrivate) {
     roomManager.joinRoom({ room, type });
+    return () => {
+      roomManager.leaveRoom({ room, type });
+    }
   }
 
-  function leave(room: string, type: "public") {
+  type PublicPrivate = "public" | "private";
+
+  function leave(room: string, type: PublicPrivate) {
     roomManager.leaveRoom({ room, type });
   }
 
@@ -174,7 +110,7 @@ export default function useSocket() {
   }, [handleConnected, handleDisconnected, socket]);
 
   return {
-    connected,
+    status,
     socket,
     sendMessage,
     onMessage,

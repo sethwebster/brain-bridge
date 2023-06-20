@@ -1,4 +1,4 @@
-import { type MessageWithRelations } from "~/server/interfaces/types";
+import { type MessageWithRelations } from "~/data/interfaces/types";
 import generateId from "./generate-id";
 
 export default function generateChatErrorMessage(error: string): MessageWithRelations {

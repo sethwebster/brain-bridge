@@ -16,13 +16,13 @@ import {
   type QuestionAndAnswerPartial,
   type TrainingSetWithRelations,
   defaultTrainingOptions,
-} from "~/server/interfaces/types";
+} from "~/data/interfaces/types";
 import replaceTokens from "~/utils/replace-tokens";
 import MissedQuestionsList from "./MissedQuestionsList";
 import { useSession } from "next-auth/react";
 import Modal from "~/app/components/ModalDialog";
 import { SaveIcon } from "~/app/components/SvgIcons";
-import { useAuthenticatedSocket } from "~/hooks/use-socket";
+import useSocket from "~/hooks/use-socket";
 import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
 import Tabs from "~/app/components/Tabs";
 import { toast } from "react-toastify";
@@ -56,7 +56,7 @@ export function TrainingSetForm({
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRefinePromptModal, setShowRefinePromptModal] = useState(false);
-  const socketRef = useAuthenticatedSocket();
+  const socketRef = useSocket();
   const handleTrainingStarted = useCallback(() => {
     setIsTraining(true);
   }, []);
@@ -359,23 +359,29 @@ export function TrainingSetForm({
               </button>
             </div>,
             <div className="flex h-full flex-col justify-center" key="Save">
-                <button
-                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                  onClick={handleTrain}
-                  disabled={
-                    !socketRef.connected ||
-                    isDirty ||
-                    isTraining ||
-                    trainingSetData.version === trainingSet.trainingIndexVersion
-                  }
-                  title={socketRef.connected ? "Train the model" : "Server is offline"}
-                  className={`w-24 rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400 ${
-                    isTraining ? "animate-pulse" : ""
-                  } ${socketRef.connected ? "bg-green-400 dark:bg-green-500" : "disabled:bg-red-400 disabled:dark:bg-red-500"}`}
-                >
-                  Train
-                </button>
-            </div>
+              <button
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                onClick={handleTrain}
+                disabled={
+                  socketRef.status !== "connected" ||
+                  isDirty ||
+                  isTraining ||
+                  trainingSetData.version === trainingSet.trainingIndexVersion
+                }
+                title={
+                  socketRef.status === "connected" ? "Train the model" : "Server is offline"
+                }
+                className={`w-24 rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400 ${
+                  isTraining ? "animate-pulse" : ""
+                } ${
+                  socketRef.status === "connected"
+                    ? "bg-green-400 dark:bg-green-500"
+                    : "disabled:bg-red-400 disabled:dark:bg-red-500"
+                }`}
+              >
+                Train
+              </button>
+            </div>,
           ]}
           tabContent={{
             Details: (

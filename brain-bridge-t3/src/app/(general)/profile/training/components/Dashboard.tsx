@@ -1,6 +1,6 @@
 import { type PublicChatInstance } from "@prisma/client";
 import { useMemo } from "react";
-import { type TrainingSetWithRelations } from "~/server/interfaces/types";
+import { type TrainingSetWithRelations } from "~/data/interfaces/types";
 
 export default function Dashboard({
   trainingSet,

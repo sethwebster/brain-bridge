@@ -1,6 +1,9 @@
-export function anyMessageHandler(socket) {
-  socket.onAny((event, ...args) => {
-    return;
-    console.log("[received]", event, ...args);
+import { Socket } from "socket.io";
+
+export function anyMessageHandler(socket: Socket) {
+  socket.onAny((event: any, ...args: any) => {
+    // return;
+
+    console.log("[catchall:received]", `'${event}'`, socket.listeners(event).length, "listeners");
   });
 }

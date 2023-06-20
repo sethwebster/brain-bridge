@@ -1,5 +1,5 @@
 "use client";
-import { type MessageWithRelations } from "~/server/interfaces/types";
+import { type MessageWithRelations } from "~/data/interfaces/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 

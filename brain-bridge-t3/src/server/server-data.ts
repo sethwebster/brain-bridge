@@ -9,7 +9,7 @@ import {
   conversationWithRelations,
   defaultTrainingOptions,
   type TrainingOptions
-} from "~/server/interfaces/types";
+} from "~/data/interfaces/types";
 import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";

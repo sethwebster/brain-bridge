@@ -1,16 +1,17 @@
 import { Socket } from "socket.io";
 import invariant from "tiny-invariant";
-import { prisma } from "../../lib/db";
-import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm";
-import replaceTokens from "../../lib/replace-tokens";
-import { storeBotMessage } from "./data-helpers";
-import { MessageWithRelations, PublicChatInstanceWithRelations } from "./types";
-import { promptFooter, promptHeader } from "../../lib/prompt-templates";
+import { prisma } from "../../lib/db.ts";
+import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm.ts";
+import replaceTokens from "../../lib/replace-tokens.ts";
+import { storeBotMessage } from "./data-helpers.ts";
+import { MessageWithRelations, PublicChatInstanceWithRelations } from "./types.ts";
+import { promptFooter, promptHeader } from "../../lib/prompt-templates.ts";
 
 export async function publicMessageHandler(socket: Socket) {
   socket.on("message-public", async (data) => {
     try {
       const { data: { message, mode } } = data as { token: string; data: { message: MessageWithRelations; mode: "one-shot" | "critique" | "refine"; }; };
+      invariant(message.publicChatInstanceId, "Public chat instance id must be defined");
       const publicChatInstance = (await prisma.publicChatInstance.findUnique({
         where: {
           id: message.publicChatInstanceId
@@ -97,15 +98,15 @@ export async function publicMessageHandler(socket: Socket) {
         publicChatInstance.messages.map(m => `${m.sender.name}: ${m.text}`),
         mode
       );
-
+      invariant(bot, "Bot must exist")
       const newMessage: MessageWithRelations = {
         id: "",
         text: response,
         createdAt: new Date(),
         sender: bot,
-        participantId: undefined,
-        conversationId: undefined,
-        conversation: undefined,
+        participantId: "",
+        conversationId: "",
+        conversation: null,
         publicChatInstance: publicChatInstance,
         publicChatInstanceId: publicChatInstance.id,
       };

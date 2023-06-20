@@ -1,10 +1,10 @@
-import * as dotenv from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config();
 
 import { PrismaClient } from "@prisma/client";
 
-import server from "./api";
+import server from "./api.js";
 
 const prisma = new PrismaClient();
 

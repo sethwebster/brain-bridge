@@ -2,7 +2,7 @@
 import { useCallback, useState } from "react";
 import { SpeakerIcon } from "../(general)/profile/training/components/SvgIcons";
 import { CheckMark, EraseIcon } from "./SvgIcons";
-import { type ChatResponseMode } from "~/server/interfaces/types";
+import { type ChatResponseMode } from "~/data/interfaces/types";
 
 function BooleanCheck({ condition }: { condition: boolean }) {
   if (condition) {

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import invariant from "tiny-invariant";
-import { type PublicChatWithRelations } from "~/server/interfaces/types";
+import { type PublicChatWithRelations } from "~/data/interfaces/types";
 import { getServerSession } from "~/server/auth";
 import ServerData from "~/server/server-data";
 

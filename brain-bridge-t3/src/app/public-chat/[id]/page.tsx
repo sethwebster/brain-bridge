@@ -6,9 +6,10 @@ import { type Metadata } from "next";
 import ServerData from "~/server/server-data";
 import generateId from "~/utils/generate-id";
 import { safeGetJSONCookieServer } from "~/utils/safe-get-json-cookie-server";
-import { type PublicChatInstanceWithRelations } from "~/server/interfaces/types";
+import { type PublicChatInstanceWithRelations } from "~/data/interfaces/types";
 import PublicChat from "./components/PublicChat";
 import { type PublicChat as PublicChatType } from "@prisma/client";
+import { RoomJoiner } from "~/app/(general)/profile/components/RoomJoiner";
 
 interface PageProps {
   params: {
@@ -34,7 +35,6 @@ export async function generateMetadata({
     };
   }
 }
-
 
 export default async function PublicChatPage({ params: { id } }: PageProps) {
   try {
@@ -70,7 +70,10 @@ export default async function PublicChatPage({ params: { id } }: PageProps) {
           conversation = existing;
         }
       } catch (e) {
-        console.log("Unable to fetch existing conversation [expected if new]", e);
+        console.log(
+          "Unable to fetch existing conversation [expected if new]",
+          e
+        );
       }
       if (!conversation) {
         console.log("creating new convo");
@@ -91,6 +94,7 @@ export default async function PublicChatPage({ params: { id } }: PageProps) {
     invariant(conversation, "Conversation must exist");
     return (
       <div className="h-full">
+        <RoomJoiner room={chat.id} />
         <PublicChat
           publicChat={chat}
           publicChatInstance={conversation}

@@ -7,12 +7,15 @@ import {
   type ChatResponseMode,
   type MessageWithRelations,
   type PublicChatInstanceWithRelations,
-} from "~/server/interfaces/types";
+} from "~/data/interfaces/types";
 import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
 import { safeGetJSONCookieClient } from "~/utils/safe-get-json-cookie-client";
 import useSocket from "~/hooks/use-socket";
 import generateChatErrorMessage from "~/utils/error-chat-message-generator";
+import { useSession } from "next-auth/react";
+import { CheckLogin } from "~/app/login/CheckLogin";
+import { useAuthToken } from "~/hooks/useAuthToken";
 
 interface PublicChatProps {
   viewer: Participant;
@@ -31,9 +34,10 @@ export default function PublicChat({
     publicChatInstance.messages
   );
   const [callback, setCallback] = useState<(() => void) | null>(null);
-
+  const session = useSession();
   // const player = useAudioPlayer();
   const socket = useSocket();
+  const { token } = useAuthToken();
 
   useEffect(() => {
     setCookie("viewer-id", viewer.id, { sameSite: "strict" });
@@ -47,6 +51,12 @@ export default function PublicChat({
 
   useEffect(() => {
     if (socket) {
+      // if (token) socket.join(publicChatInstance.id, "private");
+      // const leaveRoom = () => {
+      //   if (!token) return;
+      //   socket.leave(publicChatInstance.id, "private");
+      // };
+
       const removeMessageListener = socket.onMessage(
         "message",
         (payload: { message: MessageWithRelations }) => {
@@ -85,7 +95,7 @@ export default function PublicChat({
         removeErrorListener();
       };
     }
-  }, [callback, socket]);
+  }, [callback, publicChatInstance.id, socket, token]);
 
   // const playVoice = useCallback(
   //   (fileUrl: string) => {
@@ -107,8 +117,8 @@ export default function PublicChat({
         publicChatInstanceId: publicChatInstance.id,
         participantId: viewer.id,
       };
-      setLoadedMessages((messages) => [...messages, formattedMessage]);
-      socket.sendMessage("message-public", { mode, message: formattedMessage });
+      // setLoadedMessages((messages) => [...messages, formattedMessage]);
+      socket.sendMessage("message", { mode, message: formattedMessage });
     },
     [publicChatInstance, socket, viewer]
   );
@@ -128,19 +138,25 @@ export default function PublicChat({
   }, []);
 
   return (
-    <ChatDisplay
-      isConnected={socket.connected}
-      viewer={viewer}
-      conversation={{ ...publicChatInstance, messages: loadedMessages }}
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      onNewMessage={handleNewMessage}
-      onSoundEnabledChange={handleSoundEnabledChanged}
-      soundEnabled={soundEnabled}
-      answerPending={answerPending}
-      soundPending={soundPending}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-misused-promises
-      onClearChatClicked={handleClearChatClicked}
-      notifyNewMessage={handleNotifyCallbackSet}
-    />
+    <>
+      {!session ||
+        (session.status == "unauthenticated" && (
+          <CheckLogin provider="anonymous" />
+        ))}
+      <ChatDisplay
+        isConnected={socket.status === "authenticated" ?? false}
+        viewer={viewer}
+        conversation={{ ...publicChatInstance, messages: loadedMessages }}
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        onNewMessage={handleNewMessage}
+        onSoundEnabledChange={handleSoundEnabledChanged}
+        soundEnabled={soundEnabled}
+        answerPending={answerPending}
+        soundPending={soundPending}
+        // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-misused-promises
+        onClearChatClicked={handleClearChatClicked}
+        notifyNewMessage={handleNotifyCallbackSet}
+      />
+    </>
   );
 }

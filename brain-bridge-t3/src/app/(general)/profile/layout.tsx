@@ -5,6 +5,7 @@ import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
 import ServerData from "~/server/server-data";
 import Toast from "~/app/components/Toast";
 import SidebarContainer from "./components/SidebarContainer";
+import NoAnonymous from "./components/NoAnonymous";
 
 export default async function Layout({
   children,
@@ -21,7 +22,7 @@ export default async function Layout({
     setsRequest,
     chatsRequest,
     publicChatsRequest,
-    costsRequest
+    costsRequest,
   ]);
   const totalCurrentCosts = Object.keys(costs).reduce((acc, key) => {
     const toAdd = costs[key]?.cost ?? 0;
@@ -35,16 +36,18 @@ export default async function Layout({
   //   email: session.user.email!,
   // });
   return (
-    <div className="h-full w-full">
-      <SidebarContainer
-        setsCount={sets.length}
-        chatCount={chats.length}
-        publicChatCount={publicChats.length}
-        currentCosts={totalCurrentCosts}
-      >
-        {children}
-      </SidebarContainer>
-      <Toast />
-    </div>
+    <NoAnonymous session={session}>
+      <div className="h-full w-full">
+        <SidebarContainer
+          setsCount={sets.length}
+          chatCount={chats.length}
+          publicChatCount={publicChats.length}
+          currentCosts={totalCurrentCosts}
+        >
+          {children}
+        </SidebarContainer>
+        <Toast />
+      </div>
+    </NoAnonymous>
   );
 }

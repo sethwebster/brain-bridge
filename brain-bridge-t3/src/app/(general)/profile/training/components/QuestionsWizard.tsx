@@ -3,7 +3,7 @@ import Input from "~/app/components/Input";
 import { useCallback, useState } from "react";
 import invariant from "tiny-invariant";
 import { type QuestionAndAnswer } from "@prisma/client";
-import { type QuestionAndAnswerPartial } from "~/server/interfaces/types";
+import { type QuestionAndAnswerPartial } from "~/data/interfaces/types";
 
 export const QuestionsAndTokens: QuestionAndAnswerPartial[] = [
   {

@@ -4,14 +4,14 @@ import { type Conversation } from "@prisma/client";
 import {
   type ChatResponseMode,
   type MessageWithRelations,
-} from "~/server/interfaces/types";
+} from "~/data/interfaces/types";
 import ChatDisplay, {
   type ConversationLike,
   type NewMessage,
   type Viewer,
 } from "~/app/components/ChatDisplay";
 import { useSession } from "next-auth/react";
-import { useAuthenticatedSocket } from "~/hooks/use-socket";
+import useSocket from "~/hooks/use-socket";
 import { useAuthToken } from "~/hooks/useAuthToken";
 import generateChatErrorMessage from "~/utils/error-chat-message-generator";
 import generateId from "~/utils/generate-id";
@@ -63,7 +63,7 @@ export function AutoTraining({
   const [callback, setCallback] = useState<() => void>(() => () => {
     console.log("callback not set");
   });
-  const socket = useAuthenticatedSocket();
+  const socket = useSocket();
   const { token } = useAuthToken();
 
   const handleNotifyCallbackSet = useCallback((callback: () => void) => {
@@ -104,7 +104,7 @@ export function AutoTraining({
           messages: [...conversation.messages, newMessageAugment],
         };
         setConversation((conversation) => ({ ...conversation, ...updated }));
-        const history = updated.messages
+        const history = conversation.messages
           .map((m) => {
             return `${m.sender.name}: ${m.text}`;
           })
@@ -131,7 +131,7 @@ export function AutoTraining({
     timeout: null,
   });
 
-  const getPromptOutout = useCallback((text: string) => {
+  const getPromptOutput = useCallback((text: string) => {
     const regex = new RegExp(/<prompt>([\s\S]*)<\/prompt>/gm);
     const matches = regex.exec(text);
     console.log(matches);
@@ -139,6 +139,7 @@ export function AutoTraining({
   }, []);
 
   const sendIntroMessage = useCallback(() => {
+    console.log("SIM");
     let text = "Sounds good. Let's get started.";
 
     if (oldPrompt && oldPrompt.trim().length > 0) {
@@ -169,9 +170,10 @@ export function AutoTraining({
           text,
         },
         history: "",
+        userName: session.data?.user?.name ?? "human",
       });
     }, 500)();
-  }, [oldPrompt, socket]);
+  }, [oldPrompt, session.data?.user?.name, socket]);
 
   useEffect(() => {
     if (socket) {
@@ -179,7 +181,7 @@ export function AutoTraining({
         "prompt-generator-message",
         (payload: { message: MessageWithRelations }) => {
           setAnswerPending(false);
-          const promptMatch = getPromptOutout(payload.message.text);
+          const promptMatch = getPromptOutput(payload.message.text);
           if (promptMatch && promptMatch?.length > 0) {
             const match = promptMatch[1]?.trim();
             if (match) onPromptGenerated?.(match);
@@ -239,7 +241,7 @@ export function AutoTraining({
     }
   }, [
     callback,
-    getPromptOutout,
+    getPromptOutput,
     onPromptGenerated,
     sendIntroMessage,
     socket,
@@ -248,7 +250,7 @@ export function AutoTraining({
 
   return (
     <ChatDisplay
-      isConnected={socket.connected}
+      isConnected={socket.status === "connected"}
       viewer={user}
       answerPending={answerPending}
       conversation={conversation}

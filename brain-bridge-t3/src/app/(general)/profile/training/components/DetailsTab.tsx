@@ -2,7 +2,7 @@
 import { Suspense } from "react";
 import Input from "~/app/components/Input";
 import { type TrainingSetShares } from "@prisma/client";
-import { type TrainingSetWithRelations } from "~/server/interfaces/types";
+import { type TrainingSetWithRelations } from "~/data/interfaces/types";
 import Shares from "./Shares";
 import { ShareIcon } from "~/app/components/SvgIcons";
 import Dashboard from "./Dashboard";

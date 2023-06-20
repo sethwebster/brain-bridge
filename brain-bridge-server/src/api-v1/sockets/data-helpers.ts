@@ -1,7 +1,7 @@
 import { Conversation, Participant } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { prisma } from "../../lib/db";
-import { MessageWithRelations, PublicChatInstanceWithRelations, messageWithRelations } from "./types";
+import { prisma } from "../../lib/db.ts";
+import { MessageWithRelations, PublicChatInstanceWithRelations, messageWithRelations } from "./types.ts";
 
 
 export async function storeBotMessage(instance: PublicChatInstanceWithRelations, payload: MessageWithRelations) {

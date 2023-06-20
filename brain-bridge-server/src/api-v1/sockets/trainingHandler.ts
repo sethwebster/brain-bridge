@@ -1,12 +1,11 @@
 import { PrismaClient, TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
-import { verifyJWT } from "../../lib/jwt";
 import { Server, Socket } from "socket.io";
-import Mutex from "../../lib/mutex";
-import { getRoomId } from "./roomsHandler";
-import { BuildResult, TrainingSetBuilder } from "../../lib/training";
+import Mutex from "../../lib/mutex.ts";
+import { getRoomId } from "./roomsHandler.ts";
+import { BuildResult, TrainingSetBuilder } from "../../lib/training.ts";
 
-type TrainingStages = "overall" |
+export type TrainingStages = "overall" |
   "sources-load" |
   "source-load" |
   "split-documents" |
@@ -42,7 +41,7 @@ export function trainingSetRoomName(id: string) {
 const mutex = new Mutex();
 
 setInterval(() => {
-  console.log("trainingApiStatus", trainingApiStatus);
+  // console.log("trainingApiStatus", trainingApiStatus);
 }, 5000);
 
 export function trainingHandler(socket: Socket, io: Server) {
@@ -81,19 +80,11 @@ export function trainingHandler(socket: Socket, io: Server) {
     });
   }
 
-  async function doTraining(id: string, token) {
+  async function doTraining(id: string, token: string) {
     const roomName = trainingSetRoomName(id);
     console.log("training started", id, roomName)
     const emit = (message: string, data: any) => io.in(roomName).emit(message, data);
     invariant(id, "trainingSetId is required");
-    const verifiedToken = verifyJWT(token);
-    console.log(verifiedToken);
-    if (!verifiedToken) {
-      console.log("Invalid token");
-      emit("training-error", { error: "Invalid token" });
-      removeTraining(id);
-      return;
-    }
 
     const prisma = new PrismaClient();
     const set = await prisma.trainingSet.findUnique({
@@ -147,9 +138,10 @@ export function trainingHandler(socket: Socket, io: Server) {
       }
     }
 
-    function progressNotifiier(progress: ProgressPayload) {
-      progressState[progress.stage] = progress;
-      emit("training-progress", progressState);
+    //(payload: ProgressPayload | ((stage: string, progress: ProgressPayload) => ProgressPayload)): void
+    function progressNotifiier(payload: ProgressPayload) {
+        progressState[payload.stage] = payload;
+        emit("training-progress", progressState);
     }
 
     try {
@@ -159,7 +151,7 @@ export function trainingHandler(socket: Socket, io: Server) {
           trainingSet: set,
           onProgress: progressNotifiier,
           options,
-          userId: (verifiedToken.body as unknown as { sub: string }).sub
+          userId: (socket.decodedToken.sub as string)
         }
       );
 
@@ -187,7 +179,7 @@ export function trainingHandler(socket: Socket, io: Server) {
           id: undefined,
           user: {
             connect: {
-              id: (verifiedToken.body as unknown as { sub: string }).sub
+              id: socket.decodedToken.sub
             }
           },
           trainingSet: {

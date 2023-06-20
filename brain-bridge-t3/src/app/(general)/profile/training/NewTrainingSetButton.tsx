@@ -4,9 +4,9 @@ import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
 import { NewButton } from "~/app/components/NewButton";
 import DataClient from "~/utils/data-client";
-import promptTemplate from "./PromptTemplate";
+import promptTemplate from "./DEPRECATED_PromptTemplate";
 import { useRouter } from "next/navigation";
-import { defaultTrainingOptions } from "~/server/interfaces/types";
+import { defaultTrainingOptions } from "~/data/interfaces/types";
 
 interface NewTrainingSetButtonProps {
   empty?: boolean;

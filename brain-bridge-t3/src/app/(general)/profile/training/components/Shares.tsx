@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
-import { type TrainingSetWithRelations } from "~/server/interfaces/types";
+import { type TrainingSetWithRelations } from "~/data/interfaces/types";
 import { SaveIcon, TrashCan } from "./SvgIcons";
 import Select from "~/app/components/Select";
 import DeleteButton from "../../components/DeleteButton";

@@ -12,9 +12,9 @@ export class AuthTokenManager {
   private _refreshingToken = false;
   private _REFRESH_TIME = ms("5m");
   private _mutex: Mutex;
-  private _statusMutex = new Mutex({ name: 'AuthTokenManager status ' + this._id, logging: true });
+  private _statusMutex = new Mutex({ name: 'AuthTokenManager status ' + this._id, logging: false });
   constructor() {
-    this._mutex = new Mutex({ name: 'AuthTokenManager ' + this._id, logging: true });
+    this._mutex = new Mutex({ name: 'AuthTokenManager ' + this._id, logging: false });
     this.refreshTokenIfNecessary();
     this.interval = setInterval(() => this.refreshTokenIfNecessary.bind(this), this._REFRESH_TIME);
   }
@@ -46,55 +46,65 @@ export class AuthTokenManager {
     }).catch(console.error);
   }
 
-  private async getToken(): Promise<string | null> {
+  private async getToken(): Promise<void> {
     const abortController = new AbortController();
     abortController.signal.addEventListener('abort', () => {
       console.log("Aborting token fetch", this._id)
     });
     const task = (async () => {
       if (this.tokenIsValid && this._token) {
-        console.log("Token is valid, returning without a fetch");
+        // Already have a valid token
         return this._token;
-      } else {
-        console.log("Token is invalid, fetching new token", this.tokenIsValid, this._token);
       }
+      // Timeout if we don't get a response in 3 seconds
       const abortInterval = setTimeout(() => {
         abortController.abort();
       }, ms("3s"));
-      console.log("Refreshing token");
+
+      // Flag that a fetch has started
       this._refreshingToken = true;
-      console.log("Getting new token");
+
+      // Fetch the token
       let result: { token: string | null } | null = null;
       result = await isomorphicGenerateToken(result);
       this._token = result.token;
       this._tokenExpiration = Date.now() + ms("1m");
+
+      // Dispatch the token to all subscribers
+      console.log("Notifying", this.authTokenSubscribers.size, "subscribers")
       this.authTokenSubscribers.forEach((callback) => {
         callback(this._token);
       });
+
+      // Flag that the fetch has finished
       this._refreshingToken = false;
+
+      // Abandon the abort timeout
       clearTimeout(abortInterval);
-      console.log("Got new token", this._token);
       return result.token;
     });
-    task.bind(this);
-    const id = generateId();
-    console.log("Running task", id, this._id, new Date().toISOString());
-    const result = await this._mutex.run(task);
-    console.log("Completed", id, this._id, new Date().toISOString())
-    return result;
+    task.bind(this);    
+    await this._mutex.run(task);
   }
 }
 async function isomorphicGenerateToken(result: { token: string | null; } | null) {
   if (typeof window !== 'undefined') {
+    console.log("Client side token fetch")
     result = await DataClient.getToken();
+    console.log("Client side token result", result)
 
   } else {
+    console.log("Server side token fetch")
     const { getServerSession } = await import('~/server/auth');
     const { createJwt } = await import('~/lib/jwt');
     const session = await getServerSession();
     if (!session) throw new Error("No session");
     result = { token: createJwt(session.user) };
+    console.log("Server side token result", result)
   }
   return result;
 }
 
+
+const defaultTokenManager = new AuthTokenManager();
+export default defaultTokenManager;

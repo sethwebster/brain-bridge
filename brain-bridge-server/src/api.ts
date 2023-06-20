@@ -3,12 +3,14 @@ import nocache from "nocache";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import apiV1 from "./api-v1/index";
-import * as errorHandler from "./helpers/errorHandler";
-import home from "./home";
+import apiV1 from "./api-v1/index.js";
+import * as errorHandler from "./helpers/errorHandler.js";
+import home from "./home.js";
 import http from 'http';
 import { Server } from "socket.io";
-import { messageRouter } from "./api-v1/sockets";
+import { messageRouter } from "./api-v1/sockets.js";
+import { authorize } from '@thream/socketio-jwt'
+import invariant from "tiny-invariant";
 class App {
   public express: express.Application;
   public io: Server;
@@ -19,7 +21,7 @@ class App {
     this.setMiddlewares();
     this.setRoutes();
     this.catchErrors();
-    this.setUpSockets();
+    this.io = this.setUpSockets();
   }
 
 
@@ -35,26 +37,28 @@ class App {
 
   private setUpSockets() {
     console.log("Setting up sockets...")
-    this.io = new Server(this.server, {
+    const io = new Server(this.server, {
       cors: {
         origin: "*",
       }
     });
-    // TODO: Add authentication correctly
-    // this.io.use((socket, next) => {
-    //   const token = socket.handshake.auth.token;
-    //   console.log("middleware token", token)
-    //   next();
-    // });
-    this.io.on('connection', (socket) => {
-      console.log('a user connected');
+    invariant(process.env.NEXTAUTH_SECRET, "NEXTAUTH_SECRET is not defined");
+    io.use(authorize({
+      secret: process.env.NEXTAUTH_SECRET,
+      onAuthentication: async (decodedToken) => {
+        return true;
+      }
+    })
+    )
+
+    io.on('connection', (socket) => {
+      console.log('...a user connected');
       messageRouter(socket, this.io)
       socket.on('disconnect', () => {
-        console.log('user disconnected');
+        console.log('...user disconnected');
       });
     });
-
-
+    return io;
   }
 
   private setRoutes(): void {

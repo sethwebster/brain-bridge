@@ -1,4 +1,4 @@
-import { type QuestionAndAnswerPartial } from "~/server/interfaces/types";
+import { type QuestionAndAnswerPartial } from "~/data/interfaces/types";
 
 const replaceTokens = (textWithTokens: string, tokensWithAnswers: QuestionAndAnswerPartial[]) => {
   return tokensWithAnswers.reduce((acc, curr) => {

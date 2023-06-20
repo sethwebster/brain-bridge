@@ -4,9 +4,9 @@ import {
   type ChatResponseMode,
   type ConversationWithRelations,
   type MessageWithRelations,
-} from "~/server/interfaces/types";
+} from "~/data/interfaces/types";
 import { type Session } from "next-auth";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ChatDisplay, {
   type Viewer,
   type NewMessage,
@@ -14,9 +14,11 @@ import ChatDisplay, {
 // import useAudioPlayer from "~/hooks/useAudioPlayer";
 import DataClient from "~/utils/data-client";
 import generateId from "~/utils/generate-id";
-import { useAuthenticatedSocket } from "~/hooks/use-socket";
 import generateChatErrorMessage from "~/utils/error-chat-message-generator";
 import { useAuthToken } from "~/hooks/useAuthToken";
+import useSocket from "~/hooks/use-socket";
+import { toast } from "react-toastify";
+import { RoomJoiner } from "../../components/RoomJoiner";
 
 export default function PrivateChat({
   selectedChat,
@@ -36,22 +38,25 @@ export default function PrivateChat({
   const [callback, setCallback] = useState<(() => void) | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const socket = useAuthenticatedSocket();
+  const socket = useSocket();
   const { token } = useAuthToken();
 
   useEffect(() => {
     if (!selectedChat) return;
     if (socket) {
-      if (token) socket.join(selectedChat.id, "private");
-      const leaveRoom = () => {
-        if (!token) return;
-        socket.leave(selectedChat.id, "private");
-      };
+      // if (token) socket.join(selectedChat.id, "private");
+      // const leaveRoom = () => {
+      //   if (!token) return;
+      //   socket.leave(selectedChat.id, "private");
+      // };
 
       const removeMessageListener = socket.onMessage(
         "message",
         (payload: { message: MessageWithRelations }) => {
-          setAnswerPending(false);
+          console.log("message", payload.message);
+          if (payload.message.sender.name !== session.user.name) {
+            setAnswerPending(false);
+          }
           setSelectedChatMessages((messages) => [...messages, payload.message]);
           callback?.();
         }
@@ -64,9 +69,17 @@ export default function PrivateChat({
         }
       );
 
+      const removeTypingIndicatorListenerEnded = socket.onMessage(
+        "llm-response-ended",
+        () => {
+          setAnswerPending(false);
+        }
+      );
+
       const removeErrorListener = socket.onMessage(
         "message-error",
         (payload: { error?: string }) => {
+          toast.error(payload.error ?? "Unknown error");
           setAnswerPending(false);
           if (payload.error) {
             setSelectedChatMessages((messages) => [
@@ -80,11 +93,20 @@ export default function PrivateChat({
       return () => {
         removeMessageListener();
         removeTypingIndicatorListener();
+        removeTypingIndicatorListenerEnded();
         removeErrorListener();
-        leaveRoom();
+        // leaveRoom();
       };
     }
-  }, [callback, selectedChat, selectedChat.id, session.user.id, socket, token]);
+  }, [
+    callback,
+    selectedChat,
+    selectedChat.id,
+    session.user.id,
+    session.user.name,
+    socket,
+    token,
+  ]);
   // const playVoice = useCallback(
   //   (fileUrl: string) => {
   //     player.play(fileUrl);
@@ -121,6 +143,7 @@ export default function PrivateChat({
             publicChatInstanceId: null,
           },
         };
+        console.log("SENDING MESSAGE", newMessageAugment);
         // setSelectedChatMessages((messages) => [...messages, newMessageAugment]);
         socket.sendMessage("message", { mode, message: newMessageAugment });
       };
@@ -149,6 +172,7 @@ export default function PrivateChat({
   if (!session.user?.email) throw new Error("No user email");
   return (
     <div className="w-full pt-20">
+      <RoomJoiner room={selectedChat.id} />
       <ChatDisplay
         answerPending={answerPending}
         soundPending={false}
@@ -161,7 +185,7 @@ export default function PrivateChat({
         viewer={session.user as Viewer}
         onClearChatClicked={handleClearChatClicked}
         notifyNewMessage={handleNotifyCallbackSet}
-        isConnected={socket?.connected ?? false}
+        isConnected={socket.status === "authenticated" ?? false}
       />
     </div>
   );

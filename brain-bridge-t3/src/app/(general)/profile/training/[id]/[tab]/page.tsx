@@ -4,7 +4,7 @@ import { getServerSession } from "~/server/auth";
 import { removeFooter } from "~/utils/prompts";
 import ServerData from "~/server/server-data";
 import TrainingSetPage from "../../components/TrainingSetPage";
-import promptTemplate from "../../PromptTemplate";
+import promptTemplate from "../../DEPRECATED_PromptTemplate";
 import { type TabsList } from "../../components/TrainingSetForm";
 
 export default async function TrainingPage({

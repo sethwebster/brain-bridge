@@ -4,16 +4,19 @@ import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { CohereEmbeddings } from 'langchain/embeddings/cohere';
 import Cohere from "cohere-ai";
 import { Prisma, type TrainingSource } from '@prisma/client';
-import R2 from './R2';
-import { getTempFilePath } from './get-temp-file';
-import client from './milvus';
+import tiktoken from '@dqbd/tiktoken';
+import path from 'path';
+import fetch from 'node-fetch';
 import { Document } from "langchain/document";
 import { TextLoader } from "langchain/document_loaders/fs/text"
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
-import { CountKeeper } from './count-keeper';
-import tiktoken from '@dqbd/tiktoken';
-import cleanUpHtml from './clean-up-html';
-import path from 'path';
+import R2 from './R2.ts';
+import { getTempFilePath } from './get-temp-file.ts';
+import client from './milvus.ts';
+import { CountKeeper } from './count-keeper.ts';
+import cleanUpHtml from './clean-up-html.ts';
+import { TrainingStages } from '../api-v1/sockets/trainingHandler.ts';
+
 interface TrainingSetBuilderOptions {
   maxSegmentLength?: number;
   overlapBetweenSegments?: number;
@@ -47,8 +50,8 @@ export class TrainingSetBuilder {
     this.onProgress = onProgress;
     this.userId = userId;
     this.options = {
-      maxSegmentLength: parseInt((options?.maxSegmentLength.toString() ?? "2000")),
-      overlapBetweenSegments: parseInt((options?.overlapBetweenSegments.toString() ?? "200")),
+      maxSegmentLength: parseInt(((options?.maxSegmentLength ?? 2000).toString())),
+      overlapBetweenSegments: parseInt(((options?.overlapBetweenSegments ?? 200).toString())),
     }
   }
 
@@ -364,10 +367,10 @@ export class TrainingSetBuilder {
 }
 
 export interface ProgressPayload {
-  stage: string; statusText: string, progress: number, additionalInfo?: string
+  stage: TrainingStages; statusText: string, progress: number, additionalInfo?: string
 }
 export interface ProgressNotifier {
-  (payload: ProgressPayload | ((stage: string, progress: ProgressPayload) => ProgressPayload)): void;
+  (payload: ProgressPayload): void;
 }
 
 export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>()({

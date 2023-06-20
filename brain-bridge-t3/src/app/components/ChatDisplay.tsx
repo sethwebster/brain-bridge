@@ -12,7 +12,7 @@ import {
 import {
   type ChatResponseMode,
   type MessageWithRelations,
-} from "~/server/interfaces/types";
+} from "~/data/interfaces/types";
 
 export interface Viewer {
   id: string;

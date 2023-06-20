@@ -1,15 +1,10 @@
 import * as jwks from "jwks-rsa";
-import * as jwt from "express-jwt";
+import { expressjwt as jwt } from "express-jwt";
+import invariant from "tiny-invariant";
 
+invariant(process.env.NEXTAUTH_SECRET, "NEXTAUTH_SECRET is not defined");
 var jwtAuthCheck = jwt({
-  secret: jwks.expressJwtSecret({
-    cache: true,
-    rateLimit: true,
-    jwksRequestsPerMinute: 5,
-    jwksUri: `${
-      process.env.AUTH0_ISSUER_BASE_URL // "https://fabianferno.us.auth0.com/"
-    }.well-known/jwks.json`,
-  }),
+  secret: process.env.NEXTAUTH_SECRET,
   audience: process.env.APP_BASE_URL, // "http://localhost:5000",
   issuer: process.env.AUTH0_ISSUER_BASE_URL, // "https://fabianferno.us.auth0.com/",
   algorithms: ["RS256"],

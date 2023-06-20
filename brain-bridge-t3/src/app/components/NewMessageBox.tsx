@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from "react";
-import Input from "./Input";
 import AutoSizingTextArea from "../(general)/profile/training/components/AutoSizingTextArea";
 
 interface NewMessageBoxProps {
@@ -51,11 +50,12 @@ export default function NewMessageBox({
 
   return (
     <AutoSizingTextArea
+      autoFocus
       disabled={!isConnected}
       ref={textRef}
       name="message"
       placeholder={isConnected ? "Type your message here" : "Offline"}
-      className="transition-all mb-4 flex-grow rounded border bg-slate-400 bg-opacity-95 p-2 shadow-inner outline-none disabled:opacity-50 dark:bg-slate-500"
+      className="mb-4 flex-grow rounded border bg-slate-400 bg-opacity-95 p-2 shadow-inner outline-none transition-all disabled:opacity-50 dark:bg-slate-500"
       value={currentMessageText}
       onKeyDown={handleKeyDown}
       onChange={handleTextChanged}

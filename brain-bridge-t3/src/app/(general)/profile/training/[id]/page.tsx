@@ -3,7 +3,7 @@ import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
 import { removeFooter } from "~/utils/prompts";
 import TrainingSetPage from "../components/TrainingSetPage";
-import promptTemplate from "../PromptTemplate";
+import promptTemplate from "../DEPRECATED_PromptTemplate";
 import ServerData from "~/server/server-data";
 
 export default async function TrainingPage({

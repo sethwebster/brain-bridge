@@ -28,7 +28,7 @@ export const RegisterButton = () => {
 
 export const LogoutButton = () => {
   const handleSignOut = useCallback(() => {
-    signOut().catch(console.error)
+    signOut({callbackUrl:"/login"}).catch(console.error)
 
   }, []);
   return (

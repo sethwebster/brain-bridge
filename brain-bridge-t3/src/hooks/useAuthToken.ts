@@ -1,13 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { AuthTokenManager } from "./AuthTokenManager";
-
-const authTokenManager = new AuthTokenManager();
+import defaultTokenManager from "./AuthTokenManager";
 
 export function useAuthToken() {
-  const [token, setToken] = useState<string | null>(authTokenManager.token);
-
+  const [token, setToken] = useState<string | null>(defaultTokenManager.token);
   useEffect(() => {
-    const unsubscribe = authTokenManager.subscribeToAuthToken((token) => {
+    const unsubscribe = defaultTokenManager.subscribeToAuthToken((token) => {
       setToken(token);
     });
     return () => {
@@ -17,9 +14,10 @@ export function useAuthToken() {
 
   const isTokenValid = useCallback(() => {
     if (!token) return false;
-    return authTokenManager.tokenIsValid;
+    return defaultTokenManager.tokenIsValid;
   }, [token]);
 
+  console.log("useAuthToken", token, isTokenValid())
   return {
     token, isTokenValid
   };

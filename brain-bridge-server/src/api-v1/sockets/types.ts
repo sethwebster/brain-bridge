@@ -16,7 +16,13 @@ export const messageWithRelations = Prisma.validator<Prisma.MessageArgs>()({
   include: {
     sender: true,
     conversation: true,
-    publicChatInstance: true,
+    publicChatInstance: {
+      include: {
+        participants: true,
+        publicChat: true,
+        messages: false,
+      }
+    },
   }
 });
 

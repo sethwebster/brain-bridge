@@ -4,10 +4,15 @@ import {
   getServerSession as getServerSessionBase,
   type NextAuthOptions,
   type DefaultSession,
+
 } from "next-auth";
+import { CredentialsProvider } from "next-auth/providers";
 import Auth0Provider from "next-auth/providers/auth0";
+import Credentials from "next-auth/providers/credentials";
+import { createJwt } from "~/lib/jwt";
 // import { env } from "~/env.mjs";
 import { prisma } from "~/server/db";
+import generateId from "~/utils/generate-id";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -29,6 +34,7 @@ declare module "next-auth" {
   //   // role: UserRole;
   // }
 }
+
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -53,6 +59,37 @@ export const authOptions: NextAuthOptions = {
   },
   adapter: PrismaAdapter(prisma),
   providers: [
+    Credentials({
+      name: "anonymous",
+      credentials: {},
+      async authorize() {
+        return new Promise((resolve) => {
+          resolve({
+            id: generateId(), email: "anonymous", image: null, name: "anonymous"
+          })
+        })
+      }
+    }),
+    // Credentials
+    // CredentialsProvider({
+    //   name: "anon",
+    //   credentials: {},
+    //   async authorize(credentials, req) {
+    //     //no need to check anything here, just create a new CT anonymous session and return the token
+    //     const authResult = await createAnonymousSession();
+    //     /**
+    //      * https://docs.commercetools.com/tutorials/anonymous-session#creating-a-token-with-a-new-anonymous-session
+    //      * {
+    //          "access_token": "vkFuQ6oTwj8_Ye4eiRSsqMeqLYNeQRJi",
+    //          "token_type": "Bearer",
+    //          "expires_in": 172800,
+    //          "refresh_token": "{projectKey}:OWStLG0eaeVs7Yx3-mHcn8iAZohBohCiJSDdK1UCJ9U",
+    //          "scope": "view_products:{projectKey} manage_my_orders:{projectKey} manage_my_profile:{projectKey}"
+    //        }
+    //      */
+    //     return { token: authResult.accessToken };
+    //   },
+    // }),
     Auth0Provider({
       clientId: process.env.AUTH0_CLIENT_ID || "<notset>",
       clientSecret: process.env.AUTH0_CLIENT_SECRET || "<notset>",
@@ -62,7 +99,7 @@ export const authOptions: NextAuthOptions = {
         params: {
           prompt: "login",
         }
-        
+
       }
     })
     /**
