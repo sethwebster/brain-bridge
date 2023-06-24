@@ -7,7 +7,7 @@ COPY ./brain-bridge-server/package.json .
 COPY ./brain-bridge-server/pnpm-lock.yaml .
 RUN npm install -g pnpm
 RUN pnpm install
-
+RUN export
 COPY ./brain-bridge-server/ .
 COPY ./brain-bridge-t3/prisma/schema.prisma ./prisma/schema.prisma
 RUN pnpm install
