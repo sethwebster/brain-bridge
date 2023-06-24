@@ -2,7 +2,7 @@ FROM node:18-alpine as builder
 RUN apk --update add --no-cache  python3 make g++ && rm -rf /var/cache/apk/*
 
 WORKDIR /app
-
+ARG DATABASE_URL
 COPY ./brain-bridge-server/package.json .
 COPY ./brain-bridge-server/pnpm-lock.yaml .
 RUN npm install -g pnpm
