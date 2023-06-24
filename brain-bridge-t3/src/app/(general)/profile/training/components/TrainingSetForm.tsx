@@ -363,18 +363,18 @@ export function TrainingSetForm({
                 // eslint-disable-next-line @typescript-eslint/no-misused-promises
                 onClick={handleTrain}
                 disabled={
-                  socketRef.status !== "connected" ||
+                  socketRef.status !== "authenticated" ||
                   isDirty ||
                   isTraining ||
                   trainingSetData.version === trainingSet.trainingIndexVersion
                 }
                 title={
-                  socketRef.status === "connected" ? "Train the model" : "Server is offline"
+                  socketRef.status === "authenticated" ? "Train the model" : "Server is offline"
                 }
                 className={`w-24 rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400 ${
                   isTraining ? "animate-pulse" : ""
                 } ${
-                  socketRef.status === "connected"
+                  socketRef.status === "authenticated"
                     ? "bg-green-400 dark:bg-green-500"
                     : "disabled:bg-red-400 disabled:dark:bg-red-500"
                 }`}
