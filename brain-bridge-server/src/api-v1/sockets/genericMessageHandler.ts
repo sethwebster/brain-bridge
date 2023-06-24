@@ -51,33 +51,37 @@ export abstract class GenericMessageHandler<O> {
   abstract getOptimisticResponse(message: MessageWithRelations): Promise<O> | O;
 
   async handle(event: string, { data: { mode, message } }: { data: { mode: ChatResponseMode, message: MessageWithRelations } }): Promise<void> {
-    console.log("genericMessageHandler.ts: handle: event: ", event, "message: ", message, "mode: ", mode);
-    if (!this.handlesEvent(event)) return;
-    const initialResponse = this.getOptimisticResponse(message);
-    if (initialResponse) {
-      // Optimistically send to room
-      this.sendToRoom(initialResponse);
-    }
-    // Fetch the conversation
-    const conversation = await this.fetchConversationForMessage(message);
-    const type = message.conversationId ? 'conversation' : 'publicChatInstance';
-    invariant(conversation, "Conversation must exist");
-    switch (type) {
-      case "conversation":
-        const storedMessage = await this.storeMessage(conversation as ConversationWithRelations, message);
-        const response = await this.generateResponse(conversation as ConversationWithRelations, storedMessage, mode);
-        const newMessagePrivate = await this.storeMessage(conversation as ConversationWithRelations, response);
-        console.log("newMessagePrivate: ", newMessagePrivate);
-        this.sendToRoom({ message: newMessagePrivate });
-        break;
-      case "publicChatInstance":
-        const storedPublicMessage = await this.storeMessage(conversation as PublicChatInstanceWithRelations, message);
-        const publicResponse = await this.generateResponse(conversation as PublicChatInstanceWithRelations, storedPublicMessage, mode);
-        console.log("publicResponse: ", publicResponse)
-        const newMessagePublic = await this.storeMessage(conversation as PublicChatInstanceWithRelations, publicResponse);
-        console.log("newMessagePublic: ", newMessagePublic);
-        this.sendToRoom({ message: newMessagePublic });
-        break;
+    try {
+      if (!this.handlesEvent(event)) return;
+      const initialResponse = this.getOptimisticResponse(message);
+      if (initialResponse) {
+        // Optimistically send to room
+        this.sendToRoom(initialResponse);
+      }
+      // Fetch the conversation
+      const conversation = await this.fetchConversationForMessage(message);
+      const type = message.conversationId ? 'conversation' : 'publicChatInstance';
+      invariant(conversation, "Conversation must exist");
+      switch (type) {
+        case "conversation":
+          const storedMessage = await this.storeMessage(conversation as ConversationWithRelations, message);
+          const response = await this.generateResponse(conversation as ConversationWithRelations, storedMessage, mode);
+          const newMessagePrivate = await this.storeMessage(conversation as ConversationWithRelations, response);
+          console.log("newMessagePrivate: ", newMessagePrivate);
+          this.sendToRoom({ message: newMessagePrivate });
+          break;
+        case "publicChatInstance":
+          const storedPublicMessage = await this.storeMessage(conversation as PublicChatInstanceWithRelations, message);
+          const publicResponse = await this.generateResponse(conversation as PublicChatInstanceWithRelations, storedPublicMessage, mode);
+          console.log("publicResponse: ", publicResponse)
+          const newMessagePublic = await this.storeMessage(conversation as PublicChatInstanceWithRelations, publicResponse);
+          console.log("newMessagePublic: ", newMessagePublic);
+          this.sendToRoom({ message: newMessagePublic });
+          break;
+      }
+    } catch (e) {
+      console.error(e);
+      this.socket.emit(`${event}-error`, e);
     }
   }
 
