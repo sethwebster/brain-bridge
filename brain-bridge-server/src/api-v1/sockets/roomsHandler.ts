@@ -2,9 +2,9 @@ import { PrismaClient, TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
 import { Server, Socket } from "socket.io";
 import { GenericMessageHandler } from "./genericMessageHandler.ts";
-import { ChatMessageHandler } from "./chatMessageHandler.ts";
 import { MessageWithRelations, messageWithRelations } from "./types.ts";
 import Mutex from "../../lib/mutex.ts";
+import { ChatMessageHandler } from "./chatMessageHandler.ts";
 
 export function getRoomId(id: string) {
   return `private-room-${id}`;

@@ -1,16 +1,12 @@
 import invariant from "tiny-invariant";
-import { Conversation, Message, Participant, Prisma, PublicChatInstance, Usage } from '@prisma/client';
-import { Server, Socket } from "socket.io";
+import { Conversation, Message, Participant, Prisma, PublicChatInstance } from '@prisma/client';
 import { prisma } from "../../lib/db.ts";
 import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm.ts";
 import replaceTokens from "../../lib/replace-tokens.ts";
-import { storeUserMessage } from "./data-helpers.ts";
-import { ChatResponseMode, ConversationWithRelations, MessageWithRelations, PublicChatInstanceWithRelations, messageWithRelations } from "./types.ts";
-import { getRoomId } from "./roomsHandler.ts";
+import { ChatResponseMode, ConversationWithRelations, MessageWithRelations, PublicChatInstanceWithRelations } from "./types.ts";
 import { promptFooter, promptHeader } from "../../lib/prompt-templates.ts";
 import { runWithIndicator } from "./runWithIndicator.ts";
-import { runWithCostStorage } from "./runWithCostStorage.ts";
-import { GenericMessageHandler, GenericMessageHandlerWithCosts, TokenUsageFn } from "./genericMessageHandler.ts";
+import { GenericMessageHandlerWithCosts, TokenUsageFn } from "./genericMessageHandler.ts";
 
 // interface RecursionPayload {
 //   message: Omit<MessageWithRelations, "publicChatInstanceId" | "publicChatInstance"> | undefined | null;
