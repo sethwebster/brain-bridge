@@ -7,8 +7,16 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
   const session = await getServerSession();
   invariant(session, "User must be logged in to retrieve a file")
   const { slug } = params;
-  const key = [session?.user.id, ...slug].join("/")
-  const url = await R2.getSignedUrlForRetrieval(key);
-  const data = await fetch(url).then(r => r.blob());
-  return new Response(data);
+  if (slug.join() === "web") {
+    const url = req.nextUrl.searchParams.get("url")
+    console.log("fetching", url)
+    invariant(url, "url is required");
+    const data = await fetch(url).then(r => r.blob());
+    return new Response(data);
+  } else {
+    const key = [session?.user.id, ...slug].join("/")
+    const url = await R2.getSignedUrlForRetrieval(key);
+    const data = await fetch(url).then(r => r.blob());
+    return new Response(data);
+  }
 }

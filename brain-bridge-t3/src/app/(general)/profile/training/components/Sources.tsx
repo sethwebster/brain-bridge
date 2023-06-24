@@ -1,6 +1,6 @@
 import { useFilePicker } from "use-file-picker";
 import { memo, useCallback, useMemo, useState } from "react";
-import { PlusAddIcon, TrashCan, UrlIcon } from "./SvgIcons";
+import { DownloadIcon, PlusAddIcon, TrashCan, UrlIcon } from "./SvgIcons";
 import { isValidURL } from "~/utils/validation";
 import { type TrainingSource } from "@prisma/client";
 import Modal from "~/app/components/ModalDialog";
@@ -16,6 +16,10 @@ import path from "path";
 import delay from "~/utils/delay";
 import { FolderIcon } from "~/app/components/SvgIcons";
 import DeleteButton from "../../components/DeleteButton";
+import * as R from "ramda";
+import { saveAs } from "file-saver";
+import JsZip from "jszip";
+import { extension } from "mime-types";
 
 function Sources({
   sources,
@@ -48,9 +52,7 @@ function Sources({
           : file.name;
       setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);
       const parts = [trainingSetId, fileName].filter((p) => p.length > 0);
-      console.log("parts", parts);
       const fileKey = parts.join("/");
-      console.log("fileKey", fileKey);
       const { url } = await DataClient.getSignedUrl(fileKey);
       const final = `${fileKey}`;
       let response = await R2Client.uploadFile(url, file);
@@ -252,6 +254,65 @@ function Sources({
     } catch (err) {}
   }, [onFilesSelected]);
 
+  const handleDownloadClick = useCallback(async () => {
+    console.log("Download files");
+    const sourcePromises = sources.map((source, i) => {
+      invariant(process.env.NEXT_PUBLIC_BASE_URL, "Base URL is required");
+      console.log(source);
+      const item =
+        source.name.length > 0 && source.name.startsWith("http")
+          ? `web?url=${source.name}`
+          : source.content;
+      const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/files/${item}`;
+      console.log(url);
+      return fetch(url).then((res) => {
+        return {
+          source,
+          blob: res.blob(),
+          type: res.headers.get("content-type"),
+        };
+      });
+    });
+
+    const chunked = R.splitEvery(10, sourcePromises);
+
+    const fetchResults = await Promise.all(
+      chunked.map(async (chunk, index) => {
+        await delay(index * 100);
+        return await Promise.all(chunk);
+      })
+    );
+
+    const blobs = fetchResults.flat();
+
+    const zip = JsZip();
+    blobs.forEach((item, i) => {
+      console.log("Zipping", item);
+
+      const dir = path.dirname(item.source.name);
+      const name = path.basename(item.source.name);
+      let ext = path.extname(name);
+      if (ext.length === 0 && item.type) {
+        const resolvedExt = extension(item.type);
+        if (resolvedExt) {
+          ext = `.${resolvedExt}`;
+        }
+      }
+
+      zip.file(
+        `${dir}/${name.replace(`.${ext}`, "")}${ext}`
+          .replace("http://", "")
+          .replace("https://", ""),
+        item.blob
+      );
+    });
+    await zip.generateAsync({ type: "blob" }).then((zipFile) => {
+      const currentDate = new Date().getTime();
+      const fileName = `training-set-data-${currentDate}.zip`;
+      saveAs(zipFile, fileName);
+    });
+  }, [sources]);
+
   const isNewUrlValid = useMemo(() => {
     return isValidURL(newUrlText);
   }, [newUrlText]);
@@ -305,10 +366,18 @@ function Sources({
             </button>
             <button
               disabled={disabled}
-              className="rounded bg-blue-400 p-2 shadow-md"
+              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
               onClick={handleAddUrlClick}
             >
               <UrlIcon />
+            </button>
+            <button
+              title="Download Sources (only files)"
+              disabled={disabled}
+              className="rounded bg-blue-400 p-2 shadow-md"
+              onClick={handleDownloadClick}
+            >
+              <DownloadIcon />
             </button>
           </div>
         </header>

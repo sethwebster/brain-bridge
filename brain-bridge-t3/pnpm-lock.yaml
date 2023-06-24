@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -80,6 +80,9 @@ dependencies:
   mime-types:
     specifier: ^2.1.35
     version: 2.1.35
+  mimetypes:
+    specifier: ^0.1.1
+    version: 0.1.1
   ms:
     specifier: ^2.1.3
     version: 2.1.3
@@ -4722,6 +4725,10 @@ packages:
     engines: {node: '>= 0.6'}
     dependencies:
       mime-db: 1.52.0
+    dev: false
+
+  /mimetypes@0.1.1:
+    resolution: {integrity: sha512-oLlh4gswquxtVNXixpQo9+V4ScphCk6g6ip9L/UAltfcs/sE+mPeua4Yc6q/zgxVgK8u5njo+Dgj/A+wit728g==}
     dev: false
 
   /mimic-fn@2.1.0:

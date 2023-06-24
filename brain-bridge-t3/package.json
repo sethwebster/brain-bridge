@@ -35,6 +35,7 @@
     "langchain": "^0.0.71",
     "lodash.debounce": "^4.0.8",
     "mime-types": "^2.1.35",
+    "mimetypes": "^0.1.1",
     "ms": "^2.1.3",
     "next": "13.4.5",
     "next-auth": "^4.22.1",
