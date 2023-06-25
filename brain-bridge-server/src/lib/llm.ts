@@ -1,6 +1,6 @@
 import { LLMChain, PromptTemplate } from "langchain";
 import { OpenAIChat } from "langchain/llms/openai";
-import { CohereEmbeddings } from "langchain/embeddings/cohere";
+import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { Milvus } from "langchain/vectorstores/milvus";
 import path from "path";
 import { getTempFilePath } from "./get-temp-file.ts";
@@ -32,8 +32,8 @@ export class BrainBridgeStorage<Milvus> implements LangChainStorage<Milvus> {
    */
   async getIndex<Milvus>(id: string): Promise<Milvus> {
     // const embedder = new OpenAIEmbeddings()
-    const embedder = new CohereEmbeddings({
-      apiKey: process.env.COHERE_API_KEY!,
+    const embedder = new OpenAIEmbeddings({
+      openAIApiKey: process.env.OPENAI_API_KEY,
     });
     const vectorStore = await Milvus.fromExistingCollection(
       embedder,
