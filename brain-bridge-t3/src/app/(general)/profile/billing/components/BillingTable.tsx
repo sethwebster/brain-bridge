@@ -1,4 +1,3 @@
-import { Usage } from "@prisma/client";
 import invariant from "tiny-invariant";
 import { type MonthlyCosts } from "~/lib/calculate-costs";
 import { type DateRange } from "~/server/server-data";
@@ -56,9 +55,9 @@ export default function BillingTable({ dateRange, usage }: BillingTableProps) {
     ]!.getUTCFullYear();
 
   const maxCost = Math.max(...Object.values(usage).map((month) => month.cost));
-  const minCost = Math.min(
-    ...[0, ...Object.values(usage).map((month) => month.cost)]
-  );
+  // const minCost = Math.min(
+  //   ...[0, ...Object.values(usage).map((month) => month.cost)]
+  // );
 
   return (
     <div className="">

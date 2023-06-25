@@ -1,7 +1,5 @@
 import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
-import SideBar from "./components/SideBar";
-import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
 import ServerData from "~/server/server-data";
 import Toast from "~/app/components/Toast";
 import SidebarContainer from "./components/SidebarContainer";

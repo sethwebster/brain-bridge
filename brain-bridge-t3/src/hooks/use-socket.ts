@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 
 import { SocketContext } from "~/app/components/SocketProvider";
 import invariant from "tiny-invariant";
@@ -51,7 +51,6 @@ const roomManager = new RoomManager(socket);
 export default function useSocket() {
   const context = useContext(SocketContext);
   const { socket, status } = context;
-  const [connected, setConnected] = useState(false);
   console.log("SocketAuth", socket?.auth)
   function sendMessage<T extends object>(message: string, data: T) {
     logger(message, data, "send");
@@ -89,25 +88,6 @@ export default function useSocket() {
       socket.removeListener(message, wrapper);
     }
   }
-
-  const handleConnected = useCallback(() => {
-    console.log("-- Socket is connected")
-    setConnected(true);
-  }, []);
-
-  const handleDisconnected = useCallback(() => {
-    console.log("-- Socket is disconnected")
-    setConnected(false);
-  }, []);
-
-  useEffect(() => {
-    if (socket) {
-      console.log("useSocket: Socket Set,", socket.connected ? "connected" : "disconnected")
-      setConnected(socket.connected);
-    } else {
-      setConnected(false);
-    }
-  }, [handleConnected, handleDisconnected, socket]);
 
   return {
     status,

@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { LogoutButton } from "./AuthButtons";
 import { getServerSession } from "~/server/auth";
-import invariant from "tiny-invariant";
 
 export const AvatarAndDropDown = async () => {
   const session = await getServerSession();

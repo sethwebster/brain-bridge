@@ -20,6 +20,7 @@ import * as R from "ramda";
 import { saveAs } from "file-saver";
 import JsZip from "jszip";
 import { extension } from "mime-types";
+import { toast } from "react-toastify";
 
 function Sources({
   sources,
@@ -254,62 +255,65 @@ function Sources({
     } catch (err) {}
   }, [onFilesSelected]);
 
-  const handleDownloadClick = useCallback(async () => {
-    console.log("Download files");
-    const sourcePromises = sources.map((source, i) => {
-      invariant(process.env.NEXT_PUBLIC_BASE_URL, "Base URL is required");
-      console.log(source);
-      const item =
-        source.name.length > 0 && source.name.startsWith("http")
-          ? `web?url=${source.name}`
-          : source.content;
-      const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/files/${item}`;
-      console.log(url);
-      return fetch(url).then((res) => {
-        return {
-          source,
-          blob: res.blob(),
-          type: res.headers.get("content-type"),
-        };
-      });
-    });
+  const handleDownloadClick = useCallback(() => {
+    const downloadAndZipFiles = async () => {
+      console.log("Download files");
+      const sourcePromises = sources.map((source) => {
+        invariant(process.env.NEXT_PUBLIC_BASE_URL, "Base URL is required");
+        console.log(source);
+        const item =
+          source.name.length > 0 && source.name.startsWith("http")
+            ? `web?url=${source.name}`
+            : source.content;
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/files/${item}`;
+        console.log(url);
+        return fetch(url).then((res) => {
+          return {
+            source,
+            blob: res.blob(),
+            type: res.headers.get("content-type"),
+          };
+        });
+      }, []);
 
-    const chunked = R.splitEvery(10, sourcePromises);
+      const chunked = R.splitEvery(10, sourcePromises);
 
-    const fetchResults = await Promise.all(
-      chunked.map(async (chunk, index) => {
-        await delay(index * 100);
-        return await Promise.all(chunk);
-      })
-    );
-
-    const blobs = fetchResults.flat();
-
-    const zip = JsZip();
-    blobs.forEach((item, i) => {
-      console.log("Zipping", item);
-
-      const dir = path.dirname(item.source.name);
-      const name = path.basename(item.source.name);
-      let ext = path.extname(name);
-      if (ext.length === 0 && item.type) {
-        const resolvedExt = extension(item.type);
-        if (resolvedExt) {
-          ext = `.${resolvedExt}`;
-        }
-      }
-
-      zip.file(
-        `${dir}/${name.replace(`.${ext}`, "")}${ext}`
-          .replace("http://", "")
-          .replace("https://", ""),
-        item.blob
+      const fetchResults = await Promise.all(
+        chunked.map(async (chunk, index) => {
+          await delay(index * 100);
+          return await Promise.all(chunk);
+        })
       );
-    });
-    await zip.generateAsync({ type: "blob" }).then((zipFile) => {
-      const currentDate = new Date().getTime();
-      const fileName = `training-set-data-${currentDate}.zip`;
-      saveAs(zipFile, fileName);
+
+      const blobs = fetchResults.flat();
+
+      const zip = JsZip();
+      blobs.forEach((item) => {
+        const dir = path.dirname(item.source.name);
+        const name = path.basename(item.source.name);
+        let ext = path.extname(name);
+        if (ext.length === 0 && item.type) {
+          const resolvedExt = extension(item.type);
+          if (resolvedExt) {
+            ext = `.${resolvedExt}`;
+          }
+        }
+
+        zip.file(
+          `${dir}/${name.replace(`.${ext}`, "")}${ext}`
+            .replace("http://", "")
+            .replace("https://", ""),
+          item.blob
+        );
+      });
+      await zip.generateAsync({ type: "blob" }).then((zipFile) => {
+        const currentDate = new Date().getTime();
+        const fileName = `training-set-data-${currentDate}.zip`;
+        saveAs(zipFile, fileName);
+      });
+    };
+    downloadAndZipFiles().catch((err: { message: string }) => {
+      toast.error(err.message);
     });
   }, [sources]);
 

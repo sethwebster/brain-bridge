@@ -2,7 +2,6 @@ import { type Session } from "next-auth";
 import { type NextRequest, NextResponse } from "next/server";
 import { createJwt } from "~/lib/jwt";
 import { getServerSession } from "~/server/auth";
-import delay from "../../../utils/delay"
 
 async function tryGetServerSession() {
   try {
@@ -12,6 +11,8 @@ async function tryGetServerSession() {
     return null;
   }
 }
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   console.log("GET /api/tokens", req.referrer);

@@ -67,23 +67,28 @@ export class AuthTokenManager {
       // Fetch the token
       let result: { token: string | null } | null = null;
       result = await isomorphicGenerateToken(result);
-      this._token = result.token;
-      this._tokenExpiration = Date.now() + ms("1m");
+      if (result) {
+        this._token = result.token;
+        this._tokenExpiration = Date.now() + ms("1m");
 
-      // Dispatch the token to all subscribers
-      console.log("Notifying", this.authTokenSubscribers.size, "subscribers")
-      this.authTokenSubscribers.forEach((callback) => {
-        callback(this._token);
-      });
+        // Dispatch the token to all subscribers
+        console.log("Notifying", this.authTokenSubscribers.size, "subscribers")
+        this.authTokenSubscribers.forEach((callback) => {
+          callback(this._token);
+        });
 
-      // Flag that the fetch has finished
-      this._refreshingToken = false;
+        // Flag that the fetch has finished
+        this._refreshingToken = false;
 
-      // Abandon the abort timeout
-      clearTimeout(abortInterval);
-      return result.token;
+        // Abandon the abort timeout
+        clearTimeout(abortInterval);
+        return result.token;
+      }
+      else {
+        return null;
+      }
     });
-    task.bind(this);    
+    task.bind(this);
     await this._mutex.run(task);
   }
 }
@@ -94,17 +99,20 @@ async function isomorphicGenerateToken(result: { token: string | null; } | null)
     console.log("Client side token result", result)
 
   } else {
-    console.log("Server side token fetch")
-    const { getServerSession } = await import('~/server/auth');
-    const { createJwt } = await import('~/lib/jwt');
-    const session = await getServerSession();
-    if (!session) throw new Error("No session");
-    result = { token: createJwt(session.user) };
-    console.log("Server side token result", result)
+    try {
+      console.log("Server side token fetch")
+      const { getServerSession } = await import('~/server/auth');
+      const { createJwt } = await import('~/lib/jwt');
+      const session = await getServerSession();
+      if (!session) throw new Error("No session");
+      result = { token: createJwt(session.user) };
+      console.log("Server side token result", result)
+    } catch (e) {
+      console.error("Error getting server side token", e)
+    }
   }
   return result;
 }
-
 
 const defaultTokenManager = new AuthTokenManager();
 export default defaultTokenManager;
