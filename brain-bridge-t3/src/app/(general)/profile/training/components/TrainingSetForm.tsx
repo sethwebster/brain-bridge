@@ -328,9 +328,9 @@ export function TrainingSetForm({
 
   const canSave = useMemo(() => {
     const regex = /\{(?!(history|context|prompt)(?:.*)\})\w+\}/g;
-    const allTokensRemoved = regex.exec(trainingSetData.prompt) === null;
+    const allTokensRemoved = true; //regex.exec(trainingSetData.prompt) === null;
     return trainingSetData.name.trim().length > 0 && allTokensRemoved;
-  }, [trainingSetData.name, trainingSetData.prompt]);
+  }, [trainingSetData.name]);
   const allQuestionsAnswered = useMemo(
     () =>
       trainingSetData.questionsAndAnswers.length > 0 &&
