@@ -183,16 +183,87 @@ export abstract class GenericMessageHandler<O> {
 export abstract class GenericMessageHandlerWithCosts<O> extends GenericMessageHandler<O> {
   async generateResponse(conversation: ConversationWithRelations | PublicChatInstance, data: MessageWithRelations, chatResponseMode: ChatResponseMode): Promise<MessageWithRelations> {
     const costs = {
-      tokens: 0
+      tokens: 0,
+      stored: false,
     }
 
     const tokensUsedCallback: TokenUsageFn = (count) => {
       costs.tokens += count;
     }
     const response = await this.generateResponseWithCost(conversation, data, chatResponseMode, tokensUsedCallback);
+
+    this.saveUsage(conversation, costs);
+
     return response;
   }
 
   abstract generateResponseWithCost(conversation: ConversationWithRelations | PublicChatInstance, data: MessageWithRelations, chatResponseMode: ChatResponseMode, tokensUsedCallback: TokenUsageFn): Promise<MessageWithRelations>;
 
+  async saveUsage(conversationOrPublicChatInstance: Pick<ConversationWithRelations, "id" | "trainingSet"> | Pick<PublicChatInstanceWithRelations, "id" | "publicChatId">, cost: { tokens: number; stored: boolean; }) {
+    if ((conversationOrPublicChatInstance as PublicChatInstanceWithRelations).publicChatId) {
+      const conversation = conversationOrPublicChatInstance as PublicChatInstanceWithRelations;
+      const publicChat = await prisma.publicChat.findUnique({
+        where: {
+          id: conversation.publicChatId,
+        },
+      });
+      invariant(publicChat, "Public Chat must exist")
+      const result = await prisma.usage.create({
+        data: {
+          user: {
+            connect: {
+              id: publicChat?.userId,
+            },
+          },
+          trainingSet: {
+            connect: {
+              id: publicChat.trainingSetId
+            },
+          },
+          count: cost.tokens,
+          type: "TOKEN",
+          purpose: "GENERATE",
+          updatedAt: new Date(),
+          createdAt: new Date(),
+          id: undefined,
+          userId: undefined,
+          trainingSetId: undefined,
+        },
+      }).catch(err => console.error(err)).then((usage) => {
+        console.log("usage saved");
+        cost.stored = true;
+        return usage;
+      });
+      return result;
+    } else {
+      const conversation = conversationOrPublicChatInstance as ConversationWithRelations;
+      const result = await prisma.usage.create({
+        data: {
+          user: {
+            connect: {
+              id: conversation.trainingSet.userId,
+            },
+          },
+          trainingSet: {
+            connect: {
+              id: conversation.trainingSet.id,
+            },
+          },
+          count: cost.tokens,
+          type: "TOKEN",
+          purpose: "GENERATE",
+          updatedAt: new Date(),
+          createdAt: new Date(),
+          id: undefined,
+          userId: undefined,
+          trainingSetId: undefined,
+        },
+      }).catch(err => console.error(err)).then((usage) => {
+        console.log("usage saved");
+        cost.stored = true;
+        return usage;
+      });
+      return result;
+    }
+  }
 }

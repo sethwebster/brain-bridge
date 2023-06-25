@@ -1,9 +1,8 @@
 import fs from 'fs'
 import { Milvus } from "langchain/vectorstores/milvus";
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
 import Cohere from "cohere-ai";
-import { Prisma, VectorCache, type TrainingSource } from '@prisma/client';
+import { Prisma, type TrainingSource } from '@prisma/client';
 import tiktoken from '@dqbd/tiktoken';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -16,8 +15,7 @@ import client from './milvus.ts';
 import { CountKeeper } from './count-keeper.ts';
 import cleanUpHtml from './clean-up-html.ts';
 import { TrainingStages } from '../api-v1/sockets/trainingHandler.ts';
-import crypto from "crypto";
-import { prisma } from './db.ts';
+import { CachedEmbeddings } from './CachedEmbeddings.ts';
 
 interface TrainingSetBuilderOptions {
   maxSegmentLength?: number;
@@ -39,83 +37,6 @@ type TrainingSourceInProgress = TrainingSource & {
 export interface BuildResult {
   tokensUsed: number;
   cost: number;
-}
-
-function toSql(value: number[]) {
-  return JSON.stringify(value);
-}
-
-class CachedEmbeddings {
-
-  embedder = new OpenAIEmbeddings({
-    openAIApiKey: process.env.OPENAI_API_KEY!,
-    modelName: "text-embedding-ada-002"
-  });
-
-  async embedDocuments(documents: string[]): Promise<number[][]> {
-
-    const hashed = documents.map(document => {
-      const hash = crypto.createHash('sha256');
-      hash.update(document);
-      const key = hash.digest('hex');
-      return {
-        hash: key, document
-      }
-    });
-
-    const keys = hashed.map(({ hash }) => hash)
-
-    const cached = (await prisma.$queryRaw`
-      SELECT "hash", "embedding"::text FROM "VectorCache" where hash in (${Prisma.join(keys)})
-    ` as (VectorCache & { embedding: number[] })[]).map(c => {
-      return {
-        ...c,
-        embedding: JSON.parse(c.embedding as any as string)
-      }
-    });
-
-    // const cached = await prisma.vectorCache.findMany({
-    //   where: {
-    //     hash: {
-    //       in: keys
-    //     }
-    //   }
-    // }) as (VectorCache & { embedding: number[] })[]
-    // console.log("Found " + cached.length + " cached embeddings.")
-    const filtered = hashed.filter(({ hash }) => {
-      return !cached.find(c => c.hash === hash);// && c.embedding && c.embedding.length > 0);
-    });
-    console.log("Will create embeddings for " + filtered.length + " of " + documents.length + " documents.")
-
-    const rawEmbeddings = await this.embedder.embedDocuments(filtered.map(({ document }) => document));
-
-    const promises = rawEmbeddings.map(async (embedding, i) => {
-      const isUpdated = cached.find(c => c.hash === filtered[i].hash);
-      if (!isUpdated) {
-        await prisma.vectorCache.create({
-          data: {
-            hash: filtered[i].hash,
-          }
-        });
-      }
-      const ready = toSql(embedding);
-
-      await prisma.$executeRaw`UPDATE "VectorCache" SET embedding = (${ready}::vector) WHERE hash = ${filtered[i].hash}`;
-      return embedding;
-    });
-
-    const newEmbeddings = await Promise.all(promises);
-
-    const embeddings = cached.map(c => c.embedding).concat(newEmbeddings);
-
-    return embeddings;
-  }
-
-  embedQuery(document: string): Promise<number[]> {
-    const result = this.embedDocuments([document]);
-    return result.then(r => r[0]);
-  }
-
 }
 
 export class TrainingSetBuilder {
@@ -297,6 +218,11 @@ export class TrainingSetBuilder {
       chunkOverlap: this.options.overlapBetweenSegments,
       separators: ["\n\n", "\n", ".", "?", "!"],
     });
+
+    console.log("options", {
+      chunkSize: this.options.maxSegmentLength,
+      chunkOverlap: this.options.overlapBetweenSegments,
+    })
 
     switch (source.type) {
       /**

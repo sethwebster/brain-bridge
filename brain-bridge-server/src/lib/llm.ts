@@ -123,7 +123,7 @@ export class BrainBridgeLangChain implements LangChainStore {
     });
 
 
-    // console.log("[llm-request]", userPrompt, context, history, mode);
+    console.log("[llm-request]", userPrompt, context, history, mode);
     let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history });
     let response = this.tryParseResponse(userPrompt, rawResponse);
     let usedMode = mode;
