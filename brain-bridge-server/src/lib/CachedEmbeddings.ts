@@ -17,7 +17,7 @@ export class CachedEmbeddings {
 
   async embedDocuments(documents: string[]): Promise<number[][]> {
 
-    const hashed = this.hashDocuments(documents);
+    const hashed = this.hashDocuments(documents)
     const keys = hashed.map(({ hash }) => hash);
     const cached = await this.fetchCachedDocumentsByHashes(keys);
 
@@ -68,7 +68,13 @@ export class CachedEmbeddings {
       return {
         hash: key, document
       };
-    });
+    }).reduce((hashed, doc) => {
+      if (!hashed.find(h => h.hash === doc.hash)) {
+        hashed.push(doc);
+      }
+      return hashed;
+    }, [] as { hash: string; document: string; }[]);
+
     return hashed;
   }
 
