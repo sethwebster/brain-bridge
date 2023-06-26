@@ -23,7 +23,7 @@ export default function RootLayout({
           <SocketProvider>
             <div className="w-full h-full overflow-hidden">
               <NavBar />
-              <div className="flex flex-col h-full mt-16 overflow-auto">
+              <div className="flex flex-col h-full mt-16 overflow-auto bg-slate-100 dark:bg-slate-700">
                 <div className="mt-4">{children}</div>
               </div>
             </div>

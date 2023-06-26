@@ -4,7 +4,6 @@ import {
   MdChat,
   MdChatBubbleOutline,
   MdDashboard,
-  MdReport,
   MdSummarize,
   MdTableChart,
 } from "react-icons/md";
@@ -35,11 +34,11 @@ export default function SideBar({
   currentCosts: number;
 }) {
   return (
-    <div className="w-12 h-full overflow-hidden transition-all sm:w-64">
+    <div className="w-12 h-full overflow-hidden transition-all shadow-lg sm:w-64">
       {/* SIDEBAR */}
       <aside
         id="default-sidebar"
-        className="sticky w-64 h-full shadow top-20 bg-gray-50 dark:bg-gray-800"
+        className="sticky w-64 h-full top-20 bg-gray-50 dark:bg-gray-800"
         aria-label="Sidebar"
       >
         <div className="h-full px-2 py-4 overflow-y-auto">
