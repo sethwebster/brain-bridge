@@ -3,24 +3,27 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { createJwt } from "~/lib/jwt";
+import DataClient from "~/utils/data-client";
 
 export function CheckLogin({ provider }: { provider: "auth0" | "anonymous" }) {
   const session = useSession();
   const router = useRouter();
   useEffect(() => {
+    if (session.status==="loading") return;
     const options = {
       callbackUrl: provider === "anonymous" ? window.location.href : "/profile",
     };
     const doSignIn = async () => {
       if (provider === "anonymous") {
-        // router.push("/api/auth/callback/anonymous?id_token=123");
-        const token = createJwt({
-          name: "anonymous",
-          email: "noemail@anonymous.com",
-        });
-        await fetch("/api/auth/callback/anonymous?id_token=" + token, {
+        const  {token} = await DataClient.getAnonymousToken();
+        console.log("Created Token (posting)", token)
+        const response = await fetch("/api/auth/callback/anonymous?id_token=" + token, {
           method: "POST",
         });
+        if (response.redirected) {
+          router.push(response.url)
+        }
+        console.log("Response", response)
       } else {
         await signIn(provider, options);
       }

@@ -4,7 +4,6 @@ import { useAuthToken } from "~/hooks/useAuthToken";
 import useSocket from "~/hooks/use-socket";
 
 export const RoomJoiner = React.memo(({ room }: { room: string; }) => {
-  console.log("ROOMJOINER", room);
   const socket = useSocket();
   const { token } = useAuthToken();
   useEffect(() => {

@@ -62,6 +62,7 @@ export const authOptions: NextAuthOptions = {
   providers: [
     Credentials({
       name: "anonymous",
+      id: "anonymous",
       credentials: {},
       async authorize() {
         return new Promise((resolve) => {

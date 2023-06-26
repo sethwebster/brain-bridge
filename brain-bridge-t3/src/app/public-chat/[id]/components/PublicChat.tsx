@@ -136,11 +136,11 @@ export default function PublicChat({
   const handleNotifyCallbackSet = useCallback((callback: () => void) => {
     setCallback(callback);
   }, []);
-
+  console.log("session", session);
   return (
     <>
       {!session ||
-        (session.status == "unauthenticated" && (
+        (session.status != "authenticated" && (
           <CheckLogin provider="anonymous" />
         ))}
       <ChatDisplay

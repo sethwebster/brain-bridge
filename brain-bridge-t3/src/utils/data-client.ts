@@ -227,6 +227,17 @@ async function getToken() {
   return data;
 }
 
+async function getAnonymousToken() {
+  const response = await fetch(makeApiUrl(`/api/tokens/anonymous`), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  const data = await response.json() as { token: string };
+  return data;
+}
+
 const DataClient = {
   fetchTrainingSet,
   createTrainingSet,
@@ -246,7 +257,8 @@ const DataClient = {
   deletePublicChat,
   getSignedUrl,
   getToken,
-  verifyToken
+  verifyToken,
+  getAnonymousToken
 }
 
 export default DataClient;
