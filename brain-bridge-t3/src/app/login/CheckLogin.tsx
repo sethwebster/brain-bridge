@@ -8,6 +8,7 @@ export function CheckLogin({ provider }: { provider: "auth0" | "anonymous" }) {
   const router = useRouter();
   useEffect(() => {
     if (session.status==="loading") return;
+    if (session.status==="authenticated") return;
     const options = {
       callbackUrl: provider === "anonymous" ? window.location.href : "/profile",
     };
