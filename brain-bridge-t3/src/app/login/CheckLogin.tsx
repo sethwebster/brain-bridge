@@ -2,7 +2,6 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { createJwt } from "~/lib/jwt";
 import DataClient from "~/utils/data-client";
 
 export function CheckLogin({ provider }: { provider: "auth0" | "anonymous" }) {
