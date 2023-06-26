@@ -2,7 +2,6 @@
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import DataClient from "~/utils/data-client";
 
 export function CheckLogin({ provider }: { provider: "auth0" | "anonymous" }) {
   const session = useSession();
@@ -14,15 +13,14 @@ export function CheckLogin({ provider }: { provider: "auth0" | "anonymous" }) {
     };
     const doSignIn = async () => {
       if (provider === "anonymous") {
-        const  {token} = await DataClient.getAnonymousToken();
-        console.log("Created Token (posting)", token)
-        const response = await fetch("/api/auth/callback/anonymous?id_token=" + token, {
-          method: "POST",
-        });
-        if (response.redirected) {
-          router.push(response.url)
-        }
-        console.log("Response", response)
+        // const  {token} = await DataClient.getAnonymousToken();
+        // console.log("Created Token (posting)", token)
+        // const response = await fetch("/api/auth/signin/anonymous?id_token=" + token, {
+        //   method: "POST",
+        // });
+        // console.log("Response", response)
+        // router.refresh();
+        await signIn(provider, {...options, prompt: "none"});
       } else {
         await signIn(provider, options);
       }
