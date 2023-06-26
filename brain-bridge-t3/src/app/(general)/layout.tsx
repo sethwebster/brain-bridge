@@ -18,11 +18,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex h-screen w-full flex-col ">
+      <body className="flex flex-col w-full h-screen">
         <AuthProvider>
           <SocketProvider>
-            <NavBar />
-            <div className="flex h-full flex-col">{children}</div>
+            <div className="w-full h-full overflow-hidden">
+              <NavBar />
+              <div className="flex flex-col h-full mt-16 overflow-auto">
+                <div className="mt-4">{children}</div>
+              </div>
+            </div>
           </SocketProvider>
         </AuthProvider>
       </body>

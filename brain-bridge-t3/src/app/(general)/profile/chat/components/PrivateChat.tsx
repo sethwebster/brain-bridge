@@ -19,6 +19,7 @@ import { useAuthToken } from "~/hooks/useAuthToken";
 import useSocket from "~/hooks/use-socket";
 import { toast } from "react-toastify";
 import { RoomJoiner } from "../../components/RoomJoiner";
+import SideBarPaddedContainer from "../../components/SidebarPaddedContainer";
 
 export default function PrivateChat({
   selectedChat,
@@ -27,7 +28,6 @@ export default function PrivateChat({
   selectedChat: ConversationWithRelations;
   session: Session;
 }) {
-  const [firstLoad, setFirstLoad] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(false);
   // const [soundPending, setSoundPending] = useState(false);
   const [answerPending, setAnswerPending] = useState(false);
@@ -114,13 +114,6 @@ export default function PrivateChat({
   //   [player]
   // );
 
-  useEffect(() => {
-    if (firstLoad) {
-      setFirstLoad(false);
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [firstLoad, session.user.email, session.user.name]);
-
   const handleSend = useCallback(
     (newMessage: NewMessage, mode: ChatResponseMode) => {
       const sendMessage = () => {
@@ -171,7 +164,7 @@ export default function PrivateChat({
 
   if (!session.user?.email) throw new Error("No user email");
   return (
-    <div className="w-full pt-20">
+    <SideBarPaddedContainer>
       <RoomJoiner room={selectedChat.id} />
       <ChatDisplay
         answerPending={answerPending}
@@ -187,6 +180,6 @@ export default function PrivateChat({
         notifyNewMessage={handleNotifyCallbackSet}
         isConnected={socket.status === "authenticated" ?? false}
       />
-    </div>
+    </SideBarPaddedContainer>
   );
 }

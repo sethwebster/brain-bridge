@@ -1,12 +1,14 @@
+"use client";
+import { type PropsWithChildren } from "react";
 import SideBar from "./SideBar";
 
-export default function SidebarContainer({
+export default function SideBarLayout({
   children,
   setsCount,
   chatCount,
   publicChatCount,
   currentCosts,
-}: {
+}: PropsWithChildren & {
   setsCount: number;
   chatCount: number;
   publicChatCount: number;
@@ -14,18 +16,17 @@ export default function SidebarContainer({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full w-full flex-row bg-slate-100 dark:bg-slate-700">
-      <div className="h-full">
+    <div className="fixed flex flex-row w-full h-full max-h-screen">
+      <div className="w-auto max-h-screen">
         <SideBar
+          aria-label="Side Bar Navigation"
           setCount={setsCount}
           chatCount={chatCount}
           publicChatCount={publicChatCount}
           currentCosts={currentCosts}
         />
       </div>
-      <div className="ml-0 h-full w-full pl-0 sm:ml-64 ">
-        <div className="h-auto mb-10">{children}</div>
-      </div>
+      <div className="w-full h-auto overflow-hidden">{children}</div>
     </div>
   );
 }

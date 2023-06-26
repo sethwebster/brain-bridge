@@ -2,8 +2,8 @@ import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
 import ServerData from "~/server/server-data";
 import Toast from "~/app/components/Toast";
-import SidebarContainer from "./components/SidebarContainer";
 import NoAnonymous from "./components/NoAnonymous";
+import SideBarLayout from "./components/SideBarLayout";
 
 export default async function Layout({
   children,
@@ -35,17 +35,13 @@ export default async function Layout({
   // });
   return (
     <NoAnonymous session={session}>
-      <div className="h-full w-full">
-        <SidebarContainer
-          setsCount={sets.length}
-          chatCount={chats.length}
-          publicChatCount={publicChats.length}
-          currentCosts={totalCurrentCosts}
-        >
-          {children}
-        </SidebarContainer>
-        <Toast />
-      </div>
+      <SideBarLayout
+        setsCount={sets.length}
+        chatCount={chats.length}
+        publicChatCount={publicChats.length}
+        currentCosts={totalCurrentCosts}
+      >{children}</SideBarLayout>
+      <Toast />
     </NoAnonymous>
   );
 }

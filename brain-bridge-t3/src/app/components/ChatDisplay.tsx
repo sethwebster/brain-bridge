@@ -7,7 +7,6 @@ import { type Participant } from "@prisma/client";
 import { Messages } from "../(general)/profile/chat/components/Messages";
 import {
   FakeSpeakerIndicator,
-  TypingIndicator,
 } from "../(general)/profile/chat/components/TypingIndicator";
 import {
   type ChatResponseMode,
@@ -54,14 +53,14 @@ export default function ChatDisplay({
   onNewMessage,
   onSoundEnabledChange,
   onClearChatClicked,
-  isConnected
+  isConnected,
 }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [chatMode, setChatMode] = useState<ChatResponseMode>("one-shot");
   const handleSoundEnabledChange = useCallback(() => {
     onSoundEnabledChange(!soundEnabled);
   }, [onSoundEnabledChange, soundEnabled]);
-  
+
   const handleClearChatClicked = useCallback(() => {
     onClearChatClicked();
   }, [onClearChatClicked]);
@@ -80,12 +79,6 @@ export default function ChatDisplay({
     [chatMode, onNewMessage, viewer]
   );
 
-  const handleTypingIndicatorShown = useCallback(() => {
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  }, []);
-
   const handleChatModeSelectionChanged = useCallback(
     (mode: ChatResponseMode) => {
       setChatMode(mode);
@@ -96,12 +89,12 @@ export default function ChatDisplay({
   useEffect(() => {
     setTimeout(() => {
       // if (bottomRef.current?.checkVisibility()) return;
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      // bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   }, [answerPending, soundPending]);
 
   return (
-    <div className="mb-20 flex h-full w-full flex-col overflow-scroll bg-slate-100 dark:bg-slate-700 ">
+    <div className="flex flex-col w-full h-full mb-20">
       <ChatToolbar
         chatMode={chatMode}
         onModeSelectionChanged={handleChatModeSelectionChanged}
@@ -110,19 +103,20 @@ export default function ChatDisplay({
         onSoundEnabledClick={handleSoundEnabledChange}
         onClearChatClick={handleClearChatClicked}
       />
-      <div className="h-full w-full flex-grow">
+      <div className="flex-grow w-full h-full">
         <div className="pt-6">
           <Messages
             messages={conversation.messages}
             userName={viewer.name || viewer.email || viewer.id}
+            answerPending={answerPending}
           />
         </div>
-        <div className="ml-4">
+        {/* <div className="ml-4">
           <TypingIndicator
             show={answerPending}
             onShown={handleTypingIndicatorShown}
           />
-        </div>
+        </div> */}
         {soundPending && (
           <div className="ml-4">
             <FakeSpeakerIndicator />
@@ -131,9 +125,12 @@ export default function ChatDisplay({
         <div ref={bottomRef} className="m-6" />
         <div className="h-20 opacity-0" />
       </div>
-      <div className="fixed bottom-0 ml-4 w-10/12 sm:ml-3 sm:w-4/5 ">
-        <div className="sticky bottom-0 mt-4 flex w-full bg-opacity-0 p-2 outline-none">
-          <NewMessageBox onMessageSend={handleNewMessage} isConnected={isConnected} />
+      <div className="fixed bottom-0 w-screen">
+        <div className="sticky bottom-0 flex w-full p-2 px-4 mt-4 bg-opacity-0 outline-none">
+          <NewMessageBox
+            onMessageSend={handleNewMessage}
+            isConnected={isConnected}
+          />
         </div>
       </div>
     </div>
