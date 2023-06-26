@@ -2,10 +2,35 @@ import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
 import { Prisma, VectorCache } from '@prisma/client';
 import crypto from "crypto";
 import { prisma } from './db.ts';
+import invariant from 'tiny-invariant';
 
 function toSql(value: number[]) {
   return JSON.stringify(value);
 }
+
+type VectorCacheWithEmbeds = VectorCache & { embedding: number[] | null; }
+type DocumentWithHashAndCache = {
+  hash: string;
+  document: string;
+  cached: VectorCacheWithEmbeds | null;
+}
+
+function generateUniqueId(): string {
+  const prefix = 'cli';
+  const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  const length = 22; // Total length of the ID minus the length of prefix
+
+  let result = '';
+
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters[randomIndex];
+  }
+
+  return prefix + result;
+}
+
+
 export class CachedEmbeddings {
 
   embedder = new OpenAIEmbeddings({
@@ -18,40 +43,55 @@ export class CachedEmbeddings {
   async embedDocuments(documents: string[]): Promise<number[][]> {
 
     const hashed = this.hashDocuments(documents)
-    const keys = hashed.map(({ hash }) => hash);
-    const cached = await this.fetchCachedDocumentsByHashes(keys);
-
+    const cached = await this.fetchCachedDocumentsByHashes(hashed);
+    console.log("Lengths", cached.map(n => n.cached))
+    const todo = cached.filter(c => !c.cached || c.cached.embedding === null);
     console.log("Found " + cached.length + " cached embeddings.")
+    console.log("Will create embeddings for " + todo.length + " of " + documents.length + " documents.");
 
-    const filtered = this.removeAlreadyCachedDocuments(hashed, cached);
-
-    console.log("Will create embeddings for " + filtered.length + " of " + documents.length + " documents.");
-
-    const remainingDocuments = filtered.map(({ document }) => document);
+    const remainingDocuments = todo.map(({ document }) => document);
     const rawEmbeddings = await this.embedder.embedDocuments(remainingDocuments);
 
-    const promises = rawEmbeddings.map(async (embedding, i) => {
-      // This check shouldn't actuall
-      const isUpdated = !!cached.find(c => c.hash === filtered[i].hash);
-      if (!isUpdated) {
-        await prisma.vectorCache.create({
-          data: {
-            hash: filtered[i].hash,
-          }
-        });
-      }
-
+    const promises = todo.map(async ({ hash, cached, document }, i) => {
+      const embedding = rawEmbeddings[i];
       const ready = toSql(embedding);
-
-      await prisma.$executeRaw`UPDATE "VectorCache" SET embedding = (${ready}::vector) WHERE hash = ${filtered[i].hash}`;
-      return embedding;
-    });
+      if (cached) {
+        await prisma.$executeRaw`UPDATE "VectorCache" SET embedding = (${ready}::vector) WHERE hash = ${hash}`;
+        console.log("Updated embedding for " + hash);
+        return {
+          hash,
+          document,
+          cached: {
+            ...cached,
+            embedding
+          }
+        }
+      } else {
+        const id = generateUniqueId();
+        await prisma.$executeRaw`INSERT INTO "VectorCache" (id, hash, embedding, "createdAt", "updatedAt") VALUES (${id}, ${hash}, ${ready}::vector, now(), now())`;
+        console.log("Created embedding for " + hash)
+        return {
+          hash,
+          cached: {
+            hash,
+            embedding,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            id: "0"
+          }
+        }
+      }
+    }) as Promise<DocumentWithHashAndCache>[]
 
     const newEmbeddings = await Promise.all(promises);
-
-    const embeddings = cached.filter(c => !filtered.find(f => f.hash === c.hash)).map(c => c.embedding).concat(newEmbeddings);
-
-    return embeddings;
+    const allEmbeddings = hashed.map(({ document, hash }) => {
+      const newEmbedding = newEmbeddings.find(e => e.hash === hash)?.cached?.embedding;
+      const oldEmbedding = cached.find(c => c.hash === hash)?.cached?.embedding;
+      const embed = (newEmbedding || oldEmbedding);
+      return embed;
+    }).filter(e => e !== null) as number[][];
+    console.log("Documents length", documents.length, "embeddings length", allEmbeddings.length);
+    return allEmbeddings;
   }
 
   private removeAlreadyCachedDocuments(hashed: { hash: string; document: string; }[], cached: { embedding: any; hash: string; id: string; createdAt: Date; updatedAt: Date; }[]) {
@@ -60,26 +100,28 @@ export class CachedEmbeddings {
     });
   }
 
-  private hashDocuments(documents: string[]) {
+  private hashDocuments(documents: string[]): DocumentWithHashAndCache[] {
     const hashed = documents.map(document => {
       const hash = crypto.createHash('sha256');
       const updated = hash.update(document);
       const key = updated.digest('hex');
       return {
-        hash: key, document
+        hash: key, document, cached: null
       };
-    }).reduce((hashed, doc) => {
-      if (!hashed.find(h => h.hash === doc.hash)) {
-        hashed.push(doc);
-      }
-      return hashed;
-    }, [] as { hash: string; document: string; }[]);
+    })
+    // .reduce((hashed, doc) => {
+    //   if (!hashed.find(h => h.hash === doc.hash)) {
+    //     hashed.push(doc);
+    //   }
+    //   return hashed;
+    // }, [] as { hash: string; document: string; }[]);
 
     return hashed;
   }
 
-  private async fetchCachedDocumentsByHashes(keys: string[]) {
-    return (await prisma.$queryRaw`
+  private async fetchCachedDocumentsByHashes(hashesWithDocument: DocumentWithHashAndCache[]): Promise<DocumentWithHashAndCache[]> {
+    const keys = hashesWithDocument.map(({ hash }) => hash);
+    const result = (await prisma.$queryRaw`
       SELECT "hash", "embedding"::text FROM "VectorCache" where hash in (${Prisma.join(keys)})
     ` as (VectorCache & { embedding: number[]; })[]).map(c => {
       return {
@@ -87,6 +129,17 @@ export class CachedEmbeddings {
         embedding: JSON.parse(c.embedding as any as string)
       };
     });
+    return hashesWithDocument.map((item) => {
+      const found = result.find(r => r.hash === item.hash);
+      if (found) {
+        return {
+          ...item,
+          cached: found
+        }
+      } else {
+        return item;
+      }
+    })
   }
 
   embedQuery(document: string): Promise<number[]> {
