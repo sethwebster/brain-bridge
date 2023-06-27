@@ -10,5 +10,5 @@ export function ScrollOnReRender() {
       // inline: "start",
     });
   });
-  return <div ref={ref} className="h-6 border border-red-800" />
+  return <div ref={ref} className="h-6" />
 }

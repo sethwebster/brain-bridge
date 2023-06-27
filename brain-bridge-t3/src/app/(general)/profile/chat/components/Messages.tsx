@@ -49,7 +49,7 @@ export function Messages({
 
   return (
     <>
-      <ul className="flex flex-col flex-grow px-4 text-white markdown border border-red-500">
+      <ul className="flex flex-col flex-grow px-4 text-white markdown">
         {sorted.map((message) => (
           <li
             className={`flex flex-row ${
