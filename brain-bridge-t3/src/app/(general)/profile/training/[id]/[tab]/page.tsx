@@ -23,7 +23,7 @@ export default async function TrainingPage({
 
   const activeTabTitleCase = tab.charAt(0).toUpperCase() + tab.toLowerCase().slice(1) as TabsList;
   return (
-    <div className="w-full mt-20 h-full">
+    <div className="w-full h-full">
       <TrainingSetPage
         activeTab={activeTabTitleCase}
         trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}

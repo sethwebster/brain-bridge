@@ -8,6 +8,7 @@ import { encoding_for_model } from "@dqbd/tiktoken";
 import { SerpAPI, Tool } from "langchain/tools";
 
 import { initializeAgentExecutorWithOptions } from "langchain/agents";
+import { Embeddings } from "langchain/dist/embeddings/base";
 
 
 interface LangChainStorage<T> {
@@ -70,16 +71,37 @@ export interface LLMBrainBridgeResponse {
   confidence: number;
 }
 
+interface BrainBridgeLangChainHandlers {
+  onTokensUsed: (tokens: number) => void;
+  onLowConfidenceAnswer: (response: LLMBrainBridgeResponse) => void;
+}
 
-export class BrainBridgeLangChain implements LangChainStore {
+export interface BrainBridgeAdditionalOptions {
+  numberOfNearestNeighbors?: number;
+}
+
+const DEFAULT_ADDITIONAL_OPTIONS: BrainBridgeAdditionalOptions = {
+  numberOfNearestNeighbors: 2,
+}
+
+interface BrainBridgeLangChainOptions<S extends LangChainStorage<E>, E extends Embeddings> {
+  store: S,
+  handlers: BrainBridgeLangChainHandlers,
+  options?: BrainBridgeAdditionalOptions
+}
+
+
+export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embeddings> implements LangChainStore {
   storage: LangChainStorage<Milvus>
   _store: Milvus | null = null;
   private _lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void;
   private _onTokensUsed: (tokens: number) => void = () => { };
-  constructor(storage: LangChainStorage<Milvus> = new BrainBridgeStorage(), lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void, onTokensUsed: (tokens: number) => void) {
-    this.storage = storage;
-    this._lowConfidenceAnswerHandler = lowConfidenceAnswerHandler;
+  private _additionalOptions: BrainBridgeAdditionalOptions = DEFAULT_ADDITIONAL_OPTIONS;
+  constructor({ store, handlers: { onLowConfidenceAnswer, onTokensUsed }, options }: BrainBridgeLangChainOptions<S, E>) {
+    this.storage = store;
+    this._lowConfidenceAnswerHandler = onLowConfidenceAnswer;
     this._onTokensUsed = onTokensUsed;
+    this._additionalOptions = { ...DEFAULT_ADDITIONAL_OPTIONS, ...(options ?? {}) };
   }
 
   /**
@@ -115,7 +137,7 @@ export class BrainBridgeLangChain implements LangChainStore {
     const store = await this.storage.getIndex<Milvus>(indexId);
 
 
-    const data = await store.similaritySearch(userPrompt, 2);
+    const data = await store.similaritySearch(userPrompt, this._additionalOptions.numberOfNearestNeighbors ?? 2);
     const context: string[] = [];
 
     data.filter(d => d.pageContent.trim().length > 0).forEach((item) => {

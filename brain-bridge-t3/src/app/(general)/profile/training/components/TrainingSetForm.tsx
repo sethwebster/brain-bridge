@@ -342,7 +342,7 @@ export function TrainingSetForm({
 
   return (
     <div className="h-full bg-slate-50">
-      <div className="h-full w-full bg-slate-100">
+      <div className="h-full w-full bg-slate-100 ">
         <Tabs
           header={<h1 className="text-sm">{trainingSet.name}</h1>}
           initialSelectedTab={activeTab}

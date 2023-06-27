@@ -27,9 +27,9 @@ export default function Tabs({
 
   return (
     <div className="h-full bg-slate-100 dark:bg-slate-700">
-      <div className="fixed top-20 z-10 w-full">
+      <div className="fixed top-20 z-10 w-full ">
         <div className="z-40 flex w-full flex-row bg-slate-100 bg-opacity-60 text-center text-sm font-medium text-gray-500 shadow backdrop-blur-md backdrop-filter transition-all dark:border-gray-700 dark:bg-slate-600 dark:text-gray-400 ">
-          <ul className="-mb-px flex flex-grow transition-all sm:flex-wrap ">
+          <ul className="-mb-px flex flex-grow transition-all sm:flex-wrap  ">
             <li className="mr-2 truncate p-4 hover:w-auto">{header}</li>
             {Object.keys(tabContent).map((tab) => (
               <li className="mr-2" key={tab}>
@@ -61,8 +61,8 @@ export default function Tabs({
           </ul>
         </div>
       </div>
-      <div className="w-full bg-slate-100 h-auto dark:bg-slate-700">
-        <div className="pt-16">
+      <div className="w-full bg-slate-100 h-auto dark:bg-slate-700 mt-14">
+        <div className="">
           {Object.keys(tabContent).map((tab) => (
             <div key={tab} className="w-full">
               {activeTab === tab ? tabContent[tab] : null}

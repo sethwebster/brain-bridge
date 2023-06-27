@@ -64,9 +64,11 @@ export type ChatResponseMode = "one-shot" | "critique" | "refine";
 export type TrainingOptions = {
   maxSegmentLength: number; // 2000;
   overlapBetweenSegments: number; // 200;
+  numberOfNearestNeighbors: number; // 2;
 }
 
 export const defaultTrainingOptions: TrainingOptions = {
   maxSegmentLength: 2000,
   overlapBetweenSegments: 200,
+  numberOfNearestNeighbors: 2,
 }

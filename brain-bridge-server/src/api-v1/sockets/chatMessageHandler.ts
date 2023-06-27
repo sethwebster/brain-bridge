@@ -1,7 +1,7 @@
 import invariant from "tiny-invariant";
 import { Conversation, Message, Participant, Prisma, PublicChatInstance } from '@prisma/client';
 import { prisma } from "../../lib/db.ts";
-import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm.ts";
+import { BrainBridgeAdditionalOptions, BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm.ts";
 import replaceTokens from "../../lib/replace-tokens.ts";
 import { ChatResponseMode, ConversationWithRelations, MessageWithRelations, PublicChatInstanceWithRelations } from "./types.ts";
 import { promptFooter, promptHeader } from "../../lib/prompt-templates.ts";
@@ -28,7 +28,19 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
     const questionsAndAnswers = conversation.trainingSet.questionsAndAnswers;
     const fullPrompt = promptHeader + "\n\n" + conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
     const handleMissedQuestion = this.handleMissedQuestion.bind(this, conversation);
-    const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)), onTokensUsed);
+    const options = conversation.trainingSet.trainingOptions as BrainBridgeAdditionalOptions;
+    console.log("options", options)
+
+    const llm = new BrainBridgeLangChain(
+      {
+        store: new BrainBridgeStorage(),
+        handlers: {
+          onLowConfidenceAnswer: (missed) => handleMissedQuestion(missed).catch(err => console.error(err)),
+          onTokensUsed,
+        },
+        options
+      }
+    );
     invariant(message.conversationId, "Conversation id must be defined");
     let response = "";
     response = await llm.getLangChainResponse(
@@ -73,7 +85,18 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
     const fullPrompt = promptHeader + "\n\n" + conversation.publicChat.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
     const handleMissedQuestion = async (missed: LLMBrainBridgeResponse) => { };
     // this.handleMissedQuestion.bind(this, conversation.publicChat);
-    const llm = new BrainBridgeLangChain(new BrainBridgeStorage(), (missed) => handleMissedQuestion(missed).catch(err => console.error(err)), onTokensUsed);
+    const options = JSON.parse((conversation.publicChat.trainingSet.trainingOptions ?? "{}").toString()) as BrainBridgeAdditionalOptions;
+    console.log("options", options)
+    const llm = new BrainBridgeLangChain(
+      {
+        store: new BrainBridgeStorage(),
+        handlers: {
+          onLowConfidenceAnswer: (missed) => handleMissedQuestion(missed).catch(err => console.error(err)),
+          onTokensUsed,
+        },
+        options
+      }
+    );
     invariant(message.publicChatInstanceId, "publicChatInstanceId must be defined");
     let response = "";
     response = await llm.getLangChainResponse(
