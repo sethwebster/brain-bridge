@@ -23,6 +23,7 @@ const AutoSizingTextArea = React.forwardRef<
   }, []);
   const ref =
     forwardedRef as unknown as React.MutableRefObject<HTMLTextAreaElement>;
+
   useAutosizeTextArea(
     // eslint-disable-next-line
     (ref ?? textRef).current,
