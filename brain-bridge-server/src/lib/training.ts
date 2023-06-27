@@ -133,6 +133,7 @@ export class TrainingSetBuilder {
     const TIME_PER_BATCH = 7500;
     const totalTime = TIME_PER_BATCH * batches.length;
     const INTERVAL_LENGTH = 100;
+
     vectorProgressInterval = setInterval(() => {
       time = time + INTERVAL_LENGTH;
       this.onProgress({
@@ -143,51 +144,57 @@ export class TrainingSetBuilder {
 
     }, INTERVAL_LENGTH);
 
-    while (batches.length > 0) {
-      this.onProgress({
-        stage: "vectorize",
-        statusText: `Vectorizing batch ${batchCount - batches.length + 1} of ${batchCount}`,
-        progress: (batchCount - batches.length) / batchCount
-      })
-      console.log("Vectoring batch", batchCount - batches.length + 1, "of", batchCount)
-      const batch = batches.shift();
-      if (!batch) break;
-      try {
-        const documents = batch.map((b, i) => b.loadedContent).flat();
-        // console.log("Documents", documents)
-        const encoding = tiktoken.get_encoding("cl100k_base");
-        const encoded = encoding.encode(documents.map(doc => doc.pageContent).join("\n"));
-        buildResult.tokensUsed += encoded.length;
-        buildResult.cost = buildResult.cost * 0.0000004;
-        onTokensUsed(buildResult);
-        const res = await Milvus.fromDocuments(documents, embedder, {
-          collectionName: this.trainingSet.id,
+    try {
+      while (batches.length > 0) {
+        this.onProgress({
+          stage: "vectorize",
+          statusText: `Vectorizing batch ${batchCount - batches.length + 1} of ${batchCount}`,
+          progress: (batchCount - batches.length) / batchCount
+        })
+        console.log("Vectoring batch", batchCount - batches.length + 1, "of", batchCount)
+        const batch = batches.shift();
+        if (!batch) break;
+        try {
+          const documents = batch.map((b, i) => b.loadedContent).flat();
+          // console.log("Documents", documents)
+          const encoding = tiktoken.get_encoding("cl100k_base");
+          const encoded = encoding.encode(documents.map(doc => doc.pageContent).join("\n"));
+          buildResult.tokensUsed += encoded.length;
+          buildResult.cost = buildResult.cost * 0.0000004;
+          onTokensUsed(buildResult);
+          const res = await Milvus.fromDocuments(documents, embedder, {
+            collectionName: this.trainingSet.id,
+          });
+        } catch (e) {
+          console.log("ERROR BATCH", batch.length);
+          throw e;
+        }
+        const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
+          collection_name: this.trainingSet.id,
         });
-      } catch (e) {
-        console.log("ERROR BATCH", batch.length);
-        throw e;
+        console.log("Collection statistics", stats);
       }
+
+      /**
+       * This adds our list of documents to the Milvus database.
+       */
+      await Milvus.fromDocuments([list], embedder, {
+        collectionName: this.trainingSet.id,
+      });
+
+      clearInterval(vectorProgressInterval);
       const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
         collection_name: this.trainingSet.id,
       });
+      client.flush({ collection_names: [this.trainingSet.id] });
       console.log("Collection statistics", stats);
+      console.log("Vectorization complete");
+      return buildResult;
+    } catch (e) {
+      throw e;
+    } finally {
+      clearInterval(vectorProgressInterval);
     }
-
-    /**
-     * This adds our list of documents to the Milvus database.
-     */
-    await Milvus.fromDocuments([list], embedder, {
-      collectionName: this.trainingSet.id,
-    });
-
-    clearInterval(vectorProgressInterval);
-    const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
-      collection_name: this.trainingSet.id,
-    });
-    client.flush({ collection_names: [this.trainingSet.id] });
-    console.log("Collection statistics", stats);
-    console.log("Vectorization complete");
-    return buildResult;
   }
 
   /////////////

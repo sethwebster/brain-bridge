@@ -3,6 +3,7 @@ import { Prisma, VectorCache } from '@prisma/client';
 import crypto from "crypto";
 import { prisma } from './db.ts';
 import invariant from 'tiny-invariant';
+import Mutex from './mutex.ts';
 
 function toSql(value: number[]) {
   return JSON.stringify(value);
@@ -52,35 +53,56 @@ export class CachedEmbeddings {
     const remainingDocuments = todo.map(({ document }) => document);
     const rawEmbeddings = await this.embedder.embedDocuments(remainingDocuments);
 
+    const hashMutex = new Mutex();
+    const seenHashes = new Map<string, DocumentWithHashAndCache>();
     const promises = todo.map(async ({ hash, cached, document }, i) => {
-      const embedding = rawEmbeddings[i];
-      const ready = toSql(embedding);
-      if (cached) {
-        await prisma.$executeRaw`UPDATE "VectorCache" SET embedding = (${ready}::vector) WHERE hash = ${hash}`;
-        console.log("Updated embedding for " + hash);
-        return {
-          hash,
-          document,
-          cached: {
-            ...cached,
-            embedding
-          }
-        }
-      } else {
-        const id = generateUniqueId();
-        await prisma.$executeRaw`INSERT INTO "VectorCache" (id, hash, embedding, "createdAt", "updatedAt") VALUES (${id}, ${hash}, ${ready}::vector, now(), now())`;
-        console.log("Created embedding for " + hash)
-        return {
-          hash,
-          cached: {
+      return await hashMutex.run(async () => {
+        const embedding = rawEmbeddings[i];
+        const ready = toSql(embedding);
+        const hasSeen = seenHashes.has(hash);
+        if (hasSeen) {
+          return {
             hash,
-            embedding,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            id: "0"
+            cached: {
+              hash,
+              embedding,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              id: "0"
+            }
           }
         }
-      }
+
+        if (cached) {
+          await prisma.$executeRaw`UPDATE "VectorCache" SET embedding = (${ready}::vector) WHERE hash = ${hash}`;
+          console.log("Updated embedding for " + hash);
+          seenHashes.set(hash, {
+            hash,
+            document,
+            cached: {
+              ...cached,
+              embedding
+            }
+          })
+          return seenHashes.get(hash);
+        } else {
+          const id = generateUniqueId();
+          await prisma.$executeRaw`INSERT INTO "VectorCache" (id, hash, embedding, "createdAt", "updatedAt") VALUES (${id}, ${hash}, ${ready}::vector, now(), now())`;
+          console.log("Created embedding for " + hash)
+          seenHashes.set(hash, {
+            hash,
+            document,
+            cached: {
+              hash,
+              embedding,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              id: "0"
+            }
+          });
+          return seenHashes.get(hash);
+        }
+      });
     }) as Promise<DocumentWithHashAndCache>[]
 
     const newEmbeddings = await Promise.all(promises);
