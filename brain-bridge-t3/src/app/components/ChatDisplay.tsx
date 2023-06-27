@@ -94,7 +94,7 @@ export default function ChatDisplay({
   }, [answerPending, soundPending]);
 
   return (
-    <div className="flex flex-col w-full h-full mb-20">
+    <div className="flex flex-col w-full h-full">
       <ChatToolbar
         chatMode={chatMode}
         onModeSelectionChanged={handleChatModeSelectionChanged}
@@ -104,7 +104,7 @@ export default function ChatDisplay({
         onClearChatClick={handleClearChatClicked}
       />
       <div className="flex-grow w-full h-full">
-        <div className="pt-6">
+        <div className="pt-6 mb-14">
           <Messages
             messages={conversation.messages}
             userName={viewer.name || viewer.email || viewer.id}

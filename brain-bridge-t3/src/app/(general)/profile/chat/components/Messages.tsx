@@ -49,7 +49,7 @@ export function Messages({
 
   return (
     <>
-      <ul className="flex flex-col flex-grow px-4 text-white markdown">
+      <ul className="flex flex-col flex-grow px-4 text-white markdown border border-red-500">
         {sorted.map((message) => (
           <li
             className={`flex flex-row ${
@@ -81,7 +81,7 @@ export function Messages({
         />
         )}
       </ul>
-      <div className="mt-20">
+      <div className="">
         <ScrollOnReRender />
       </div>
     </>
