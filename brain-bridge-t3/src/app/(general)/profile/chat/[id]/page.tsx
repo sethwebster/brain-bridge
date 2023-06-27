@@ -1,6 +1,6 @@
 import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
-import Chat from "../components/PrivateChat";
+import Chat from "../components/Chat";
 import { Suspense } from "react";
 import ServerData from "~/server/server-data";
 

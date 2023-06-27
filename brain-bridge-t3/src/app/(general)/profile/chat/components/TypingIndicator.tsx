@@ -1,6 +1,6 @@
 "use client";
 import { useRef } from "react";
-import { SpeakerIcon } from "../../training/components/SvgIcons";
+import { SpeakerIcon } from "~/app/components/SvgIcons";
 
 interface TypingIndicatorProps {
   onShown?: (visible: boolean) => void;

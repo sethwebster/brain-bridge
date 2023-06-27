@@ -29,7 +29,6 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
     const fullPrompt = promptHeader + "\n\n" + conversation.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
     const handleMissedQuestion = this.handleMissedQuestion.bind(this, conversation);
     const options = conversation.trainingSet.trainingOptions as BrainBridgeAdditionalOptions;
-    console.log("options", options)
 
     const llm = new BrainBridgeLangChain(
       {
@@ -86,7 +85,6 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
     const handleMissedQuestion = async (missed: LLMBrainBridgeResponse) => { };
     // this.handleMissedQuestion.bind(this, conversation.publicChat);
     const options = conversation.publicChat.trainingSet.trainingOptions as BrainBridgeAdditionalOptions;
-    console.log("options", options)
     const llm = new BrainBridgeLangChain(
       {
         store: new BrainBridgeStorage(),

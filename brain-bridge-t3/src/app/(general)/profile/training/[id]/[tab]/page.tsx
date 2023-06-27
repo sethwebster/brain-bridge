@@ -10,7 +10,7 @@ import { type TabsList } from "../../components/TrainingSetForm";
 export default async function TrainingPage({
   params: { id, tab },
 }: {
-  params: { id: string, tab: string };
+  params: { id: string; tab: string };
 }) {
   const session = await getServerSession();
   invariant(session, "Session must exist");
@@ -21,10 +21,12 @@ export default async function TrainingPage({
     notFound();
   }
 
-  const activeTabTitleCase = tab.charAt(0).toUpperCase() + tab.toLowerCase().slice(1) as TabsList;
+  const activeTabTitleCase = (tab.charAt(0).toUpperCase() +
+    tab.toLowerCase().slice(1)) as TabsList;
   return (
     <div className="w-full h-full">
       <TrainingSetPage
+        session={session}
         activeTab={activeTabTitleCase}
         trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
         user={session.user}

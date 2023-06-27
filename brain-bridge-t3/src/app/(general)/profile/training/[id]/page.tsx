@@ -25,6 +25,7 @@ export default async function TrainingPage({
         trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
         user={session.user}
         promptTemplate={promptTemplate}
+        session={session}
       />
     </div>
   );

@@ -29,11 +29,17 @@ import { toast } from "react-toastify";
 import { DetailsTab } from "./DetailsTab";
 import { PromptTab } from "./PromptTab";
 import { OptionsTab } from "./OptionsTab";
+import Button from "~/base-components/Button";
+import ThreeStateButton from "~/base-components/ThreeStateButton";
+import Logger from "~/lib/logger";
+import ChatTab from "./ChatTab";
+import { Session } from "next-auth";
 
 export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {
   trainingSet: TrainingSetWithRelations;
   promptTemplate: string;
+  session: Session;
   user: {
     email?: string | null | undefined;
     name?: string | null | undefined;
@@ -47,8 +53,9 @@ export function TrainingSetForm({
   promptTemplate,
   onUpdate,
   activeTab,
+  session,
 }: TrainingSetFormProps) {
-  const session = useSession();
+  const clientSession = useSession();
   const router = useRouter();
   const [trainingSetData, setTrainingSetData] =
     useState<TrainingSetWithRelations>(trainingSet);
@@ -67,12 +74,15 @@ export function TrainingSetForm({
     toast("🎉 Training Complete", {
       type: "success",
     });
-    router.refresh();
+    onUpdate?.({
+      ...trainingSet,
+      trainingIndexVersion: trainingSetData.trainingIndexVersion + 1,
+    });
     // TODO: Figure out why router.refresh() doesn't work.
-  }, [router]);
+  }, [onUpdate, trainingSet, trainingSetData.trainingIndexVersion]);
 
   const handleTrainingError = useCallback((data: { error: string }) => {
-    console.log(data.error);
+    Logger.error("Training Error", data.error);
     toast(`⛔️ ${data.error ?? "Training Failed"}`, {
       type: "error",
     });
@@ -289,33 +299,6 @@ export function TrainingSetForm({
     return options;
   }, [trainingSetData.trainingOptions]);
 
-  const handleTrainingOptionToggle = useCallback(
-    (option: string) => {
-      router.push(
-        `/profile/training/${trainingSetData.id}/${option.toLowerCase()}`
-      );
-    },
-    [router, trainingSetData.id]
-  );
-
-  const handleAutoTrainClicked = useCallback(() => {
-    if (trainingSetData.prompt.length === 0) {
-      setIsAutoTraining((isAutoTraining) => !isAutoTraining);
-    } else {
-      if (isAutoTraining) {
-        setIsAutoTraining(false);
-        return;
-      }
-      setShowRefinePromptModal(true);
-    }
-  }, [isAutoTraining, trainingSetData.prompt.length]);
-
-  const shared = trainingSetData.trainingSetShares.find(
-    (s) => s.acceptedUserId === session.data?.user.id
-  );
-  const role = shared?.role ?? "OWNER";
-  const isShared = shared !== undefined;
-  const canEdit = role === "OWNER" || role === "EDITOR";
   /**
    * Check if the training set has been modified
    */
@@ -340,47 +323,100 @@ export function TrainingSetForm({
     [trainingSetData.questionsAndAnswers]
   );
 
+  const handleTabChange = useCallback(
+    (option: string) => {
+      // window.history.pushState({}, "", `/profile/training/${trainingSet.id}/${option.toLowerCase()}`);
+      if (isDirty) {
+        handleSave()
+          .then(() => {
+            router.push(
+              `/profile/training/${trainingSetData.id}/${option.toLowerCase()}`
+            );
+          })
+          .catch((err: unknown) => {
+            Logger.error(err);
+          });
+      } else {
+        router.push(
+          `/profile/training/${trainingSetData.id}/${option.toLowerCase()}`
+        );
+      }
+    },
+    [handleSave, isDirty, router, trainingSetData.id]
+  );
+
+  const handleAutoTrainClicked = useCallback(() => {
+    if (trainingSetData.prompt.length === 0) {
+      setIsAutoTraining((isAutoTraining) => !isAutoTraining);
+    } else {
+      if (isAutoTraining) {
+        setIsAutoTraining(false);
+        return;
+      }
+      setShowRefinePromptModal(true);
+    }
+  }, [isAutoTraining, trainingSetData.prompt.length]);
+
+  const shared = trainingSetData.trainingSetShares.find(
+    (s) => s.acceptedUserId === clientSession.data?.user.id
+  );
+  const role = shared?.role ?? "OWNER";
+  const isShared = shared !== undefined;
+  const canEdit = role === "OWNER" || role === "EDITOR";
+
+  const trainingButtonState = useMemo(() => {
+    if (isTraining) {
+      return "training";
+    }
+    if (
+      socketRef.status === "authenticated" &&
+      trainingSetData.version !== trainingSetData.trainingIndexVersion
+    ) {
+      return "enabled";
+    }
+    return "disabled";
+  }, [
+    isTraining,
+    socketRef.status,
+    trainingSetData.trainingIndexVersion,
+    trainingSetData.version,
+  ]);
+
   return (
     <div className="h-full bg-slate-50">
-      <div className="h-full w-full bg-slate-100 ">
+      <div className="w-full h-full bg-slate-100 ">
         <Tabs
           header={<h1 className="text-sm">{trainingSet.name}</h1>}
           initialSelectedTab={activeTab}
-          onSelectNewTab={handleTrainingOptionToggle}
+          onSelectNewTab={handleTabChange}
           additionalItems={[
-            <div className="flex h-full flex-col justify-center" key="Save">
-              <button
+            <div className="flex flex-col justify-center h-full" key="Save">
+              <Button
                 // eslint-disable-next-line @typescript-eslint/no-misused-promises
                 onClick={handleSave}
                 disabled={!isDirty || isSaving || !canSave}
-                className="mr-2 w-24 rounded-md border bg-blue-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
+                // className="w-24 p-2 mr-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
               >
                 {isSaving ? "Saving..." : "Save"}
-              </button>
+              </Button>
             </div>,
-            <div className="flex h-full flex-col justify-center" key="Save">
-              <button
-                // eslint-disable-next-line @typescript-eslint/no-misused-promises
+            <div className="flex flex-col justify-center h-full" key="Train">
+              <ThreeStateButton
+                classNamesForStates={{
+                  enabled: "bg-green-400 dark:bg-green-500",
+                  error: "bg-red-400 dark:bg-red-500",
+                  disabled: "bg-opacity-50",
+                  training: "animate-pulse bg-amber-400 dark:bg-amber-500",
+                }}
+                label="Train"
                 onClick={handleTrain}
-                disabled={
-                  socketRef.status !== "authenticated" ||
-                  isDirty ||
-                  isTraining ||
-                  trainingSetData.version === trainingSet.trainingIndexVersion
-                }
                 title={
-                  socketRef.status === "authenticated" ? "Train the model" : "Server is offline"
-                }
-                className={`w-24 rounded-md border bg-green-400 p-2 text-white disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-green-400 ${
-                  isTraining ? "animate-pulse" : ""
-                } ${
                   socketRef.status === "authenticated"
-                    ? "bg-green-400 dark:bg-green-500"
-                    : "disabled:bg-red-400 disabled:dark:bg-red-500"
-                }`}
-              >
-                Train
-              </button>
+                    ? "Train the model"
+                    : "Server is offline"
+                }
+                state={trainingButtonState}
+              />
             </div>,
           ]}
           tabContent={{
@@ -426,6 +462,15 @@ export function TrainingSetForm({
                   disabled={!canEdit}
                   trainingSet={trainingSetData}
                   onUpdate={handleMissedQuestionsUpdate}
+                />
+              </div>
+            ),
+            Chat: (
+              <div className="h-auto p-2 px-4 overflow-scroll">
+                <ChatTab
+                  trainingSetId={trainingSetData.id}
+                  session={session}
+                  selectedChat={trainingSet.conversations[0]}
                 />
               </div>
             ),

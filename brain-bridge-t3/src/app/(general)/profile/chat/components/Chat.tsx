@@ -20,8 +20,9 @@ import useSocket from "~/hooks/use-socket";
 import { toast } from "react-toastify";
 import { RoomJoiner } from "../../components/RoomJoiner";
 import SideBarPaddedContainer from "../../components/SidebarPaddedContainer";
+import Logger from "~/lib/logger";
 
-export default function PrivateChat({
+export default function Chat({
   selectedChat,
   session,
 }: {
@@ -52,27 +53,38 @@ export default function PrivateChat({
 
       const removeMessageListener = socket.onMessage(
         "message",
-        (payload: { message: MessageWithRelations }) => {
-          console.log("message", payload.message);
-          if (payload.message.sender.name !== session.user.name) {
-            setAnswerPending(false);
+        (payload: { message: MessageWithRelations; room: string }) => {
+          Logger.warn("message", payload.message, payload.room);
+          if (payload.room.includes(selectedChat.id)) {
+            if (payload.message.sender.name !== session.user.name) {
+              setAnswerPending(false);
+            }
+            setSelectedChatMessages((messages) => [
+              ...messages,
+              payload.message,
+            ]);
+            callback?.();
           }
-          setSelectedChatMessages((messages) => [...messages, payload.message]);
-          callback?.();
         }
       );
 
       const removeTypingIndicatorListener = socket.onMessage(
         "llm-response-started",
-        () => {
-          setAnswerPending(true);
+        (payload: { room: string }) => {
+          if (payload.room.includes(selectedChat.id)) {
+            Logger.warn("llm-response-started", payload.room);
+            setAnswerPending(true);
+          }
         }
       );
 
       const removeTypingIndicatorListenerEnded = socket.onMessage(
         "llm-response-ended",
-        () => {
-          setAnswerPending(false);
+        (payload: { room: string }) => {
+          if (payload.room.includes(selectedChat.id)) {
+            Logger.warn("llm-response-ended", payload.room);
+            setAnswerPending(false);
+          }
         }
       );
 
@@ -136,7 +148,6 @@ export default function PrivateChat({
             publicChatInstanceId: null,
           },
         };
-        console.log("SENDING MESSAGE", newMessageAugment);
         // setSelectedChatMessages((messages) => [...messages, newMessageAugment]);
         socket.sendMessage("message", { mode, message: newMessageAugment });
       };
@@ -154,7 +165,7 @@ export default function PrivateChat({
   const handleClearChatClicked = useCallback(() => {
     setSelectedChatMessages([]);
     DataClient.clearChat(selectedChat.id).catch((e) => {
-      console.log(e);
+      Logger.error("Error clearing chat", e);
     });
   }, [selectedChat.id]);
 
@@ -167,6 +178,7 @@ export default function PrivateChat({
     <SideBarPaddedContainer>
       <RoomJoiner room={selectedChat.id} />
       <ChatDisplay
+        chatType="private"
         answerPending={answerPending}
         soundPending={false}
         // soundPending={soundPending}

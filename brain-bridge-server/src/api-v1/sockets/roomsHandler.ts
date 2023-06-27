@@ -9,14 +9,6 @@ import { ChatMessageHandler } from "./chatMessageHandler.ts";
 export function getRoomId(id: string) {
   return `private-room-${id}`;
 }
-// io.use(
-//   authorize({
-//     secret: process.env.NEXTAUTH_SECRET,
-//     onAuthentication: async (decodedToken) => {
-//       console.log("THE TOKEN", decodedToken)
-//     }
-//   })
-// )
 
 let roomHandlers = new Map<string, GenericMessageHandler<{ message: MessageWithRelations }>[]>();
 const mutex = new Mutex({ logging: false });
@@ -26,52 +18,76 @@ export function chatMessageRoomsHandler(socket: Socket, io: Server) {
     await mutex.run(fn);
   }
 
+  async function handleJoin(room: string) {
+    invariant(room, "room is required");
+    const roomId = getRoomId(room)
+    if (roomId.includes('training')) {
+      console.error(
+        "Training room detected. This handler is for chat rooms only."
+      )
+      return;
+    }
+
+    if (!roomHandlers.has(roomId)) {
+      console.log("Creating handler...", roomId)
+      roomHandlers = roomHandlers.set(roomId, [new ChatMessageHandler(socket, io, roomId, [
+        "message",
+        "delete-message",
+      ])]);
+    } else {
+      console.log("Adding handler...", roomId)
+      if (roomHandlers.get(roomId)?.find(handler => handler.socketId === socket.id)) {
+        console.log("Already added handler...", roomId)
+        return;
+      }
+      roomHandlers.get(roomId)?.push(new ChatMessageHandler(socket, io, roomId, [
+        "message",
+        "delete-message",
+      ]));
+    }
+    console.log(roomHandlers.get(roomId)?.length, roomHandlers.get(roomId)?.map(handler => handler.socketId));
+    console.log("Room handlers", roomHandlers.get(roomId)?.length)
+    socket.on("disconnect", () => {
+      console.log("*** DISCONNECTED ***")
+      handleLeave(room);
+    });
+    socket.join(roomId);
+    socket.to(room).emit("user-joined", { room });
+  }
+
+  async function handleLeave(room: string) {
+    const roomId = getRoomId(room)
+    console.log('leave-private-room', roomId)
+    invariant(room, "room is required");
+    socket.leave(roomId);
+
+    // Remove subscriptions for this handler / socket
+    const handlerToDestroy = roomHandlers.get(roomId)?.find(handler => handler.socketId === socket.id);
+    handlerToDestroy?.unsubscribe();
+    const removed = roomHandlers.get(roomId)?.filter(handler => handler.socketId !== socket.id);
+    roomHandlers = roomHandlers.set(roomId, removed || []);
+    if ((await io.in(roomId).fetchSockets()).length === 0) {
+      console.log("removing room", roomId)
+      roomHandlers.delete(roomId);
+    }
+    socket.to(roomId).emit("user-left", { room });
+  }
+
   socket.on("join-private-room", async ({ data: { room } }) => {
 
     updateRoomHandler(async () => {
       try {
-        invariant(room, "room is required");
-        const roomId = getRoomId(room)
-        if (!roomHandlers.has(roomId)) {
-          roomHandlers = roomHandlers.set(roomId, [new ChatMessageHandler(socket, io, roomId, [
-            "message",
-            "delete-message",
-          ])]);
-        } else {
-          console.log("Adding handler...")
-          roomHandlers.get(roomId)?.push(new ChatMessageHandler(socket, io, roomId, [
-            "message",
-            "delete-message",
-          ]));
-        }
-
-        socket.join(roomId);
-        socket.to(room).emit("user-joined", { room });
+        handleJoin(room);
       } catch (error: any) {
         console.error(error)
       }
     });
   });
 
-  socket.on("leave-private-room", async ({ data: { room }, token }) => {
+  socket.on("leave-private-room", async ({ data: { room } }) => {
     updateRoomHandler(async () => {
       try {
-        console.log('leave-private-room', room)
-        invariant(room, "room is required");
-        const roomId = getRoomId(room)
-        socket.leave(roomId);
-        console.log('roomid', roomId)
-
-        // Remove subscriptions for this handler / socket
-        const handlerToDestroy = roomHandlers.get(roomId)?.find(handler => handler.socketId === socket.id);
-        handlerToDestroy?.unsubscribe();
-        const removed = roomHandlers.get(roomId)?.filter(handler => handler.socketId !== socket.id);
-        roomHandlers = roomHandlers.set(roomId, removed || []);
-        if ((await io.in(roomId).fetchSockets()).length === 0) {
-          console.log("removing room", roomId)
-          roomHandlers.delete(roomId);
-        }
-        socket.to(roomId).emit("user-left", { room });
+        handleLeave(room);
       } catch (error: any) {
         console.error(error)
       }

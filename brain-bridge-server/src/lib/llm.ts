@@ -10,6 +10,7 @@ import { SerpAPI, Tool } from "langchain/tools";
 import { initializeAgentExecutorWithOptions } from "langchain/agents";
 import { Embeddings } from "langchain/dist/embeddings/base";
 import { getTokensForStringWithRetry } from "./get-tokens-for-string.ts";
+import getTotalLengthOfStrings from "./get-total-length-strings.ts";
 
 
 interface LangChainStorage<T> {
@@ -105,6 +106,33 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
     this._additionalOptions = { ...DEFAULT_ADDITIONAL_OPTIONS, ...(options ?? {}) };
   }
 
+  async summarizeConversation(text: string) {
+    const model = new OpenAIChat({
+      temperature: 0,
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: 'gpt-3.5-turbo-0613',
+      maxTokens: -1,
+    });
+    const promptTemplate = new PromptTemplate({
+      template: `This is a conversation between you and a human. Summarize this conversation keeping any important details, and use ONLY the information provided to you.
+
+      The conversation is formatted as follows:
+      [human name]: [human message]
+      [you]: [your message]
+
+      When you summarize, make sure to include who said what.
+
+      Summarize: {text}`,
+      inputVariables: ["text"]
+    });
+    const chain = new LLMChain({
+      llm: model,
+      prompt: promptTemplate,
+    });
+    const result = await this.langChainCall(chain, { text });
+    return result.text;
+  }
+
   /**
    *
    * @param userPrompt The text provided by the end-user
@@ -115,7 +143,14 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
    */
   async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine" = "one-shot") {
     let attempts = 0;
-    console.log("base-prompt", basePrompt)
+    // console.log("base-prompt", basePrompt)
+
+
+    const historyLength = getTotalLengthOfStrings(history);
+    let historyString = history.join("\n");
+    if (historyLength > 2000) {
+      historyString = await this.summarizeConversation(historyString);
+    }
 
     const encodedLength = this.getTokensForStringWithRetry(userPrompt);
     if (encodedLength > 4000) {
@@ -147,7 +182,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
 
 
     console.log("[llm-request]", userPrompt, context, history, mode);
-    let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history });
+    let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history: historyString });
     let response = this.tryParseResponse(userPrompt, rawResponse);
     let usedMode = mode;
 

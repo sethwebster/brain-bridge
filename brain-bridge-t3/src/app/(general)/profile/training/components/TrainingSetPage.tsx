@@ -21,6 +21,7 @@ export default function TrainingSetPage(props: TrainingSetFormProps) {
     <TrainingSetForm
       {...props}
       trainingSet={trainingSetData}
+      key={trainingSetData.trainingIndexVersion}
       onUpdate={handleUpdate} />
   );
 }

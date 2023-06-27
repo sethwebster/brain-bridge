@@ -1,7 +1,6 @@
 "use client";
 
 import { type Session } from "next-auth";
-import { PencilIcon } from "../../training/components/SvgIcons";
 import { useCallback, useState } from "react";
 import EditPublicChat from "./EditPublicChat";
 import { useRouter } from "next/navigation";
@@ -11,8 +10,8 @@ import {
   type TrainingSetWithRelations,
 } from "~/data/interfaces/types";
 import DataClient from "~/utils/data-client";
-import DeleteButton from "../../components/DeleteButton";
-import { TrashCan } from "~/app/components/SvgIcons";
+import ConfirmButton from "../../../../../base-components/ConfirmButton";
+import { PencilIcon, TrashCan } from "~/app/components/SvgIcons";
 import Modal from "~/app/components/ModalDialog";
 import { toast } from "react-toastify";
 
@@ -112,13 +111,13 @@ export default function PublicChatItem({
             {publicChat.trainingSet.name}
           </small>
           <div className="flex justify-end">
-            <DeleteButton
+            <ConfirmButton
               className="p-2 bg-blue-400 rounded-md"
               confirmingClassName="rounded-md bg-red-400 p-2"
               onConfirmed={handleDeleteChat}
             >
               <TrashCan />
-            </DeleteButton>
+            </ConfirmButton>
             <button
               className="ml-2 rounded-md bg-blue-100 p-1.5 shadow hover:bg-blue-200"
               onClick={handleEditClicked}
@@ -173,14 +172,14 @@ export default function PublicChatItem({
           {publicChat.published ? "⬤" : "⬤"}
         </button>
         <div className="flex justify-end">
-          <DeleteButton
+          <ConfirmButton
             className="p-2 bg-blue-400 rounded-md"
             confirmingClassName="rounded-md bg-red-400 p-2"
             // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onConfirmed={handleDeleteChat}
           >
             <TrashCan />
-          </DeleteButton>
+          </ConfirmButton>
         </div>
       </div>
     </>

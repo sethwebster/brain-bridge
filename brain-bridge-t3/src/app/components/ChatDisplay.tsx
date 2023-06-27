@@ -5,13 +5,12 @@ import NewMessageBox from "./NewMessageBox";
 import { ChatToolbar } from "./ChatToolbar";
 import { type Participant } from "@prisma/client";
 import { Messages } from "../(general)/profile/chat/components/Messages";
-import {
-  FakeSpeakerIndicator,
-} from "../(general)/profile/chat/components/TypingIndicator";
+import { FakeSpeakerIndicator } from "../(general)/profile/chat/components/TypingIndicator";
 import {
   type ChatResponseMode,
   type MessageWithRelations,
 } from "~/data/interfaces/types";
+import Logger from "~/lib/logger";
 
 export interface Viewer {
   id: string;
@@ -42,6 +41,7 @@ interface ChatProps {
   onClearChatClicked: () => void;
   notifyNewMessage: (callback: () => void) => void;
   isConnected: boolean;
+  chatType: "private" | "public";
 }
 
 export default function ChatDisplay({
@@ -54,6 +54,7 @@ export default function ChatDisplay({
   onSoundEnabledChange,
   onClearChatClicked,
   isConnected,
+  chatType,
 }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [chatMode, setChatMode] = useState<ChatResponseMode>("one-shot");
@@ -94,7 +95,7 @@ export default function ChatDisplay({
   }, [answerPending, soundPending]);
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div className="flex flex-col w-full h-full bg-slate-100 dark:bg-slate-600">
       <ChatToolbar
         chatMode={chatMode}
         onModeSelectionChanged={handleChatModeSelectionChanged}
@@ -122,16 +123,22 @@ export default function ChatDisplay({
             <FakeSpeakerIndicator />
           </div>
         )}
+        <div
+          className={`fixed bottom-0 ${
+            chatType === "private"
+              ? "w-[calc(100%-280px)] sm:w-[calc(100%-16em)]"
+              : "w-full"
+          }`}
+        >
+          <div className="p-2 px-4">
+            <NewMessageBox
+              onMessageSend={handleNewMessage}
+              isConnected={isConnected}
+            />
+          </div>
+        </div>
         <div ref={bottomRef} className="m-6" />
         <div className="h-20 opacity-0" />
-      </div>
-      <div className="fixed bottom-0 w-screen">
-        <div className="sticky bottom-0 flex w-full p-2 px-4 mt-4 bg-opacity-0 outline-none">
-          <NewMessageBox
-            onMessageSend={handleNewMessage}
-            isConnected={isConnected}
-          />
-        </div>
       </div>
     </div>
   );

@@ -16,6 +16,7 @@ import { useAuthToken } from "~/hooks/useAuthToken";
 import generateChatErrorMessage from "~/utils/error-chat-message-generator";
 import generateId from "~/utils/generate-id";
 import debounce from "lodash.debounce";
+import Logger from "~/lib/logger";
 
 interface AutoTrainingProps {
   oldPrompt: string;
@@ -61,7 +62,7 @@ export function AutoTraining({
 
   const [answerPending, setAnswerPending] = useState(false);
   const [callback, setCallback] = useState<() => void>(() => () => {
-    console.log("callback not set");
+    Logger.warn("callback not set");
   });
   const socket = useSocket();
   const { token } = useAuthToken();
@@ -134,12 +135,10 @@ export function AutoTraining({
   const getPromptOutput = useCallback((text: string) => {
     const regex = new RegExp(/<prompt>([\s\S]*)<\/prompt>/gm);
     const matches = regex.exec(text);
-    console.log(matches);
     return matches;
   }, []);
 
   const sendIntroMessage = useCallback(() => {
-    console.log("SIM");
     let text = "Sounds good. Let's get started.";
 
     if (oldPrompt && oldPrompt.trim().length > 0) {
@@ -250,14 +249,15 @@ export function AutoTraining({
 
   return (
     <ChatDisplay
+      chatType="private"
       isConnected={socket.status === "authenticated"}
       viewer={user}
       answerPending={answerPending}
       conversation={conversation}
       notifyNewMessage={handleNotifyCallbackSet}
-      onClearChatClicked={() => console.log}
+      onClearChatClicked={() => Logger.info}
       onNewMessage={handleSend}
-      onSoundEnabledChange={() => console.log}
+      onSoundEnabledChange={() => Logger.info}
       soundPending={false}
       soundEnabled={false}
     />

@@ -1,4 +1,5 @@
 import invariant from 'tiny-invariant';
+import Logger from './logger';
 
 interface MutexOptions {
   name?: string;
@@ -55,7 +56,7 @@ export default class Mutex {
   private log(str: string) {
     if (this.options.logging) {
       const nameStr = this.options.name ? `[${this.options.name}]` : "";
-      console.log(`[mutex]${nameStr}: ${str}`);
+      Logger.info(`[mutex]${nameStr}: ${str}`);
     }
   }
 }

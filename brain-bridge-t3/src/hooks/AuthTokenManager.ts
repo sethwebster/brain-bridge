@@ -2,6 +2,7 @@ import ms from 'ms';
 import DataClient from "~/utils/data-client";
 import Mutex from "~/lib/mutex";
 import generateId from "~/utils/generate-id";
+import Logger from '~/lib/logger';
 
 export class AuthTokenManager {
   private _id = generateId();
@@ -49,7 +50,7 @@ export class AuthTokenManager {
   private async getToken(): Promise<void> {
     const abortController = new AbortController();
     abortController.signal.addEventListener('abort', () => {
-      console.log("Aborting token fetch", this._id)
+      Logger.warn("Aborting token fetch", this._id)
     });
     const task = (async () => {
       if (this.tokenIsValid && this._token) {
@@ -72,7 +73,7 @@ export class AuthTokenManager {
         this._tokenExpiration = Date.now() + ms("1m");
 
         // Dispatch the token to all subscribers
-        console.log("Notifying", this.authTokenSubscribers.size, "subscribers")
+        // Logger.info("Notifying", this.authTokenSubscribers.size, "subscribers")
         this.authTokenSubscribers.forEach((callback) => {
           callback(this._token);
         });
@@ -94,21 +95,17 @@ export class AuthTokenManager {
 }
 async function isomorphicGenerateToken(result: { token: string | null; } | null) {
   if (typeof window !== 'undefined') {
-    console.log("Client side token fetch")
     result = await DataClient.getToken();
-    console.log("Client side token result", result)
 
   } else {
     try {
-      console.log("Server side token fetch")
       const { getServerSession } = await import('~/server/auth');
       const { createJwt } = await import('~/lib/jwt');
       const session = await getServerSession();
       if (!session) throw new Error("No session");
       result = { token: createJwt(session.user) };
-      console.log("Server side token result", result)
     } catch (e) {
-      console.error("Error getting server side token", e)
+      Logger.error("Error getting server side token", e)
     }
   }
   return result;

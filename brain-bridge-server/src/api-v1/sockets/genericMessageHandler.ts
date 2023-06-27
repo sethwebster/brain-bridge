@@ -67,15 +67,12 @@ export abstract class GenericMessageHandler<O> {
           const storedMessage = await this.storeMessage(conversation as ConversationWithRelations, message);
           const response = await this.generateResponse(conversation as ConversationWithRelations, storedMessage, mode);
           const newMessagePrivate = await this.storeMessage(conversation as ConversationWithRelations, response);
-          console.log("newMessagePrivate: ", newMessagePrivate);
           this.sendToRoom({ message: newMessagePrivate });
           break;
         case "publicChatInstance":
           const storedPublicMessage = await this.storeMessage(conversation as PublicChatInstanceWithRelations, message);
           const publicResponse = await this.generateResponse(conversation as PublicChatInstanceWithRelations, storedPublicMessage, mode);
-          console.log("publicResponse: ", publicResponse)
           const newMessagePublic = await this.storeMessage(conversation as PublicChatInstanceWithRelations, publicResponse);
-          console.log("newMessagePublic: ", newMessagePublic);
           this.sendToRoom({ message: newMessagePublic });
           break;
       }
@@ -111,8 +108,7 @@ export abstract class GenericMessageHandler<O> {
     const type = payload.conversationId ? 'conversation' : 'publicChatInstance';
     let participant = type === "conversation" ? conversation?.participants.find(p => p.name === payload.sender.name) :
       payload.publicChatInstance?.participants.find(p => p.name === payload.sender.name);
-    console.log("genericMessageHandler.ts: storeMessage: type: ", type, "participant: ", participant, "payload: ", payload)
-    console.log("participants", conversation.participants)
+    // console.log("genericMessageHandler.ts: storeMessage: type: ", type, "participant: ", participant, "payload: ", payload)
 
     participant = await this.createParticipantIfNecessary(participant, payload);
 
@@ -174,7 +170,7 @@ export abstract class GenericMessageHandler<O> {
   }
 
   private sendToRoom<O>(message: O) {
-    this.io.in(this.room).emit("message", message);
+    this.io.in(this.room).emit("message", { ...message, room: this.room });
   }
 
 }
@@ -230,7 +226,6 @@ export abstract class GenericMessageHandlerWithCosts<O> extends GenericMessageHa
           trainingSetId: undefined,
         },
       }).catch(err => console.error(err)).then((usage) => {
-        console.log("usage saved");
         cost.stored = true;
         return usage;
       });
@@ -259,7 +254,6 @@ export abstract class GenericMessageHandlerWithCosts<O> extends GenericMessageHa
           trainingSetId: undefined,
         },
       }).catch(err => console.error(err)).then((usage) => {
-        console.log("usage saved");
         cost.stored = true;
         return usage;
       });

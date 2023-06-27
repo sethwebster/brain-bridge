@@ -23,7 +23,6 @@ async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
     body: JSON.stringify(trainingSet),
   })
   const data = await response.json() as TrainingSetWithRelations;
-  console.log("DATA", data)
   return data
 }
 
@@ -57,6 +56,13 @@ async function fetchChats(): Promise<ConversationWithRelations[]> {
   return data
 }
 
+
+async function fetchChat(chatId: string): Promise<ConversationWithRelations> {
+  const response = await fetch(makeApiUrl(`/profile/chat/${chatId}/api`), { method:"GET" })
+  const data = await response.json() as ConversationWithRelations;
+  return data;
+}
+
 async function clearChat(chatId: string): Promise<ConversationWithRelations> {
   const response = await fetch(makeApiUrl(`/profile/chat/${chatId}/api/messages`), {
     method: "DELETE",
@@ -66,6 +72,17 @@ async function clearChat(chatId: string): Promise<ConversationWithRelations> {
   })
   const data = await response.json() as ConversationWithRelations;
   return data;
+}
+
+async function fetchMessages(chatId: string): Promise<MessageWithRelations[]> {
+  const response = await fetch(makeApiUrl(`/profile/chat/${chatId}/api/messages`), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+  const data = await response.json() as { messages: MessageWithRelations[] };
+  return data.messages;
 }
 
 async function clearPublicChatMessages(publicChatId: string): Promise<PublicChatWithRelations> {
@@ -152,7 +169,6 @@ async function publishPublicChat(publicChat: PublicChatWithRelations) {
 }
 
 async function sendMessage(message: MessageWithRelations, mode: ChatResponseMode) {
-  console.log("sendMessage", message.conversationId, message)
   invariant(message.conversationId, "conversationId is required")
   const response = await fetch(makeApiUrl(`/profile/chat/${message.conversationId}/api/message`), {
     method: "POST",
@@ -167,8 +183,6 @@ async function sendMessage(message: MessageWithRelations, mode: ChatResponseMode
 }
 
 async function sendPublicInstanceChatMessage(message: MessageWithRelations, mode: ChatResponseMode) {
-  console.log("sendPublicInstanceChatMessage", message.publicChatInstance?.publicChatId, message)
-
   invariant(message.publicChatInstance?.publicChatId, "publicChatId is required")
   invariant(message.publicChatInstanceId, "publicChatInstanceId is required")
   const response = await fetch(makeApiUrl(`/public-chat/${message.publicChatInstance?.publicChatId}/api/message`), {
@@ -243,7 +257,9 @@ const DataClient = {
   createTrainingSet,
   updateTrainingSet,
   deleteTrainingSet,
+  fetchChat,
   fetchChats,
+  fetchMessages,
   clearChat,
   clearPublicChatMessages,
   newChat,

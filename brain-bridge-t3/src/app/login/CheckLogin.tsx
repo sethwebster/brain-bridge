@@ -14,13 +14,6 @@ export function CheckLogin({ provider }: { provider: "auth0" | "anonymous" }) {
     };
     const doSignIn = async () => {
       if (provider === "anonymous") {
-        // const  {token} = await DataClient.getAnonymousToken();
-        // console.log("Created Token (posting)", token)
-        // const response = await fetch("/api/auth/signin/anonymous?id_token=" + token, {
-        //   method: "POST",
-        // });
-        // console.log("Response", response)
-        // router.refresh();
         await signIn(provider, {...options, prompt: "none"});
       } else {
         await signIn(provider, options);

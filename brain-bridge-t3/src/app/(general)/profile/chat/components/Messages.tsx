@@ -49,7 +49,7 @@ export function Messages({
 
   return (
     <>
-      <ul className="flex flex-col flex-grow px-4 text-white markdown">
+      <ul className="flex flex-col flex-grow px-4 text-white markdown ">
         {sorted.map((message) => (
           <li
             className={`flex flex-row ${
@@ -58,7 +58,7 @@ export function Messages({
             key={`${message.sender.id}-${message.id}`}
           >
             <div
-              className={`mt-2 rounded-lg p-2 drop-shadow-md dark:drop-shadow-none ${
+              className={`mt-2 rounded-lg p-2 drop-shadow-md  ${
                 message.sender.name === userName
                   ? "bg-blue-500"
                   : `bg-slate-500`

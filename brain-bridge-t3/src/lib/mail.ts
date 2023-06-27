@@ -1,5 +1,6 @@
 import * as postmark from "postmark";
 import { env } from "~/env.mjs";
+import Logger from "./logger";
 
 // Send an email:
 const client = new postmark.ServerClient(env.POSTMARK_API_KEY);
@@ -9,7 +10,7 @@ async function sendEmail({ From, To, Subject, HtmlBody, TextBody, MessageStream 
   const result = await client.sendEmail({
     From, To, Subject, HtmlBody, TextBody, MessageStream
   });
-  console.log("EMAIL RESULT", result)
+  Logger.info("EMAIL RESULT", result)
   return result;
 }
 

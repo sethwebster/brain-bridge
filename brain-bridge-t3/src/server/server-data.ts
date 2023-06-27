@@ -17,13 +17,13 @@ import { prisma } from "./db";
 import { type Prisma, type Participant } from "@prisma/client";
 import Mail from "~/lib/mail";
 import { calculateCost } from "~/lib/calculate-costs";
+import Logger from "~/lib/logger";
 
 ///////////////////
 // Training Sets //
 async function fetchUserTrainingSets(): Promise<TrainingSetWithRelations[]> {
   const user = await getServerSession();
   invariant(user, "User must be logged in to fetch training sets");
-  console.log("fetchUserTrainingSets", user.user.id)
   const sets = await prisma.trainingSet.findMany({
     where: { OR: [{ userId: user.user.id }, { trainingSetShares: { some: { acceptedUserId: user.user.id } } }] },
     ...trainingSetWithRelations
@@ -65,7 +65,6 @@ async function fetchUserTrainingSet(trainingSetId: string): Promise<TrainingSetW
       acceptedUserId: user.user.id,
     }
   });
-  console.log("share", share)
   if (share) {
     const set = await prisma.trainingSet.findFirst({
       where: { id: trainingSetId, trainingSetShares: { some: { acceptedUserId: user.user.id } } },
@@ -138,7 +137,7 @@ async function sendTrainingSetInvitationEmail(email: string, trainingSetName: st
     training_set_id: trainingSetId,
   });
 
-  console.log("Sending email", email, loadedUser.email)
+  Logger.info("Sending email", email, loadedUser.email)
   return result;
 }
 
@@ -146,9 +145,7 @@ async function sendInvitationEmails(trainingSet: TrainingSetWithRelations) {
   const invitationsToSend = trainingSet.trainingSetShares.filter(s => {
     return s.invitationSentAt === null && s.acceptedAt === null;
   });
-  console.log("Will need to send invitations", invitationsToSend)
   const results = await Promise.all(invitationsToSend.map(async s => {
-    console.log("Sending invitation email", s.toUserEmail, trainingSet.id)
     const emailResult = await sendTrainingSetInvitationEmail(s.toUserEmail, trainingSet.name, trainingSet.id);
     return {
       share: s, emailResult
@@ -182,7 +179,11 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
   );
   invariant(authorizedToUpdate, "User is not authorized to make this update");
   const incomingTrainingOptions = ((trainingSet.trainingOptions ?? defaultTrainingOptions) ?? defaultTrainingOptions) as TrainingOptions
+  let versionChangeRequired = false;
 
+  if (JSON.stringify(existing.trainingOptions) !== JSON.stringify(incomingTrainingOptions) || JSON.stringify(existing.trainingSources) !== JSON.stringify(trainingSet.trainingSources)) {
+    versionChangeRequired = true;
+  }
   await prisma.trainingSet.update({
     where: {
       id: trainingSet.id,
@@ -253,7 +254,7 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
         }),
       },
       updatedAt: new Date(),
-      version: existing.version + 1,
+      version: versionChangeRequired ? existing.version + 1 : existing.version,
     },
   })
   const updated = await fetchUserTrainingSet(trainingSet.id);
@@ -399,7 +400,6 @@ async function fetchChat(id: string): Promise<ConversationWithRelations> {
 }
 
 async function deleteChat(id: string) {
-  console.log("DELETING", id)
   const session = await getServerSession();
   invariant(session, "User must be logged in to delete chat");
   const chat = await fetchChat(id);
@@ -463,7 +463,6 @@ async function fetchPublicChat(id: string, publishedOnly: boolean) {
 async function updatePublicChat(publicChat: PublicChatWithRelations & { published: boolean }) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to create a public chat");
-  console.log("UPDATING", publicChat)
   const chat = await prisma.publicChat.update({
     where: { id: publicChat.id },
     data: {

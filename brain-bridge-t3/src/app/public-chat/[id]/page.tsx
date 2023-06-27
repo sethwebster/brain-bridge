@@ -10,6 +10,7 @@ import { type PublicChatInstanceWithRelations } from "~/data/interfaces/types";
 import PublicChat from "./components/PublicChat";
 import { type PublicChat as PublicChatType } from "@prisma/client";
 import { RoomJoiner } from "~/app/(general)/profile/components/RoomJoiner";
+import Logger from "~/lib/logger";
 
 interface PageProps {
   params: {
@@ -47,36 +48,28 @@ export default async function PublicChatPage({ params: { id } }: PageProps) {
       "chats",
       {} as { [key: string]: string }
     );
-    console.log("conversations", conversations);
     const conversationId = conversations[chat.id];
-    console.log("conversationId", conversationId);
     let conversation: PublicChatInstanceWithRelations | undefined;
     if (conversationId) {
       try {
         conversation = await ServerData.fetchPublicChatInstance(conversationId);
       } catch (e) {
-        console.log(`Chat for ${viewerId}/${conversationId} not found`, e);
+        Logger.error(`Chat for ${viewerId}/${conversationId} not found`, e);
       }
     }
     if (!conversation) {
-      console.log("No conversation found cookies");
       try {
         const existing = await ServerData.fetchPublicChatInstanceForViewer(
           chat.id,
           viewerId
         );
         if (existing) {
-          console.log("Existing convo");
           conversation = existing;
         }
       } catch (e) {
-        console.log(
-          "Unable to fetch existing conversation [expected if new]",
-          e
-        );
+        Logger.error(`Chat for ${viewerId}/${conversationId ?? "undefined"} not found`, e);
       }
       if (!conversation) {
-        console.log("creating new convo");
         conversation = await ServerData.newPublicChatInstance({
           participant: {
             id: viewerId,
@@ -111,7 +104,7 @@ export default async function PublicChatPage({ params: { id } }: PageProps) {
       </div>
     );
   } catch (e) {
-    console.log("Loading chat failed", e);
+    Logger.error("Loading chat failed", e);
     notFound();
   }
 }

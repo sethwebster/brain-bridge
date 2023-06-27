@@ -82,10 +82,6 @@ export function promptGeneratorHandler(socket: Socket, io: Server) {
 
       const theHistory = [...renamed, ...split].join("\n");
       try {
-        // console.log("****************************************",
-        //   { task: "prompt-generator-message", message, history: theHistory }
-        // );
-
         const { text } = await llmChain.call({ prompt: message.text, history: theHistory }) as LLMResponse;
 
         switch (mode) {

@@ -17,7 +17,7 @@ export async function runWithCostStorage(conversation: Pick<ConversationWithRela
 
     await fn(onTokensUsed);
   } catch (err: any) {
-    console.log('runWithCostStorage', err);
+    console.log('Error: runWithCostStorage: ', err);
     throw err;
   } finally {
     console.log("Storing usage:", "Conversation ID:", conversation.id, "Tokens:", cost.tokens);
@@ -47,7 +47,6 @@ function saveUsage(conversation: Pick<ConversationWithRelations, "id" | "trainin
       trainingSetId: undefined,
     },
   }).catch(err => console.error(err)).then(() => {
-    console.log("usage saved");
     cost.stored = true;
   });
 }

@@ -9,6 +9,7 @@ import { type Socket } from "socket.io-client";
 import globalSocket from "../../lib/socket";
 import invariant from "tiny-invariant";
 import defaultTokenManager from "~/hooks/AuthTokenManager";
+import Logger from "~/lib/logger";
 
 type SocketStatus =
   | "none"
@@ -38,7 +39,7 @@ export default function SocketProvider({
   const [token, setToken] = useState<string | null>(defaultTokenManager.token);
   const [status, setStatus] = useState<SocketStatus>("none");
   const handleConnected = useCallback(() => {
-    console.log("SocketProvider: Socket is connected");
+    Logger.info("SocketProvider: Socket is connected");
 
     if (globalSocket.auth) {
       const { token } = globalSocket.auth as { token: string | null };
@@ -53,19 +54,19 @@ export default function SocketProvider({
   }, []);
 
   const handleDisconnected = useCallback(() => {
-    console.log("SocketProvider: Socket is disconnected");
+    Logger.info("SocketProvider: Socket is disconnected");
     setSocket(null);
     setStatus("disconnected");
   }, []);
 
   const handleTokenChange = useCallback((token: string | null) => {
-    console.log("SocketProvider: Token Change", token);
+    Logger.info("SocketProvider: Token Change", token);
     if (globalSocket) {
       if (!token) {
         globalSocket.auth = { token: null };
         return;
       } else {
-        console.log("Setting the socket token", token);
+        // Logger.info("Setting the socket token", token);
         // Token changed, but socket may be already connected
         // Disconnect and reconnect to update the token
         if (globalSocket.connected) {
@@ -89,6 +90,7 @@ export default function SocketProvider({
     globalSocket.connect();
     return () => {
       unsubscribe();
+      globalSocket.disconnect();
       globalSocket.off("connect", handleConnected);
       globalSocket.off("disconnect", handleDisconnected);
     };

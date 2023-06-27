@@ -34,7 +34,7 @@ export default function SideBar({
   currentCosts: number;
 }) {
   return (
-    <div className="w-12 h-full overflow-hidden transition-all shadow-lg sm:w-64">
+    <div className="w-12 h-full overflow-hidden transition-all drop-shadow-lg sm:w-64">
       {/* SIDEBAR */}
       <aside
         id="default-sidebar"
@@ -52,7 +52,7 @@ export default function SideBar({
                 <SideBarItemLabel title="Home">Home</SideBarItemLabel>
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 href="/profile/chats"
                 className="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
@@ -63,7 +63,7 @@ export default function SideBar({
                   {chatCount}
                 </span>
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link
                 href="/profile/training"

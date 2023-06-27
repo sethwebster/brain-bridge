@@ -12,12 +12,7 @@ interface BillingTableProps {
 export default function BillingTable({ dateRange, usage }: BillingTableProps) {
   const startDate = new Date(dateRange.start); //.toDateString());
   const endDate = new Date(dateRange.end); //.toDateString());
-  const offset = new Date(startDate).getTimezoneOffset() / 60;
-  console.log("Offset", offset);
   startDate.setHours(0, 0, 0, 0);
-
-  // endDate.setHours(offset, 0, 0, 0);
-  // console.log("Date Range", { startDate, endDate });
 
   let datesBetweenStartAndEnd: Date[] = [];
   let currentDate = startDate;
@@ -43,10 +38,6 @@ export default function BillingTable({ dateRange, usage }: BillingTableProps) {
   invariant(datesBetweenStartAndEnd[0]);
   invariant(datesBetweenStartAndEnd[datesBetweenStartAndEnd.length - 1]);
 
-  console.log(
-    datesBetweenStartAndEnd[0],
-    datesBetweenStartAndEnd[0].getUTCFullYear()
-  );
   const moreThanOneYearInList =
     datesBetweenStartAndEnd[0].getUTCFullYear() !==
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

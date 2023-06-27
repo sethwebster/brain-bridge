@@ -1,3 +1,101 @@
+export function EraseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+    >
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+      <g
+        id="SVGRepo_tracerCarrier"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      ></g>
+      <g id="SVGRepo_iconCarrier">
+        {" "}
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z"
+          fill="#1F2328"
+        ></path>{" "}
+      </g>
+    </svg>
+  );
+}
+
+export function ShareIcon({
+  className = "w-4 h-4",
+  fillColor = "white",
+}: {
+  className?: string;
+  fillColor?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+      <g
+        id="SVGRepo_tracerCarrier"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      ></g>
+      <g id="SVGRepo_iconCarrier">
+        <g id="Communication / Share_iOS_Export">
+          <path
+            id="Vector"
+            d="M9 6L12 3M12 3L15 6M12 3V13M7.00023 10C6.06835 10 5.60241 10 5.23486 10.1522C4.74481 10.3552 4.35523 10.7448 4.15224 11.2349C4 11.6024 4 12.0681 4 13V17.8C4 18.9201 4 19.4798 4.21799 19.9076C4.40973 20.2839 4.71547 20.5905 5.0918 20.7822C5.5192 21 6.07899 21 7.19691 21H16.8036C17.9215 21 18.4805 21 18.9079 20.7822C19.2842 20.5905 19.5905 20.2839 19.7822 19.9076C20 19.4802 20 18.921 20 17.8031V13C20 12.0681 19.9999 11.6024 19.8477 11.2349C19.6447 10.7448 19.2554 10.3552 18.7654 10.1522C18.3978 10 17.9319 10 17 10"
+            stroke={fillColor}
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          ></path>{" "}
+        </g>{" "}
+      </g>
+    </svg>
+  );
+}
+
+export function FolderIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4"
+    >
+      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+      <g
+        id="SVGRepo_tracerCarrier"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      ></g>
+      <g id="SVGRepo_iconCarrier">
+        {" "}
+        <title></title>{" "}
+        <g id="Complete">
+          {" "}
+          <g id="folder">
+            {" "}
+            <path
+              d="M2,18.8V5.3A2.3,2.3,0,0,1,4.3,3H9.6a1.1,1.1,0,0,1,.8.4l2.8,3.2a1.1,1.1,0,0,0,.8.4h5.6A2.2,2.2,0,0,1,22,9.2v9.7A2.2,2.2,0,0,1,19.8,21H4.2A2.2,2.2,0,0,1,2,18.8Z"
+              fill="none"
+              stroke="#fff"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+            ></path>{" "}
+          </g>{" "}
+        </g>{" "}
+      </g>
+    </svg>
+  );
+}
+
 export const UrlIcon = ({ color }: { color?: string }) => (
   <svg
     className="h-4 w-4"
@@ -86,13 +184,20 @@ export const PlusAddIcon = () => (
   </svg>
 );
 
-export function TrashCan() {
+export function TrashCan({
+  fillColor,
+  strokeColor,
+}: {
+  strokeColor?: string;
+  fillColor?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
       className="h-4 w-4"
-      stroke="white"
+      stroke={strokeColor || "white"}
+      fill={fillColor || "white"}
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -103,7 +208,7 @@ export function TrashCan() {
       <g id="SVGRepo_iconCarrier">
         <path
           d="M6 7V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V7M6 7H5M6 7H8M18 7H19M18 7H16M10 11V16M14 11V16M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7M8 7H16"
-          stroke="#000000"
+          stroke={strokeColor || "white"}
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -219,74 +324,16 @@ export function SaveIcon() {
   );
 }
 
-export function EraseIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
-    >
-      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-      <g
-        id="SVGRepo_tracerCarrier"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      ></g>
-      <g id="SVGRepo_iconCarrier">
-        {" "}
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M15.0722 3.9967L20.7508 9.83395L17.0544 13.5304L13.0758 17.5H21.0041V19H7.93503L4.00195 15.0669L15.0722 3.9967ZM10.952 17.5L15.4628 12.9994L11.8268 9.3634L6.12327 15.0669L8.55635 17.5H10.952Z"
-          fill="#1F2328"
-        ></path>{" "}
-      </g>
-    </svg>
-  );
-}
-
-export function ShareIcon({
-  className = "w-4 h-4",
-  fillColor = "white",
+export function DownloadIcon({
+  strokeColor = "#fff",
 }: {
-  className?: string;
-  fillColor?: string;
+  strokeColor?: string;
 }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-      <g
-        id="SVGRepo_tracerCarrier"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      ></g>
-      <g id="SVGRepo_iconCarrier">
-        <g id="Communication / Share_iOS_Export">
-          <path
-            id="Vector"
-            d="M9 6L12 3M12 3L15 6M12 3V13M7.00023 10C6.06835 10 5.60241 10 5.23486 10.1522C4.74481 10.3552 4.35523 10.7448 4.15224 11.2349C4 11.6024 4 12.0681 4 13V17.8C4 18.9201 4 19.4798 4.21799 19.9076C4.40973 20.2839 4.71547 20.5905 5.0918 20.7822C5.5192 21 6.07899 21 7.19691 21H16.8036C17.9215 21 18.4805 21 18.9079 20.7822C19.2842 20.5905 19.5905 20.2839 19.7822 19.9076C20 19.4802 20 18.921 20 17.8031V13C20 12.0681 19.9999 11.6024 19.8477 11.2349C19.6447 10.7448 19.2554 10.3552 18.7654 10.1522C18.3978 10 17.9319 10 17 10"
-            stroke={fillColor}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          ></path>{" "}
-        </g>{" "}
-      </g>
-    </svg>
-  );
-}
-
-export function FolderIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
+      fill="#000000"
       className="h-4 w-4"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
@@ -296,22 +343,44 @@ export function FolderIcon() {
         strokeLinejoin="round"
       ></g>
       <g id="SVGRepo_iconCarrier">
-        {" "}
-        <title></title>{" "}
+        <title></title>
         <g id="Complete">
-          {" "}
-          <g id="folder">
-            {" "}
-            <path
-              d="M2,18.8V5.3A2.3,2.3,0,0,1,4.3,3H9.6a1.1,1.1,0,0,1,.8.4l2.8,3.2a1.1,1.1,0,0,0,.8.4h5.6A2.2,2.2,0,0,1,22,9.2v9.7A2.2,2.2,0,0,1,19.8,21H4.2A2.2,2.2,0,0,1,2,18.8Z"
-              fill="none"
-              stroke="#fff"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-            ></path>{" "}
-          </g>{" "}
-        </g>{" "}
+          <g id="download">
+            <g>
+              <path
+                d="M3,12.3v7a2,2,0,0,0,2,2H19a2,2,0,0,0,2-2v-7"
+                fill="none"
+                stroke={strokeColor}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+              ></path>
+              <g>
+                <polyline
+                  data-name="Right"
+                  fill="none"
+                  id="Right-2"
+                  points="7.9 12.3 12 16.3 16.1 12.3"
+                  stroke={strokeColor}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                ></polyline>
+                <line
+                  fill="none"
+                  stroke={strokeColor}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  x1="12"
+                  x2="12"
+                  y1="2.7"
+                  y2="14.2"
+                ></line>
+              </g>
+            </g>
+          </g>
+        </g>
       </g>
     </svg>
   );

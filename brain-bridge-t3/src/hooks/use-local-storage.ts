@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Logger from "~/lib/logger";
 
 
 function useLocalStorage<T>(key: string, initialValue: T) {
@@ -10,7 +11,7 @@ function useLocalStorage<T>(key: string, initialValue: T) {
       // otherwise initialize it with the passed initialValue
       return (value ? JSON.parse(value) : initialValue) as T;
     } catch (error) {
-      console.log(error)
+      Logger.error(error)
       return null as T;
     }
   })
@@ -23,7 +24,7 @@ function useLocalStorage<T>(key: string, initialValue: T) {
       window.localStorage.setItem(key, JSON.stringify(valueToStore))
       setState(value)
     } catch (error) {
-      console.log("FAILED TO SET LOCAL STORAGE VALUE", key, error)
+      Logger.error("FAILED TO SET LOCAL STORAGE VALUE", key, error)
     }
   }
 

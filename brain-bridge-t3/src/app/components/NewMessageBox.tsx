@@ -55,7 +55,7 @@ export default function NewMessageBox({
       ref={textRef}
       name="message"
       placeholder={isConnected ? "Type your message here" : "Offline"}
-      className="mb-4 flex-grow rounded border bg-slate-400 bg-opacity-95 p-2 shadow-inner outline-none transition-all disabled:opacity-50 dark:bg-slate-500"
+      className="w-full p-2 mb-4 transition-all border rounded shadow-lg outline-none f text-slate-50 bg-slate-400 bg-opacity-95 disabled:opacity-50 dark:bg-slate-500"
       value={currentMessageText}
       onKeyDown={handleKeyDown}
       onChange={handleTextChanged}

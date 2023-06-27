@@ -60,7 +60,6 @@ export default function PublicChat({
       const removeMessageListener = socket.onMessage(
         "message",
         (payload: { message: MessageWithRelations }) => {
-          console.log("new message received", payload);
           setAnswerPending(false);
           setLoadedMessages((messages) => [...messages, payload.message]);
           callback?.();
@@ -77,9 +76,7 @@ export default function PublicChat({
       const removeErrorListener = socket.onMessage(
         "message-error",
         (payload: { error?: string }) => {
-          console.log("message error received", payload);
           setAnswerPending(false);
-          console.log("payload.error", payload.error);
           if (payload.error) {
             setLoadedMessages((messages) => [
               ...messages,
@@ -136,27 +133,29 @@ export default function PublicChat({
   const handleNotifyCallbackSet = useCallback((callback: () => void) => {
     setCallback(callback);
   }, []);
-  console.log("session", session);
   return (
     <>
       {!session ||
         (session.status != "authenticated" && (
           <CheckLogin provider="anonymous" />
         ))}
-      <ChatDisplay
-        isConnected={socket.status === "authenticated" ?? false}
-        viewer={viewer}
-        conversation={{ ...publicChatInstance, messages: loadedMessages }}
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        onNewMessage={handleNewMessage}
-        onSoundEnabledChange={handleSoundEnabledChanged}
-        soundEnabled={soundEnabled}
-        answerPending={answerPending}
-        soundPending={soundPending}
-        // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-misused-promises
-        onClearChatClicked={handleClearChatClicked}
-        notifyNewMessage={handleNotifyCallbackSet}
-      />
+      <div className="w-full h-auto min-h-full overflow-scroll bg-slate-100 dark:bg-slate-700">
+        <ChatDisplay
+          chatType="public"
+          isConnected={socket.status === "authenticated" ?? false}
+          viewer={viewer}
+          conversation={{ ...publicChatInstance, messages: loadedMessages }}
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          onNewMessage={handleNewMessage}
+          onSoundEnabledChange={handleSoundEnabledChanged}
+          soundEnabled={soundEnabled}
+          answerPending={answerPending}
+          soundPending={soundPending}
+          // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-misused-promises
+          onClearChatClicked={handleClearChatClicked}
+          notifyNewMessage={handleNotifyCallbackSet}
+        />
+      </div>
     </>
   );
 }

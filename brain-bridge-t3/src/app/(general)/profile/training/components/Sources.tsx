@@ -1,6 +1,5 @@
 import { useFilePicker } from "use-file-picker";
 import { memo, useCallback, useMemo, useState } from "react";
-import { DownloadIcon, PlusAddIcon, TrashCan, UrlIcon } from "./SvgIcons";
 import { isValidURL } from "~/utils/validation";
 import { type TrainingSource } from "@prisma/client";
 import Modal from "~/app/components/ModalDialog";
@@ -14,13 +13,14 @@ import {
 } from "browser-fs-access";
 import path from "path";
 import delay from "~/utils/delay";
-import { FolderIcon } from "~/app/components/SvgIcons";
-import DeleteButton from "../../components/DeleteButton";
+import { DownloadIcon, FolderIcon, PlusAddIcon, TrashCan, UrlIcon } from "~/app/components/SvgIcons";
 import * as R from "ramda";
 import { saveAs } from "file-saver";
 import JsZip from "jszip";
 import { extension } from "mime-types";
 import { toast } from "react-toastify";
+import DeleteButton from "~/base-components/DeleteButton";
+import Logger from "~/lib/logger";
 
 function Sources({
   sources,
@@ -46,7 +46,6 @@ function Sources({
 
   const handleFileAdded = useCallback(
     async (file: FileWithDirectoryAndFileHandle) => {
-      console.log(file);
       const fileName =
         file.webkitRelativePath.length > 0
           ? file.webkitRelativePath
@@ -60,7 +59,6 @@ function Sources({
       let status: "pending" | "complete" | "error" = "pending";
       if (response.status > 201) {
         // Try again
-        console.log("retrying", file);
         await delay(1000);
         response = await R2Client.uploadFile(url, file);
       }
@@ -113,7 +111,7 @@ function Sources({
                   resolve(files);
                 })
                 .catch((err) => {
-                  console.log("err", err);
+                  Logger.error("err", err);
                 });
             }, index * 100);
           });
@@ -121,8 +119,6 @@ function Sources({
       )
         .then((completedFiles) => {
           const files = completedFiles.flat();
-          console.log("files", files);
-
           const updated: Omit<TrainingSource, "trainingSetId">[] = [...sources];
 
           files.forEach((file) => {
@@ -169,7 +165,7 @@ function Sources({
           setInProcessFiles([]);
         })
         .catch((err) => {
-          console.log("err", err);
+          Logger.error("err", err);
         });
       return true;
     },
@@ -241,7 +237,6 @@ function Sources({
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/ban-ts-comment
       const filtered = blobsInDir.filter(
         (blob: FileWithDirectoryAndFileHandle) => {
-          console.log("blob", blob);
           if (!Array.isArray(blob)) {
             const ext = path.extname(blob.name);
             return [".md", ".pdf", ".txt", ".html"].includes(ext);
@@ -257,16 +252,13 @@ function Sources({
 
   const handleDownloadClick = useCallback(() => {
     const downloadAndZipFiles = async () => {
-      console.log("Download files");
       const sourcePromises = sources.map((source) => {
         invariant(process.env.NEXT_PUBLIC_BASE_URL, "Base URL is required");
-        console.log(source);
         const item =
           source.name.length > 0 && source.name.startsWith("http")
             ? `web?url=${source.name}`
             : source.content;
         const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/files/${item}`;
-        console.log(url);
         return fetch(url).then((res) => {
           return {
             source,
@@ -467,11 +459,9 @@ function Sources({
                 <DeleteButton
                   disabled={disabled}
                   onConfirmed={() => handleDelete(index)}
-                  className="flex h-8 w-8 flex-row items-center justify-center rounded border-green-800 bg-blue-400 bg-opacity-50 hover:bg-opacity-90 "
-                  confirmingClassName="flex flex-row items-center justify-center w-8 h-8 bg-red-400 bg-opacity-50 border-green-800 rounded hover:bg-opacity-90 "
-                >
-                  <TrashCan />
-                </DeleteButton>
+                  className="m-0 flex h-8 w-8 flex-row items-center justify-center p-0 opacity-90"
+                  confirmingClassName="w-8 h-8 bg-red-400 items-center flex flex-row p-0 m-0 justify-center opacity-90"
+                />
               </li>
             ))}
           {sources.length > 25 && (

@@ -4,9 +4,10 @@ import { SocketContext } from "~/app/components/SocketProvider";
 import invariant from "tiny-invariant";
 import { type Socket } from "socket.io-client";
 import socket from "~/lib/socket";
+import Logger from "~/lib/logger";
 
 function logger<T>(message: string, data: T, sendOrReceived: "send" | "received") {
-  console.log(`[${sendOrReceived}] Socket Message: `, message, data);
+  Logger.info(`[${sendOrReceived}] Socket Message: `, message, data);
 }
 
 type JoinPayload = {
@@ -51,7 +52,6 @@ const roomManager = new RoomManager(socket);
 export default function useSocket() {
   const context = useContext(SocketContext);
   const { socket, status } = context;
-  console.log("SocketAuth", socket?.auth)
   function sendMessage<T extends object>(message: string, data: T) {
     logger(message, data, "send");
     if (

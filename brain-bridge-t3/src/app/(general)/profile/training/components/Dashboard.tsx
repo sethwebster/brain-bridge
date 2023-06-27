@@ -4,7 +4,6 @@ import {
   MdChat,
   MdConstruction,
   MdPublic,
-  MdQuestionAnswer,
   MdQuestionMark,
 } from "react-icons/md";
 import { type TrainingSetWithRelations } from "~/data/interfaces/types";

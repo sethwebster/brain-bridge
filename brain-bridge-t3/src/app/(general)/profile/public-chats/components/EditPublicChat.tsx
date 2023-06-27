@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { SaveIcon } from "../../training/components/SvgIcons";
 import invariant from "tiny-invariant";
 import { type PublicChatWithRelations } from "~/data/interfaces/types";
 import Input from "~/app/components/Input";
 import Select from "~/app/components/Select";
 import { type TrainingSet } from "@prisma/client";
+import { SaveIcon } from "~/app/components/SvgIcons";
 
 export default function EditPublicChat({
   publicChat,

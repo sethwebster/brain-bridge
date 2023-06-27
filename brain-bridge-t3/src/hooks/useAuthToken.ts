@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import defaultTokenManager from "./AuthTokenManager";
+import Logger from "~/lib/logger";
 
 export function useAuthToken() {
   const [token, setToken] = useState<string | null>(defaultTokenManager.token);
@@ -17,7 +18,7 @@ export function useAuthToken() {
     return defaultTokenManager.tokenIsValid;
   }, [token]);
 
-  console.log("useAuthToken", token, isTokenValid())
+  // Logger.info("useAuthToken", token, isTokenValid())
   return {
     token, isTokenValid
   };

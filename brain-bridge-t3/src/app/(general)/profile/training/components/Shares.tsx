@@ -6,9 +6,9 @@ import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
 import { ShareIcon } from "~/app/components/SvgIcons";
 import { type TrainingSetWithRelations } from "~/data/interfaces/types";
-import { SaveIcon, TrashCan } from "./SvgIcons";
+import { SaveIcon, TrashCan } from "~/app/components/SvgIcons";
 import Select from "~/app/components/Select";
-import DeleteButton from "../../components/DeleteButton";
+import ConfirmButton from "~/base-components/ConfirmButton";
 
 function Shares({
   trainingSet,
@@ -24,7 +24,6 @@ function Shares({
   const [newEmailText, setNewEmailText] = useState("");
 
   const isDirty = useMemo(() => {
-    console.log("isDirtyCheck");
     return (
       JSON.stringify(shareData) !==
       JSON.stringify(trainingSet.trainingSetShares)
@@ -166,13 +165,13 @@ function Shares({
                   <option value="EDITOR">Editor</option>
                 </Select>
               </div>
-              <DeleteButton
+              <ConfirmButton
                 onConfirmed={() => handleRemoveShare(share)}
                 className="flex h-8 w-8 flex-row items-center justify-center rounded border-green-800 bg-blue-400 bg-opacity-50 hover:bg-opacity-90 "
                 confirmingClassName="flex flex-row items-center justify-center w-8 h-8 bg-red-400 bg-opacity-50 border-green-800 rounded hover:bg-opacity-90 "
               >
                 <TrashCan />
-              </DeleteButton>
+              </ConfirmButton>
             </li>
           ))}
         </ul>

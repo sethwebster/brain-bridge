@@ -1,13 +1,14 @@
 import { type Session } from "next-auth";
 import { type NextRequest, NextResponse } from "next/server";
 import { createJwt } from "~/lib/jwt";
+import Logger from "~/lib/logger";
 import { getServerSession } from "~/server/auth";
 
 async function tryGetServerSession() {
   try {
     return await getServerSession();
   } catch (e) {
-    console.log("Error getting server session", e)
+    Logger.error("Error getting server session", e)
     return null;
   }
 }
@@ -15,7 +16,7 @@ async function tryGetServerSession() {
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
-  console.log("GET /api/tokens", req.referrer);
+  Logger.info("GET /api/tokens", req.referrer);
   console.time("Token");
   const session: Session | null = await tryGetServerSession();
 
