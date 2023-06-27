@@ -21,11 +21,11 @@ export default async function TrainingPage({
   }
   return (
     <div className="w-full h-full">
-      {/* <TrainingSetPage
+      <TrainingSetPage
         trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
         user={session.user}
         promptTemplate={promptTemplate}
-      /> */}
+      />
     </div>
   );
 }
