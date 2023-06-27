@@ -119,7 +119,7 @@ export class BrainBridgeLangChain implements LangChainStore {
     const context: string[] = [];
 
     data.filter(d => d.pageContent.trim().length > 0).forEach((item) => {
-      context.push(`Context:\n${item.pageContent.trim()}`)
+      context.push(`Context:\nDocument: ${item.metadata.source}\nContent:\n${item.pageContent.trim()}`)
     });
 
 

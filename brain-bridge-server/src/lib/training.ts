@@ -296,7 +296,7 @@ export class TrainingSetBuilder {
 
             documents = await (new TextLoader(tempFilePath).loadAndSplit(
               splitter
-            ));
+            ))
             break;
         }
 
@@ -307,6 +307,7 @@ export class TrainingSetBuilder {
               ...doc,
               metadata: {
                 ...doc.metadata,
+                source: source.name,
                 page_number: i + 1
               }
             }
