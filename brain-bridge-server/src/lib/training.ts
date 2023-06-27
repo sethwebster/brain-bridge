@@ -16,6 +16,7 @@ import { CountKeeper } from './count-keeper.ts';
 import cleanUpHtml from './clean-up-html.ts';
 import { TrainingStages } from '../api-v1/sockets/trainingHandler.ts';
 import { CachedEmbeddings } from './CachedEmbeddings.ts';
+import { getTokensForStringWithRetry } from './get-tokens-for-string.ts';
 
 interface TrainingSetBuilderOptions {
   maxSegmentLength?: number;
@@ -157,9 +158,9 @@ export class TrainingSetBuilder {
         try {
           const documents = batch.map((b, i) => b.loadedContent).flat();
           // console.log("Documents", documents)
-          const encoding = tiktoken.get_encoding("cl100k_base");
-          const encoded = encoding.encode(documents.map(doc => doc.pageContent).join("\n"));
-          buildResult.tokensUsed += encoded.length;
+
+          const tokensUsed = this.getTokensForStringWithRetry(documents.map(doc => doc.pageContent).join("\n"));
+          buildResult.tokensUsed += tokensUsed;
           buildResult.cost = buildResult.cost * 0.0000004;
           onTokensUsed(buildResult);
           const res = await Milvus.fromDocuments(documents, embedder, {
@@ -196,6 +197,9 @@ export class TrainingSetBuilder {
       clearInterval(vectorProgressInterval);
     }
   }
+
+  private getTokensForStringWithRetry = (str: string) => getTokensForStringWithRetry(str, 'text-embedding-ada-002')
+
 
   /////////////
   // SOURCES //

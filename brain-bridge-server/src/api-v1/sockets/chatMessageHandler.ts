@@ -85,7 +85,7 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
     const fullPrompt = promptHeader + "\n\n" + conversation.publicChat.trainingSet.prompt + "\n\n" + replaceTokens(promptFooter, questionsAndAnswers);
     const handleMissedQuestion = async (missed: LLMBrainBridgeResponse) => { };
     // this.handleMissedQuestion.bind(this, conversation.publicChat);
-    const options = JSON.parse((conversation.publicChat.trainingSet.trainingOptions ?? "{}").toString()) as BrainBridgeAdditionalOptions;
+    const options = conversation.publicChat.trainingSet.trainingOptions as BrainBridgeAdditionalOptions;
     console.log("options", options)
     const llm = new BrainBridgeLangChain(
       {

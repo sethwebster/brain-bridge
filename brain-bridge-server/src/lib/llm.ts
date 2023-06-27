@@ -9,6 +9,7 @@ import { SerpAPI, Tool } from "langchain/tools";
 
 import { initializeAgentExecutorWithOptions } from "langchain/agents";
 import { Embeddings } from "langchain/dist/embeddings/base";
+import { getTokensForStringWithRetry } from "./get-tokens-for-string.ts";
 
 
 interface LangChainStorage<T> {
@@ -208,23 +209,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
     return result;
   }
 
-  private getTokensForStringWithRetry(str: string) {
-    let tokens = 0;
-    let retry = 0;
-    while (retry < 3) {
-      try {
-        tokens = encoding_for_model("gpt-3.5-turbo-0301").encode_ordinary(str).length;
-        break;
-      } catch (e) {
-        retry++;
-      }
-    }
-    if (str.length > 0 && tokens === 0) {
-      console.log("TikTokEncoding Failed: Defaulting to local count");
-      tokens = Math.floor(str.length * 1.1);
-    }
-    return tokens;
-  }
+  private getTokensForStringWithRetry = (str: string) => getTokensForStringWithRetry(str, "gpt-3.5-turbo-0301")
 
   private countTokensForLangChainCall(fields: Record<string, string | string[]>) {
     const tokenCountsForAllFields = Object.values(fields).map((field) => {
@@ -333,3 +318,4 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
   }
 
 }
+
