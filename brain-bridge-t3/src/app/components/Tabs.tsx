@@ -50,9 +50,9 @@ export default function Tabs({
         </ul>
       ) : null}
 
-      <div className="fixed z-10 w-full overflow-x-scroll top-20">
-        <div className="z-40 flex sm:w-[calc(100%-257px)] w-[calc(100%-48px)] flex-row border border-blue-400 bg-slate-100 bg-opacity-60 text-center text-sm font-medium text-gray-500 shadow backdrop-blur-md backdrop-filter transition-all dark:border-gray-700 dark:bg-slate-600 dark:text-gray-400 ">
-          <ul className="flex flex-grow -mb-px transition-all">
+      <div className="fixed z-10 w-full overflow-x-scroll shadow top-20">
+        <div className="z-40 flex sm:w-[calc(100%-257px)] w-[calc(100%-48px)] flex-row  bg-slate-100 bg-opacity-60 text-center text-sm font-medium text-gray-500 backdrop-blur-md backdrop-filter transition-all dark:border-gray-700 dark:bg-slate-600 dark:text-gray-400 ">
+          <ul className="flex flex-grow -mb-px transition-all ">
             <li className="p-4 mr-2 truncate hover:w-auto">{header}</li>
             <li className="flex-row hidden md:flex">
               <ul className="flex flex-row h-auto">

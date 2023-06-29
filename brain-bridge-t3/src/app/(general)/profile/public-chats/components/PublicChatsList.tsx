@@ -50,33 +50,36 @@ export default function PublicChatsList({
           </div>
         }
       >
-        <InfoBox type="info" title="Public Chats">
-          <>
-            <p>
-              Public chats expose your chat bot to an external link so that
-              people can chat without signing up for an account on Brain Bridge.
-            </p>
-            {trainingSets.length === 0 ? (
-              <>
-                <p>
-                  You&apos;ll need to add a training set before you can get
-                  started.
-                </p>
+        {publicChats.length === 0 && (
+          <InfoBox type="info" title="Public Chats">
+            <>
+              <p>
+                Public chats expose your chat bot to an external link so that
+                people can chat without signing up for an account on Brain
+                Bridge.
+              </p>
+              {trainingSets.length === 0 ? (
+                <>
+                  <p>
+                    You&apos;ll need to add a training set before you can get
+                    started.
+                  </p>
+                  <Button
+                    label="Add a Training Set"
+                    className="max-w-sm mx-auto mt-4"
+                    onClick={() => router.push("/profile/training")}
+                  />
+                </>
+              ) : (
                 <Button
-                  label="Add a Training Set"
+                  label="Get Started"
                   className="max-w-sm mx-auto mt-4"
-                  onClick={() => router.push("/profile/training")}
+                  onClick={() => setAddItem(true)}
                 />
-              </>
-            ) : (
-              <Button
-                label="Get Started"
-                className="max-w-sm mx-auto mt-4"
-                onClick={() => setAddItem(true)}
-              />
-            )}
-          </>
-        </InfoBox>
+              )}
+            </>
+          </InfoBox>
+        )}
 
         {trainingSets.length === 0 && (
           <DismissableInfoBox

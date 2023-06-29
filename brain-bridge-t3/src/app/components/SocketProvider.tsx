@@ -1,10 +1,5 @@
 "use client";
-import React, {
-  createContext,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useCallback, useEffect, useState } from "react";
 import { type Socket } from "socket.io-client";
 import globalSocket from "../../lib/socket";
 import invariant from "tiny-invariant";
@@ -86,15 +81,18 @@ export default function SocketProvider({
       defaultTokenManager.subscribeToAuthToken(handleTokenChange);
     globalSocket.on("connect", handleConnected);
     globalSocket.on("disconnect", handleDisconnected);
-    setStatus("connecting");
-    globalSocket.connect();
+
+    if (token) {
+      setStatus("connecting");
+      globalSocket.connect();
+    }
     return () => {
       unsubscribe();
       globalSocket.disconnect();
       globalSocket.off("connect", handleConnected);
       globalSocket.off("disconnect", handleDisconnected);
     };
-  }, [handleConnected, handleDisconnected, handleTokenChange]);
+  }, [handleConnected, handleDisconnected, handleTokenChange, token]);
 
   return (
     <SocketContext.Provider value={{ socket, token, status }}>
