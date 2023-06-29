@@ -77,6 +77,12 @@ export const QuestionsAndTokens: QuestionAndAnswerPartial[] = [
     token: "{csv:principles}",
   },
 ];
+
+/**
+ * @deprecated
+ * @param param0 
+ * @returns 
+ */
 export function QuestionsWizard({
   onStateChange,
   questionsAndTokens,
