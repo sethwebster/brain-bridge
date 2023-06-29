@@ -382,6 +382,13 @@ export function TrainingSetForm({
     trainingSetData.version,
   ]);
 
+  const firstConversation = useMemo(() => {
+    const first = trainingSetData.conversations.find(
+      (c) => c.userId === clientSession.data?.user.id
+    );
+    return first;
+  }, [clientSession.data?.user.id, trainingSetData.conversations]);
+
   return (
     <div className="h-full bg-slate-50">
       <div className="w-full h-full bg-slate-100 ">
@@ -470,7 +477,7 @@ export function TrainingSetForm({
                 <ChatTab
                   trainingSetId={trainingSetData.id}
                   session={session}
-                  selectedChat={trainingSet.conversations[0]}
+                  selectedChat={firstConversation}
                 />
               </div>
             ),
