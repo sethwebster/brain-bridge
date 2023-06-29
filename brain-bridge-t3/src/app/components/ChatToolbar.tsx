@@ -41,7 +41,7 @@ function OptionsDropDown({ onModeChange, selectedMode }: OptionsDropDownProps) {
   }, [handleModeSelect]);
 
   return (
-    <div className="mr-2">
+    <div className="z-10 mr-2">
       <button
         id="dropdownDefaultButton"
         data-dropdown-toggle="dropdown"
@@ -68,7 +68,7 @@ function OptionsDropDown({ onModeChange, selectedMode }: OptionsDropDownProps) {
         >
           <li className="">
             <button
-              className="flex flex-row  px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+              className="flex flex-row px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
               onClick={oneShotSelectedCallback}
             >
               <BooleanCheck condition={selectedMode === "one-shot"} /> One Shot
@@ -112,8 +112,8 @@ export function ChatToolbar({
   onModeSelectionChanged,
 }: ChatToolbarProps) {
   return (
-    <div className="flex w-full flex-row justify-end ">
-      <div className="justify-right fixed z-50 flex flex-row p-2 ">
+    <div className="flex flex-row justify-end w-full ">
+      <div className="fixed z-30 flex flex-row p-2 justify-right ">
         <OptionsDropDown
           selectedMode={chatMode}
           onModeChange={onModeSelectionChanged}
