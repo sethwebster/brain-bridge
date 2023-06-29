@@ -5,12 +5,10 @@ import SideBar from "./SideBar";
 export default function SideBarLayout({
   children,
   setsCount,
-  chatCount,
   publicChatCount,
   currentCosts,
 }: PropsWithChildren & {
   setsCount: number;
-  chatCount: number;
   publicChatCount: number;
   currentCosts: number;
   children: React.ReactNode;
@@ -21,7 +19,6 @@ export default function SideBarLayout({
         <SideBar
           aria-label="Side Bar Navigation"
           setCount={setsCount}
-          chatCount={chatCount}
           publicChatCount={publicChatCount}
           currentCosts={currentCosts}
         />

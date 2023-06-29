@@ -1,7 +1,6 @@
 "use client";
 import React, { type ReactNode, useState, useCallback } from "react";
 import { MdMenu } from "react-icons/md";
-import { twMerge } from "tailwind-merge";
 
 interface TabsProps {
   header?: string | ReactNode;
