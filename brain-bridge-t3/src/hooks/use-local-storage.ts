@@ -1,34 +1,60 @@
-import { useState } from "react";
-import Logger from "~/lib/logger";
+import { useEffect, useState } from 'react';
+
+const isServer = typeof window === 'undefined';
 
 
-function useLocalStorage<T>(key: string, initialValue: T) {
-  const [state, setState] = useState<T>(() => {
-    // Initialize the state
-    try {
-      const value = window.localStorage.getItem(key)
-      // Check if the local storage already has any values,
-      // otherwise initialize it with the passed initialValue
-      return (value ? JSON.parse(value) : initialValue) as T;
-    } catch (error) {
-      Logger.error(error)
-      return null as T;
+export default function useLocalStorage<T>(key: string, initialValue?: T) {
+  // State to store our value
+  // Pass initial state function to useState so logic is only executed once
+  const [storedValue, setStoredValue] = useState<T | undefined>(() => initialValue);
+  const [wasUndefined, setWasUndefined] = useState<boolean | "unknown">("unknown");
+  const initialize = () => {
+    if (isServer) {
+      return initialValue;
     }
-  })
-
-  const setValue = (value: T) => {
     try {
-      // If the passed value is a callback function,
-      //  then call it with the existing state.
-      const valueToStore = (value instanceof Function ? value(state) : value) as T;
-      window.localStorage.setItem(key, JSON.stringify(valueToStore))
-      setState(value)
+      // Get from local storage by key
+      const item = window.localStorage.getItem(key);
+      if (typeof item === "undefined" || item === null) {
+        setWasUndefined(true);
+      } else {
+        setWasUndefined(false);
+      }
+      // Parse stored json or if none return initialValue
+      return item ? JSON.parse(item) as T : initialValue;
     } catch (error) {
-      Logger.error("FAILED TO SET LOCAL STORAGE VALUE", key, error)
+      // If error also return initialValue
+      console.log(error);
+      return initialValue;
     }
-  }
+  };
 
-  return [state, setValue] as [T, (value: T) => void]
+  /* prevents hydration error so that state is only initialized after server is defined */
+  useEffect(() => {
+    if (!isServer) {
+      setStoredValue(initialize());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Return a wrapped version of useState's setter function that ...
+  // ... persists the new value to localStorage.
+  const setValue = (value: T | undefined | ((val: T | undefined) => T)) => {
+    try {
+      // Allow value to be a function so we have same API as useState
+      const valueToStore =
+        value instanceof Function ? value(storedValue) : value;
+      // Save state
+      setStoredValue(valueToStore);
+      setWasUndefined(false);
+      // Save to local storage
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      }
+    } catch (error) {
+      // A more advanced implementation would handle the error case
+      console.log(error);
+    }
+  };
+  return [storedValue, setValue, wasUndefined, isServer] as [T, typeof setValue, typeof wasUndefined, typeof isServer]
 }
-
-export default useLocalStorage;

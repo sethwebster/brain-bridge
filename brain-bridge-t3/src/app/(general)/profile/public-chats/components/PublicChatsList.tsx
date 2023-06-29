@@ -3,7 +3,7 @@ import { type PublicChat } from "@prisma/client";
 import { type Session } from "next-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import InfoBox from "~/app/components/InfoBox";
+import InfoBox, { DismissableInfoBox } from "~/app/components/InfoBox";
 import { NewButton } from "~/app/components/NewButton";
 import {
   type PublicChatWithRelations,
@@ -13,7 +13,7 @@ import PublicChatItem from "./PublicChatItem";
 import EditPublicChat from "./EditPublicChat";
 import DataClient from "~/utils/data-client";
 import ContentBoxWithHeading from "../../components/ContentBoxWithHeading";
-import { MdError, MdInfo, MdWarning } from "react-icons/md";
+import Button from "~/base-components/Button";
 
 interface PublicChatsListProps {
   publicChats: PublicChatWithRelations[];
@@ -50,23 +50,41 @@ export default function PublicChatsList({
           </div>
         }
       >
-        <InfoBox
-          type="info"
-          title="Public Chats"
-          // dismissable={true}
-          // dismissableId={"info-box-public-chats"}
-        >
-          <p>Public chats expose your chat bot to an external link so that people can chat without signing up for an account on Brain Bridge.</p>
-          <p>To get started, click the create button above.</p>
+        <InfoBox type="info" title="Public Chats">
+          <>
+            <p>
+              Public chats expose your chat bot to an external link so that
+              people can chat without signing up for an account on Brain Bridge.
+            </p>
+            {trainingSets.length === 0 ? (
+              <>
+                <p>
+                  You&apos;ll need to add a training set before you can get
+                  started.
+                </p>
+                <Button
+                  label="Add a Training Set"
+                  className="max-w-sm mx-auto mt-4"
+                  onClick={() => router.push("/profile/training")}
+                />
+              </>
+            ) : (
+              <Button
+                label="Get Started"
+                className="max-w-sm mx-auto mt-4"
+                onClick={() => setAddItem(true)}
+              />
+            )}
+          </>
         </InfoBox>
 
         {trainingSets.length === 0 && (
-          <InfoBox
+          <DismissableInfoBox
             type="warning"
-            icon={<span className="sr-only">Info</span>}
             title="No Training Sets"
-            body="!You will need to create a training set before you can create a public chat."
+            body="You will need to create a training set before you can create a public chat."
             dismissable={false}
+            dismissableId="info-box-public-chats-no-training-sets"
           />
         )}
         {trainingSets.length > 0 && (
