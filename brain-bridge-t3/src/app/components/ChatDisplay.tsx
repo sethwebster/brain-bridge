@@ -10,7 +10,6 @@ import {
   type ChatResponseMode,
   type MessageWithRelations,
 } from "~/data/interfaces/types";
-import Logger from "~/lib/logger";
 
 export interface Viewer {
   id: string;

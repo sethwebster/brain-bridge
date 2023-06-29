@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import {
-  MdChat,
   MdChatBubbleOutline,
   MdDashboard,
   MdSummarize,
@@ -24,12 +23,10 @@ function SideBarItemLabel({
 
 export default function SideBar({
   setCount,
-  chatCount,
   publicChatCount,
   currentCosts,
 }: {
   setCount: number;
-  chatCount: number;
   publicChatCount: number;
   currentCosts: number;
 }) {

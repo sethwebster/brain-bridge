@@ -33,7 +33,7 @@ import Button from "~/base-components/Button";
 import ThreeStateButton from "~/base-components/ThreeStateButton";
 import Logger from "~/lib/logger";
 import ChatTab from "./ChatTab";
-import { Session } from "next-auth";
+import { type Session } from "next-auth";
 
 export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {

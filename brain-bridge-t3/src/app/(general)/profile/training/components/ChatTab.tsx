@@ -4,8 +4,8 @@ import invariant from "tiny-invariant";
 import { type Session } from "next-auth";
 import DataClient from "~/utils/data-client";
 import Logger from "~/lib/logger";
-import { Conversation } from "@prisma/client";
-import { ConversationWithRelations } from "~/data/interfaces/types";
+import { type Conversation } from "@prisma/client";
+import { type ConversationWithRelations } from "~/data/interfaces/types";
 
 interface ChatTabProps {
   trainingSetId: string;
