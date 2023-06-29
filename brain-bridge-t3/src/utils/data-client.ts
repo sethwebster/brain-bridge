@@ -3,19 +3,21 @@ import { type PublicChat, type TrainingSet } from "@prisma/client";
 import invariant from "tiny-invariant";
 import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type PublicChatWithRelations, type ChatResponseMode } from "~/data/interfaces/types";
 
-const makeApiUrl = (endpoint: string) => {
+type ApiUrl = `/api/${string}`
+
+const makeApiUrl = (endpoint: ApiUrl) => {
   const base = process.env.NEXT_PUBLIC_BASE_URL
   return new URL(endpoint, base).toString();
 }
 
 async function fetchTrainingSet(trainingSetId: string): Promise<TrainingSetWithRelations> {
-  const response = await fetch(makeApiUrl(`/profile/training/api/${trainingSetId}`))
+  const response = await fetch(makeApiUrl(`/api/training/${trainingSetId}`))
   const data = await response.json() as TrainingSetWithRelations;
   return data
 }
 
 async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
-  const response = await fetch(makeApiUrl("/profile/training/api"), {
+  const response = await fetch(makeApiUrl("/api/training"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -27,7 +29,7 @@ async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
 }
 
 async function deleteTrainingSet(trainingSetId: string): Promise<{ success: boolean }> {
-  await fetch(makeApiUrl(`/profile/training/api/${trainingSetId}`), {
+  await fetch(makeApiUrl(`/api/training/${trainingSetId}`), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -39,7 +41,7 @@ async function deleteTrainingSet(trainingSetId: string): Promise<{ success: bool
 }
 
 async function updateTrainingSet(trainingSet: TrainingSet) {
-  const response = await fetch(makeApiUrl(`/profile/training/api/${trainingSet.id}`), {
+  const response = await fetch(makeApiUrl(`/api/training/${trainingSet.id}`), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -51,20 +53,20 @@ async function updateTrainingSet(trainingSet: TrainingSet) {
 }
 
 async function fetchChats(): Promise<ConversationWithRelations[]> {
-  const response = await fetch(makeApiUrl(`/profile/training/api/chat`))
+  const response = await fetch(makeApiUrl(`/api/training/chat`))
   const data = await response.json() as ConversationWithRelations[];
   return data
 }
 
 
 async function fetchChat(chatId: string): Promise<ConversationWithRelations> {
-  const response = await fetch(makeApiUrl(`/profile/chat/${chatId}/api`), { method:"GET" })
+  const response = await fetch(makeApiUrl(`/api/chat/${chatId}`), { method:"GET" })
   const data = await response.json() as ConversationWithRelations;
   return data;
 }
 
 async function clearChat(chatId: string): Promise<ConversationWithRelations> {
-  const response = await fetch(makeApiUrl(`/profile/chat/${chatId}/api/messages`), {
+  const response = await fetch(makeApiUrl(`/api/chat/${chatId}/messages`), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -75,7 +77,7 @@ async function clearChat(chatId: string): Promise<ConversationWithRelations> {
 }
 
 async function fetchMessages(chatId: string): Promise<MessageWithRelations[]> {
-  const response = await fetch(makeApiUrl(`/profile/chat/${chatId}/api/messages`), {
+  const response = await fetch(makeApiUrl(`/api/chat/${chatId}/messages`), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -86,7 +88,7 @@ async function fetchMessages(chatId: string): Promise<MessageWithRelations[]> {
 }
 
 async function clearPublicChatMessages(publicChatId: string): Promise<PublicChatWithRelations> {
-  const response = await fetch(makeApiUrl(`/public-chat/${publicChatId}/api/messages`), {
+  const response = await fetch(makeApiUrl(`/api/public-chat/${publicChatId}/messages`), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -97,7 +99,7 @@ async function clearPublicChatMessages(publicChatId: string): Promise<PublicChat
 }
 
 async function newChat(trainingSetId: string): Promise<ConversationWithRelations> {
-  const response = await fetch(makeApiUrl(`/profile/chats/api`), {
+  const response = await fetch(makeApiUrl(`/api/chats`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -111,7 +113,7 @@ async function newChat(trainingSetId: string): Promise<ConversationWithRelations
 }
 
 async function deleteChat(chatId: string): Promise<{ success: boolean }> {
-  await fetch(makeApiUrl(`/profile/chat/${chatId}/api`), {
+  await fetch(makeApiUrl(`/api/chat/${chatId}/api`), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -123,7 +125,7 @@ async function deleteChat(chatId: string): Promise<{ success: boolean }> {
 }
 
 async function createPublicChat(publicChat: PublicChat) {
-  const response = await fetch(makeApiUrl("/profile/public-chats/api"), {
+  const response = await fetch(makeApiUrl("/api/public-chats"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -135,7 +137,7 @@ async function createPublicChat(publicChat: PublicChat) {
 }
 
 async function updatePublicChat(publicChat: PublicChatWithRelations) {
-  const response = await fetch(makeApiUrl(`/profile/public-chats/api/${publicChat.id}`), {
+  const response = await fetch(makeApiUrl(`/api/public-chats/${publicChat.id}`), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -168,37 +170,8 @@ async function publishPublicChat(publicChat: PublicChatWithRelations) {
   }
 }
 
-async function sendMessage(message: MessageWithRelations, mode: ChatResponseMode) {
-  invariant(message.conversationId, "conversationId is required")
-  const response = await fetch(makeApiUrl(`/profile/chat/${message.conversationId}/api/message`), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ message: { ...message, conversation: { id: message.conversationId } }, mode }),
-  })
-  const text = await response.text();
-  const data = JSON.parse(text) as MessageWithRelations;
-  return data
-}
-
-async function sendPublicInstanceChatMessage(message: MessageWithRelations, mode: ChatResponseMode) {
-  invariant(message.publicChatInstance?.publicChatId, "publicChatId is required")
-  invariant(message.publicChatInstanceId, "publicChatInstanceId is required")
-  const response = await fetch(makeApiUrl(`/public-chat/${message.publicChatInstance?.publicChatId}/api/message`), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ message: { ...message }, mode }),
-  })
-  const text = await response.text();
-  const data = JSON.parse(text) as MessageWithRelations;
-  return data
-}
-
 async function deletePublicChat(publicChatId: string): Promise<void> {
-  await fetch(makeApiUrl(`/profile/public-chats/api/${publicChatId}`), {
+  await fetch(makeApiUrl(`/api/public-chats/${publicChatId}`), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -264,12 +237,10 @@ const DataClient = {
   clearPublicChatMessages,
   newChat,
   deleteChat,
-  sendMessage,
   createPublicChat,
   updatePublicChat,
   unpublishPublicChat,
   publishPublicChat,
-  sendPublicInstanceChatMessage,
   deletePublicChat,
   getSignedUrl,
   getToken,

@@ -386,6 +386,9 @@ async function fetchChat(id: string): Promise<ConversationWithRelations> {
           publicChatInstanceId: true,
           publicChatInstance: true,
         },
+        orderBy: {
+          createdAt: "asc",
+        }
       },
       participants: true,
       trainingSet: {

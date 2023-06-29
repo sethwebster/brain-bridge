@@ -5,7 +5,7 @@ import ConfirmButton from "./ConfirmButton";
 
 export default function DeleteButton({
   className,
-  confirmingClassName,
+  confirmingClassName = "bg-red-400",
   onConfirmed,
   disabled,
 }: {

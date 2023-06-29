@@ -1,6 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+import Modal from "~/app/components/ModalDialog";
+import DeleteButton from "~/base-components/DeleteButton";
 import DataClient from "~/utils/data-client";
 
 export function DeleteTrainingSet({
@@ -11,18 +13,39 @@ export function DeleteTrainingSet({
 }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
-  const handleDeleteTrainingSet = useCallback(async () => {
+  const handleDeleteTrainingSet = useCallback(() => {
     if (!confirming) {
       setConfirming(true);
       return;
     }
-    const { success } = await DataClient.deleteTrainingSet(id);
-    if (success) router.refresh();
+
+    (async () => {
+      const { success } = await DataClient.deleteTrainingSet(id);
+      if (success) router.refresh();
+    })().catch(console.error);
   }, [confirming, id, router]);
   const handleBlur = useCallback(() => {
     setConfirming(false);
   }, []);
 
+  return (
+    <>
+      <DeleteButton onConfirmed={handleDeleteTrainingSet} />
+      <Modal
+        show={confirming}
+        onCancel={handleBlur}
+        onConfirm={handleDeleteTrainingSet}
+        title="Delete Training Set"
+        confirmText="Permanently Delete"
+        closeText="Keep Training Set"
+      >
+        <p>
+          Are you sure you want to delete this training set? This action cannot
+          be undone.
+        </p>
+      </Modal>
+    </>
+  );
   return (
     <button
       className={`rounded-md bg-blue-400 p-1  text-white transition-all ${
