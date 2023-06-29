@@ -1,4 +1,4 @@
-import InfoBox, { DismissableInfoBox } from "~/app/components/InfoBox";
+import { DismissableInfoBox } from "~/app/components/InfoBox";
 import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
 
 export default function Profile() {

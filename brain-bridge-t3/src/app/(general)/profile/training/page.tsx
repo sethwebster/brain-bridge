@@ -2,7 +2,7 @@ import invariant from "tiny-invariant";
 import { NewTrainingSetButton } from "./NewTrainingSetButton";
 import Link from "next/link";
 import { DeleteTrainingSet } from "./DeleteTrainingSet";
-import InfoBox, { DismissableInfoBox } from "~/app/components/InfoBox";
+import { DismissableInfoBox } from "~/app/components/InfoBox";
 import ServerData from "~/server/server-data";
 import { Suspense } from "react";
 import { ShareIcon } from "~/app/components/SvgIcons";

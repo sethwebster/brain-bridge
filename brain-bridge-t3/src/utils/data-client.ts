@@ -1,7 +1,6 @@
 "use client";
 import { type PublicChat, type TrainingSet } from "@prisma/client";
-import invariant from "tiny-invariant";
-import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type PublicChatWithRelations, type ChatResponseMode } from "~/data/interfaces/types";
+import { type MessageWithRelations, type ConversationWithRelations, type TrainingSetWithRelations, type PublicChatWithRelations } from "~/data/interfaces/types";
 
 type ApiUrl = `/api/${string}`
 

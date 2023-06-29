@@ -1,9 +1,7 @@
 "use client";
-//TODO: Figure out why this fails hydration when loaded directly
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import invariant from "tiny-invariant";
+import { useCallback, useEffect, useState } from "react";
 import useLocalStorage from "~/hooks/use-local-storage";
-import { ClassNameValue, twMerge } from "tailwind-merge";
+import { twMerge } from "tailwind-merge";
 import {
   MdCheckCircle,
   MdClose,
@@ -11,11 +9,6 @@ import {
   MdInfo,
   MdWarning,
 } from "react-icons/md";
-import { createHash } from "crypto";
-
-function hash(str: string) {
-  return createHash("sha256").update(str).digest("hex");
-}
 
 type InfoBoxTypes = "info" | "success" | "warning" | "error";
 
