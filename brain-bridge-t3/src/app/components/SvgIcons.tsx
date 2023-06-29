@@ -4,7 +4,7 @@ export function EraseIcon() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
+      className="w-4 h-4"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -66,7 +66,7 @@ export function FolderIcon() {
     <svg
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
+      className="w-4 h-4"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -98,7 +98,7 @@ export function FolderIcon() {
 
 export const UrlIcon = ({ color }: { color?: string }) => (
   <svg
-    className="h-4 w-4"
+    className="w-4 h-4"
     fill={color ?? "#fff"}
     height="200px"
     width="200px"
@@ -123,7 +123,7 @@ export const UrlIcon = ({ color }: { color?: string }) => (
 
 export const PlusAddIcon = () => (
   <svg
-    className="h-4 w-4 "
+    className="w-4 h-4 "
     viewBox="0 0 24 24"
     xmlns="http://www.w3.org/2000/svg"
     stroke="white"
@@ -195,7 +195,7 @@ export function TrashCan({
     <svg
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
+      className="w-4 h-4"
       stroke={strokeColor || "white"}
       fill={fillColor || "white"}
     >
@@ -224,7 +224,7 @@ export function CheckMark() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4 bg-red-200"
+      className="w-4 h-4 bg-red-200"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -251,7 +251,7 @@ export function CheckMark() {
 export function SpeakerIcon() {
   return (
     <svg
-      className="h-4 w-4"
+      className="w-4 h-4"
       fill="#000000"
       viewBox="0 0 1920 1920"
       xmlns="http://www.w3.org/2000/svg"
@@ -275,7 +275,7 @@ export function SpeakerIcon() {
 export function PencilIcon() {
   return (
     <svg
-      className="h-4 w-4"
+      className="w-4 h-4"
       fill="#000000"
       viewBox="0 0 32 32"
       version="1.1"
@@ -300,7 +300,7 @@ export function SaveIcon() {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className="h-4 w-4"
+      className="w-4 h-4"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g
@@ -334,7 +334,7 @@ export function DownloadIcon({
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
       fill="#000000"
-      className="h-4 w-4"
+      className="w-4 h-4"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
       <g

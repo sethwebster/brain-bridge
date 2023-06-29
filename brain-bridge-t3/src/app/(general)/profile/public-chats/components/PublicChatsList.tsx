@@ -13,6 +13,7 @@ import PublicChatItem from "./PublicChatItem";
 import EditPublicChat from "./EditPublicChat";
 import DataClient from "~/utils/data-client";
 import ContentBoxWithHeading from "../../components/ContentBoxWithHeading";
+import { MdError, MdInfo, MdWarning } from "react-icons/md";
 
 interface PublicChatsListProps {
   publicChats: PublicChatWithRelations[];
@@ -43,28 +44,33 @@ export default function PublicChatsList({
     <>
       <ContentBoxWithHeading
         heading={
-          <>
-            <InfoBox
-              title="Public Chats"
-              body="Public chats expose your chat bot to an external link so that people can chat without signing up for an account on Brain Bridge."
-              dismissable={true}
-              dismissableId={"info-box-public-chats"}
-            />
+          <div className="flex flex-row justify-between w-full">
             <h1 className="text-xl">Public Chats</h1>
             <NewButton onClick={() => setAddItem(!addItem)} />
-          </>
+          </div>
         }
       >
+        <InfoBox
+          type="info"
+          title="Public Chats"
+          // dismissable={true}
+          // dismissableId={"info-box-public-chats"}
+        >
+          <p>Public chats expose your chat bot to an external link so that people can chat without signing up for an account on Brain Bridge.</p>
+          <p>To get started, click the create button above.</p>
+        </InfoBox>
+
         {trainingSets.length === 0 && (
           <InfoBox
+            type="warning"
+            icon={<span className="sr-only">Info</span>}
             title="No Training Sets"
-            body="You will need to create a training set before you can create a public chat."
+            body="!You will need to create a training set before you can create a public chat."
             dismissable={false}
           />
         )}
         {trainingSets.length > 0 && (
           <>
-            
             <ul>
               {(publicChats || []).map((chat) => (
                 <li key={chat.id} className="p-1">
