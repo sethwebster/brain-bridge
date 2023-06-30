@@ -112,7 +112,7 @@ async function newChat(trainingSetId: string): Promise<ConversationWithRelations
 }
 
 async function deleteChat(chatId: string): Promise<{ success: boolean }> {
-  await fetch(makeApiUrl(`/api/chat/${chatId}/api`), {
+  await fetch(makeApiUrl(`/api/chat/${chatId}`), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",

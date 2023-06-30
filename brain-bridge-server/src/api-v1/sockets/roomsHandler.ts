@@ -19,6 +19,7 @@ export function chatMessageRoomsHandler(socket: Socket, io: Server) {
   }
 
   async function handleJoin(room: string) {
+    console.log('join-private-room', room)
     invariant(room, "room is required");
     const roomId = getRoomId(room)
     if (roomId.includes('training')) {

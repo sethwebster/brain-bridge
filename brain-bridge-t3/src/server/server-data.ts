@@ -208,7 +208,6 @@ async function updateUserTrainingSet(trainingSet: TrainingSetWithRelations) {
           return {
             type: s.type,
             name: s.name,
-            content: s.content,
             pending: false,
             mimeType: s.mimeType
           }
@@ -301,7 +300,6 @@ async function createTrainingSet(trainingSet: TrainingSetWithRelations) {
           updatedAt: true,
           type: true,
           name: true,
-          content: true,
           trainingSetId: true,
         }
       },

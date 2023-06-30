@@ -2,8 +2,9 @@
 import AutoSizingTextArea from "./AutoSizingTextArea";
 import { type TrainingSetWithRelations } from "~/data/interfaces/types";
 import { AutoTraining } from "./AutoTraining";
+import React from "react";
 
-export function PromptTab({
+function PromptTab({
   trainingSetData,
   isAutoTraining,
   handlePromptChange,
@@ -60,3 +61,5 @@ export function PromptTab({
     </div>
   );
 }
+
+export default React.memo(PromptTab);

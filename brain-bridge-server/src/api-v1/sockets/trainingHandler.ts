@@ -46,19 +46,21 @@ setInterval(() => {
 
 export function trainingHandler(socket: Socket, io: Server) {
 
-  // socket.on("join-training", async (data: { payload: TrainingSetPayload }) => {
-  //   const { payload: { id } } = data;
-  //   invariant(id, "id is required");
-  //   await socket.join(trainingSetRoomName(id));
-  //   console.log((await io.in(trainingSetRoomName(id)).fetchSockets()).length, "listeners");
-  // });
+  socket.on("join-training-room", async (payload: { data: { room: string } }) => {
+    const { room } = (payload.data);
+    console.log("join-training-room", trainingSetRoomName(room))
+    invariant(room, "room (as id) is required");
+    await socket.join(trainingSetRoomName(room));
+    console.log((await io.in(trainingSetRoomName(room)).fetchSockets()).length, "listeners");
+  });
 
-  // socket.on("leave-training", async (data: { payload: TrainingSetPayload }) => {
-  //   const { payload: { id } } = data;
-  //   invariant(id, "id is required");
-  //   await socket.leave(trainingSetRoomName(id));
-  //   console.log((await io.in(trainingSetRoomName(id)).fetchSockets()).length, "listeners");
-  // });
+  socket.on("leave-training-room", async (payload: { data: { room: string } }) => {
+    const { room } = (payload.data);
+    console.log("leave-training-room", trainingSetRoomName(room))
+    invariant(room, "room (as id) is required");
+    await socket.leave(trainingSetRoomName(room));
+    console.log((await io.in(trainingSetRoomName(room)).fetchSockets()).length, "listeners");
+  });
 
   async function isTraining(id: string) {
     const is = await mutex.run(async () => {
@@ -140,8 +142,8 @@ export function trainingHandler(socket: Socket, io: Server) {
 
     //(payload: ProgressPayload | ((stage: string, progress: ProgressPayload) => ProgressPayload)): void
     function progressNotifiier(payload: ProgressPayload) {
-        progressState[payload.stage] = payload;
-        emit("training-progress", progressState);
+      progressState[payload.stage] = payload;
+      emit("training-progress", progressState);
     }
 
     try {
@@ -203,6 +205,7 @@ export function trainingHandler(socket: Socket, io: Server) {
         where: { id: set.id },
         data: { trainingStatus: "ERROR" }
       });
+      throw error;
       return res;
     }
   }

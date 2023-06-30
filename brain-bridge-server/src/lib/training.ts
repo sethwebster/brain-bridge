@@ -70,11 +70,7 @@ export class TrainingSetBuilder {
       buildResult.cost = buildResultEvent.cost;
       if (onTokensUsed) onTokensUsed(buildResult);
     }
-    try {
-      await this.vectorize(sources, onTokensUsedLocal);
-    } catch (e) {
-      console.error(e);
-    }
+    await this.vectorize(sources, onTokensUsedLocal);
     return buildResult;
   }
 
@@ -82,17 +78,15 @@ export class TrainingSetBuilder {
   // VECTORIZE //
   ///////////////////////////////////////////////////////////////////////////////////////////
   private async vectorize(trainingSources: TrainingSourceInProgress[], onTokensUsed: (buildResult: BuildResult) => void): Promise<BuildResult> {
-    const list = generateDocumentList(trainingSources);
+    const list = await generateDocumentList(trainingSources);
     Cohere.init(process.env.COHERE_API_KEY!)
-    if (trainingSources.length === 0) throw new Error("No documents to vectorize!");
+    // if (trainingSources.length === 0) throw new Error("No documents to vectorize!");
     console.log("Vectorizing documents...");
     const buildResult: BuildResult = {
       tokensUsed: 0,
       cost: 0
     }
-    const getDocumentsSize = (docs: Document<Record<string, any>>[]) => {
-      return docs.reduce((acc, doc) => acc + doc.pageContent.length, 0);
-    }
+
 
     const sizeOfDocsData = trainingSources.reduce((acc, doc) => {
       return acc + getDocumentsSize(doc.loadedContent);
@@ -102,21 +96,7 @@ export class TrainingSetBuilder {
     console.log(`Total size of docs data: ${sizeOfDocsData} bytes`)
     const ONE_MEGABYTE = 1000000;
     const MAX_BATCH_SIZE = ONE_MEGABYTE * 1.5;
-    const batches = trainingSources.reduce((acc, doc, i) => {
-      if (!doc) return acc;
-      const lastBatch = acc[acc.length - 1];
-      if (!lastBatch) {
-        acc.push([doc]);
-        return acc;
-      }
-      const lastBatchSize = lastBatch.reduce((acc, doc) => acc + getDocumentsSize(doc.loadedContent), 0);
-      if (lastBatchSize + getDocumentsSize(doc.loadedContent) > MAX_BATCH_SIZE) {
-        acc.push([doc]);
-      } else {
-        lastBatch.push(doc);
-      }
-      return acc;
-    }, [] as TrainingSourceInProgress[][]);
+    const batches = this.splitIntoBatches(trainingSources, MAX_BATCH_SIZE);
     console.log("Batches", batches.length);
     const batchCount = batches.length;
 
@@ -179,10 +159,14 @@ export class TrainingSetBuilder {
       /**
        * This adds our list of documents to the Milvus database.
        */
-      await Milvus.fromDocuments([list], embedder, {
-        collectionName: this.trainingSet.id,
-      });
-
+      try {
+        await Milvus.fromDocuments(list, embedder, {
+          collectionName: this.trainingSet.id,
+        });
+      } catch (e) {
+        console.error("ERROR ADDING DOCUMENT LIST", e);
+        throw e;
+      }
       clearInterval(vectorProgressInterval);
       const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
         collection_name: this.trainingSet.id,
@@ -201,6 +185,27 @@ export class TrainingSetBuilder {
   private getTokensForStringWithRetry = (str: string) => getTokensForStringWithRetry(str, 'text-embedding-ada-002')
 
 
+  private splitIntoBatches(trainingSources: TrainingSourceInProgress[], maxBatchSize: number) {
+    console.log("Splitting into batches", trainingSources.length, maxBatchSize)
+    return trainingSources.reduce((acc, doc, i) => {
+      if (!doc) return acc;
+      const lastBatch = acc[acc.length - 1];
+      if (!lastBatch) {
+        acc.push([doc]);
+        return acc;
+      }
+      const lastBatchSize = lastBatch.reduce((acc, doc) => acc + getDocumentsSize(doc.loadedContent), 0);
+      console.log("Last batch size", lastBatchSize, getDocumentsSize(doc.loadedContent), maxBatchSize)
+      console.log("loaded content", doc.loadedContent)
+      if (lastBatchSize + getDocumentsSize(doc.loadedContent) > maxBatchSize) {
+        acc.push([doc]);
+      } else {
+        lastBatch.push(doc);
+      }
+      return acc;
+    }, [] as TrainingSourceInProgress[][]);
+  }
+
   /////////////
   // SOURCES //
   ///////////////////////////////////////////////////////////////////////////////////////////
@@ -209,9 +214,10 @@ export class TrainingSetBuilder {
     const completeCounter = new CountKeeper();
 
     const promises = trainingSources.map(async (source) => {
+      console.log("Loading source", source.name)
       const result = await this.loadTrainingSource(source);
       completeCounter.increment();
-      this.onProgress({ stage: "source-load", statusText: `Loading ${source.name ?? source.content}`, progress: completeCounter.completed / trainingSources.length })
+      this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, progress: completeCounter.completed / trainingSources.length })
 
       return result;
     });
@@ -221,7 +227,7 @@ export class TrainingSetBuilder {
   }
 
   private async loadTrainingSource(source: TrainingSource): Promise<TrainingSourceInProgress> {
-    this.onProgress({ stage: "source-load", statusText: `Loading ${source.name ?? source.content}`, progress: 0 });
+    this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, progress: 0 });
     let documents: Document[];
 
     const splitter = new RecursiveCharacterTextSplitter({
@@ -333,7 +339,7 @@ export class TrainingSetBuilder {
         console.log("Unique keys", uniqueKeys);
 
 
-        this.onProgress({ stage: "source-load", statusText: `Loading ${source.name ?? source.content}`, progress: 1 });
+        this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, progress: 1 });
         return result;
     }
   }
@@ -345,21 +351,22 @@ export class TrainingSetBuilder {
    * @returns The path to the file
    */
   private async loadFile(source: TrainingSource) {
-    // TODO: Rename source.content to something that isn't confusing
+    // TODO: Rename source.name to something that isn't confusing
     // content sounds like it's the actual content of the file and is a
     // holdover from when we used to store the content in the database
-    const key = `${this.trainingSet.userId}/${source.content}`;
+    const key = `${this.trainingSet.userId}/${this.trainingSet.id}/${source.name}`;
     let url = "";
 
     // Some sources are literally a URL, so we don't need to do anything
     if (source.name.startsWith("http")) {
       url = source.name;
     }
-    else if (source.content.startsWith("http")) {
-      url = source.content;
+    else if (source.name.startsWith("http")) {
+      url = source.name;
     } else {
       // Otherwise, we need to get a signed URL from R2
       url = await R2.getSignedUrlForRetrieval(key)
+      console.log("Signed URL", url, source.name, source.name)
     }
     const tempFilePath = getTempFilePath(source.name, { mkdir: true });
 
@@ -371,12 +378,15 @@ export class TrainingSetBuilder {
       const buffer = await blob.arrayBuffer();
       console.log("Writing to temp file at", tempFilePath, "with buffer length", buffer.byteLength, "bytes")
       fs.writeFileSync(tempFilePath, Buffer.from(buffer));
-
       return tempFilePath;
     } else {
       throw new Error(`Failed to download file: ${url}`);
     }
   }
+}
+
+export default function arrayBufferToString(buffer: ArrayBuffer): string {
+  return String.fromCharCode.apply(null, Array.from(new Uint32Array(buffer)));
 }
 
 export interface ProgressPayload {
@@ -440,7 +450,7 @@ export type TrainingSetWithRelations = Prisma.TrainingSetGetPayload<typeof train
 // }
 
 // async function getSourceText(userId: string, source: TrainingSource, notify: ProgressNotifier): Promise<T> {
-//   notify({ stage: "source-load", statusText: `Loading ${source.name ?? source.content}`, progress: 0 });
+//   notify({ stage: "source-load", statusText: `Loading ${source.name}`, progress: 0 });
 //   switch (source.type) {
 //     case "FILE":
 //       switch (source.mimeType) {
@@ -452,13 +462,13 @@ export type TrainingSetWithRelations = Prisma.TrainingSetGetPayload<typeof train
 //           return text;
 //           break;
 //         default:
-//           if (source.content.length > 0) return source.content;
+//           if (source.name.length > 0) return source.name;
 //           return await loadFile(source.name);
 //       }
 //     case "URL":
 //       notify({ stage: "source-load", statusText: `Loading ${source.name}...`, progress: 0 });
 
-//       const key = `${userId}/${source.content}`;
+//       const key = `${userId}/${source.name}`;
 //       let url: string = "";
 //       if (source.name.startsWith("http")) {
 //         url = source.name;
@@ -575,131 +585,29 @@ export type TrainingSetWithRelations = Prisma.TrainingSetGetPayload<typeof train
 
 let vectorProgressInterval: any = null;
 
-function generateDocumentList(allContent: TrainingSourceInProgress[]) {
+async function generateDocumentList(allContent: TrainingSourceInProgress[]): Promise<Document[]> {
   const documentsList = allContent.map(source => {
     return `* ${source.name} - ${source.mimeType} - ${source.createdAt}`;
   }).join("\n");
   const listDoc = `Documents used in training:\n${documentsList}\n\n`;
-  return new Document({
-    pageContent: listDoc,
-    metadata: {
-      source: "Training Document List",
-      page_number: 1,
-      loc: { lines: { from: 1, to: listDoc.length } }
+  const blob = new Blob([listDoc], { type: "text/plain" });
+  const document = await (new TextLoader(blob).loadAndSplit(new RecursiveCharacterTextSplitter({
+    chunkOverlap: 200,
+    chunkSize: 1000
+  })));
+  return document.map((d, i) => {
+    return {
+      ...d,
+      metadata: {
+        ...d.metadata,
+        page_number: i,
+        source: "Training Document List",
+        loc: { lines: { from: 0, to: 0 } }
+      }
     }
   })
 }
 
-// async function vectorize(docs: { source: string, content: string }[], trainingSetId: string, notify: ProgressNotifier): Promise<void> {
-//   if (docs.length === 0) throw new Error("No documents to vectorize!");
-//   console.log("Vectorizing documents...")
-
-//   const sizeOfDocsData = docs.reduce((acc, doc) => acc + doc.content.length, 0);
-//   console.log(`Total size of docs data: ${sizeOfDocsData} bytes`)
-//   const ONE_MEGABYTE = 1000000;
-//   const MAX_BATCH_SIZE = ONE_MEGABYTE * 1;
-//   const batches = docs.reduce((acc, doc, i) => {
-//     if (!doc) return acc;
-//     const lastBatch = acc[acc.length - 1];
-//     if (!lastBatch) {
-//       acc.push([doc]);
-//       return acc;
-//     }
-//     const lastBatchSize = lastBatch.reduce((acc, doc) => acc + doc.content.length, 0);
-//     if (lastBatchSize + doc.content.length > MAX_BATCH_SIZE) {
-//       acc.push([doc]);
-//     } else {
-//       lastBatch.push(doc);
-//     }
-//     return acc;
-//   }, [] as { content: string, source: string }[][])
-//   console.log("Batches", batches.length);
-//   const batchCount = batches.length;
-
-//   try {
-//     await client.dropCollection({ collection_name: trainingSetId });
-//   } catch (e) {
-//     console.log("Error dropping collection", e)
-//   }
-//   // const embedder = new OpenAIEmbeddings();
-//   const embedder = new CohereEmbeddings({ apiKey: process.env.COHERE_API_KEY })
-//   let time = 0;
-//   // takes 10 seconds/batch
-//   const TIME_PER_BATCH = 9750;
-//   const totalTime = TIME_PER_BATCH * batches.length;
-//   const INTERVAL_LENGTH = 100;
-//   vectorProgressInterval = setInterval(() => {
-//     time = time + INTERVAL_LENGTH;
-//     notify({
-//       stage: "overall",
-//       statusText: "Vectorizing documents...",
-//       progress: 0.3 + ((time / totalTime))
-//     })
-
-//   }, INTERVAL_LENGTH);
-
-//   while (batches.length > 0) {
-//     notify({
-//       stage: "vectorize",
-//       statusText: `Vectorizing batch ${batchCount - batches.length + 1} of ${batchCount}`,
-//       progress: (batchCount - batches.length) / batchCount
-//     })
-//     console.log("Vectoring batch", batchCount - batches.length + 1, "of", batchCount)
-//     const batch = batches.shift();
-//     if (!batch) break;
-//     const filteredBatch = batch.filter(b => b && b.content.length > 0);
-//     const mappedMeta = filteredBatch.map((_, i) => ({ id: i }));
-//     try {
-//       const batch = filteredBatch.map((b, i) => new Document(
-//         {
-//           pageContent: b.content,
-//           metadata: {
-//             source: b.source,
-//             id: b.source.replace(/[^a-zA-Z0-9]/g, "_") + "_" + i
-//           }
-//         }
-//       ));
-//       await Milvus.fromDocuments(batch, embedder, {
-//         collectionName: trainingSetId,
-//       });
-//     } catch (e) {
-//       console.log("ERROR BATCH", filteredBatch.length, mappedMeta.length);
-//       throw e;
-//     }
-//     const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
-//       collection_name: trainingSetId,
-//     });
-//     console.log("Collection statistics", stats);
-//   }
-//   clearInterval(vectorProgressInterval);
-//   const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
-//     collection_name: trainingSetId,
-//   });
-//   client.flush({ collection_names: [trainingSetId] });
-//   console.log("Collection statistics", stats);
-//   console.log("Vectorization complete");
-// }
-
-// const textSplitter = new CharacterTextSplitter({
-//   chunkSize: 1000,
-//   chunkOverlap: 0,
-//   separator: "\n"
-// });
-
-// const text_splitter = new RecursiveCharacterTextSplitter({
-//   chunkSize: 4000, chunkOverlap: 200, separators: [" ", ",", "\n"]
-// })
-// async function splitFileData(data: { source: string, content: string }[], notify: ProgressNotifier, options: { maxSegmentLength: number, overlapBetweenSegments: number }): Promise<{ source: string, content: string }[]> {
-//   const countKeeper = new CountKeeper();
-//   console.log("Splitting text into chunks...", options)
-//   let docs: { source: string, content: string }[] = [];
-//   let index = 0;
-//   for (const d of data) {
-//     const docOutput = await textSplitterMine(d, options.maxSegmentLength, options.overlapBetweenSegments, [" ", ",", "\n"])
-//     docs = [...docs, ...docOutput];
-//     countKeeper.completed++;
-//     notify({ stage: "split-documents", statusText: `Splitting document ${countKeeper.completed} of ${data.length}`, progress: countKeeper.completed / data.length });
-//   }
-//   return docs;
-// }
-
+function getDocumentsSize(docs: Document<Record<string, any>>[]) {
+  return docs.reduce((acc, doc) => acc + doc.pageContent.length, 0);
+}

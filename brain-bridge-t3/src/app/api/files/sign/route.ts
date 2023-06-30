@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
   const payload = (await req.json()) as { fileNameKey: string };
   const { fileNameKey } = payload;
   const finalKey = `${session.user.id}/${fileNameKey}`;
+  console.log("finalKey", finalKey)
   const url = await R2.getSignedUrlForUpload(finalKey);
   return NextResponse.json({ url });
 }

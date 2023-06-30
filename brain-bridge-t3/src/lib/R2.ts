@@ -30,6 +30,7 @@ async function getSignedUrlForRetrieval(key: string, bucketName: string = env.R2
     Bucket: bucketName,
     Key: key,
   });
+  console.log("command", command)
   return getSignedUrl(S3, command, { expiresIn: 3600 });
 }
 

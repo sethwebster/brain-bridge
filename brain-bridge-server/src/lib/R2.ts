@@ -38,6 +38,7 @@ async function getSignedUrlForRetrieval(key: string, bucketName: string = proces
     Bucket: bucketName,
     Key: key,
   });
+  console.log("command", command)
   return getSignedUrl(S3, command, { expiresIn: 3600 });
 }
 

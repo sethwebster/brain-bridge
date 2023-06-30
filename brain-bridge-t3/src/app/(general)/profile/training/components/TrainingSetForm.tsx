@@ -26,14 +26,16 @@ import useSocket from "~/hooks/use-socket";
 import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
 import Tabs from "~/app/components/Tabs";
 import { toast } from "react-toastify";
-import { DetailsTab } from "./DetailsTab";
-import { PromptTab } from "./PromptTab";
+import DetailsTab from "./DetailsTab";
+import PromptTab from "./PromptTab";
 import { OptionsTab } from "./OptionsTab";
 import Button from "~/base-components/Button";
 import ThreeStateButton from "~/base-components/ThreeStateButton";
 import Logger from "~/lib/logger";
 import ChatTab from "./ChatTab";
 import { type Session } from "next-auth";
+import { RoomJoiner } from "../../components/RoomJoiner";
+import invariant from "tiny-invariant";
 
 export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {
@@ -115,10 +117,10 @@ export function TrainingSetForm({
       //   joinRef.current = undefined;
       // };
 
-      const leaveTraining = socketRef.join(
-        `training-${trainingSet.id}`,
-        "private"
-      );
+      // const leaveTraining = socketRef.join(
+      //   `training-${trainingSet.id}`,
+      //   "private"
+      // );
 
       const removeHandleTrainingStarted = socketRef.onMessage(
         "training-started",
@@ -142,7 +144,7 @@ export function TrainingSetForm({
           removeHandleTrainingStarted();
           removeTrainingError();
           removeTrainingProgress();
-          leaveTraining();
+          // leaveTraining();
         }
       };
     }
@@ -384,135 +386,139 @@ export function TrainingSetForm({
 
   const firstConversation = useMemo(() => {
     const first = trainingSetData.conversations.find(
-      (c) => c.userId === clientSession.data?.user.id
+      (c) => c.userId === session.user.id
     );
     return first;
-  }, [clientSession.data?.user.id, trainingSetData.conversations]);
+  }, [session.user.id, trainingSetData. conversations]);
+  invariant(firstConversation, "First conversation should exist");
 
   return (
-    <div className="h-full bg-slate-50">
-      <div className="w-full h-full bg-slate-100 ">
-        <Tabs
-          header={<h1 className="text-sm">{trainingSet.name}</h1>}
-          initialSelectedTab={activeTab}
-          onSelectNewTab={handleTabChange}
-          additionalItems={[
-            <div className="flex flex-col justify-center h-full" key="Save">
-              <Button
-                // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                onClick={handleSave}
-                disabled={!isDirty || isSaving || !canSave}
-                // className="w-24 p-2 mr-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
-              >
-                {isSaving ? "Saving..." : "Save"}
-              </Button>
-            </div>,
-            <div className="flex flex-col justify-center h-full" key="Train">
-              <ThreeStateButton
-                classNamesForStates={{
-                  enabled: "bg-green-400 dark:bg-green-500",
-                  error: "bg-red-400 dark:bg-red-500",
-                  disabled: "bg-opacity-50",
-                  training: "animate-pulse bg-amber-400 dark:bg-amber-500",
-                }}
-                label="Train"
-                onClick={handleTrain}
-                title={
-                  socketRef.status === "authenticated"
-                    ? "Train the model"
-                    : "Server is offline"
-                }
-                state={trainingButtonState}
-              />
-            </div>,
-          ]}
-          tabContent={{
-            Details: (
-              <DetailsTab
-                canEdit={canEdit}
-                handleConfirmShareChanges={handleConfirmShareChanges}
-                handleNameChange={handleNameChange}
-                isShared={isShared}
-                pendingData={trainingSetData}
-                trainingSet={trainingSet}
-              />
-            ),
+    <>
+      <RoomJoiner room={trainingSetData.id} type="training" />
+      <div className="h-full bg-slate-50">
+        <div className="h-full w-full bg-slate-100 ">
+          <Tabs
+            header={<h1 className="text-sm">{trainingSet.name}</h1>}
+            initialSelectedTab={activeTab}
+            onSelectNewTab={handleTabChange}
+            additionalItems={[
+              <div className="flex h-full flex-col justify-center" key="Save">
+                <Button
+                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                  onClick={handleSave}
+                  disabled={!isDirty || isSaving || !canSave}
+                  // className="w-24 p-2 mr-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
+                >
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+              </div>,
+              <div className="flex h-full flex-col justify-center" key="Train">
+                <ThreeStateButton
+                  classNamesForStates={{
+                    enabled: "bg-green-400 dark:bg-green-500",
+                    error: "bg-red-400 dark:bg-red-500",
+                    disabled: "bg-opacity-50",
+                    training: "animate-pulse bg-amber-400 dark:bg-amber-500",
+                  }}
+                  label="Train"
+                  onClick={handleTrain}
+                  title={
+                    socketRef.status === "authenticated"
+                      ? "Train the model"
+                      : "Server is offline"
+                  }
+                  state={trainingButtonState}
+                />
+              </div>,
+            ]}
+            tabContent={{
+              Details: (
+                <DetailsTab
+                  canEdit={canEdit}
+                  handleConfirmShareChanges={handleConfirmShareChanges}
+                  handleNameChange={handleNameChange}
+                  isShared={isShared}
+                  pendingData={trainingSetData}
+                  trainingSet={trainingSet}
+                />
+              ),
 
-            Prompt: (
-              <PromptTab
-                onPromptGenerated={handlePromptGenerated}
-                {...{
-                  allQuestionsAnswered,
-                  canEdit,
-                  trainingSetData,
-                  handleQnAChange,
-                  handlePromptChange,
-                  onAutoTrainClicked: handleAutoTrainClicked,
-                  isAutoTraining,
-                }}
-              />
-            ),
-            Options: (
-              <OptionsTab
-                {...{ canEdit, trainingOptions, handleTrainingOptionChanged }}
-              />
-            ),
-            Sources: (
-              <div className="h-auto p-2 px-4">
-                <Sources
-                  disabled={!canEdit}
-                  trainingSetId={trainingSetData.id}
-                  sources={trainingSetData.trainingSources}
-                  onSourcesChanged={handleSourcesChanged}
+              Prompt: (
+                <PromptTab
+                  onPromptGenerated={handlePromptGenerated}
+                  {...{
+                    allQuestionsAnswered,
+                    canEdit,
+                    trainingSetData,
+                    handleQnAChange,
+                    handlePromptChange,
+                    onAutoTrainClicked: handleAutoTrainClicked,
+                    isAutoTraining,
+                  }}
                 />
-                <MissedQuestionsList
-                  disabled={!canEdit}
-                  trainingSet={trainingSetData}
-                  onUpdate={handleMissedQuestionsUpdate}
+              ),
+              Options: (
+                <OptionsTab
+                  {...{ canEdit, trainingOptions, handleTrainingOptionChanged }}
                 />
-              </div>
-            ),
-            Chat: (
-              <div className="h-auto p-2 px-4 overflow-scroll">
-                <ChatTab
-                  trainingSetId={trainingSetData.id}
-                  session={session}
-                  selectedChat={firstConversation}
-                />
-              </div>
-            ),
-          }}
-        />
-      </div>
-
-      {error && <ErrorBox message={error} title="An error has occurred" />}
-      <Modal title="" show={isTraining} icon={<SaveIcon />}>
-        <div className="w-full">
-          <TrainingProgressDisplay
-            onMessage={socketRef.onMessage}
-            socket={socketRef.socket}
-            isTraining={isTraining}
+              ),
+              Sources: (
+                <div className="h-auto p-2 px-4">
+                  <Sources
+                    disabled={!canEdit}
+                    trainingSetId={trainingSetData.id}
+                    sources={trainingSetData.trainingSources}
+                    onSourcesChanged={handleSourcesChanged}
+                  />
+                  <MissedQuestionsList
+                    disabled={!canEdit}
+                    trainingSet={trainingSetData}
+                    onUpdate={handleMissedQuestionsUpdate}
+                  />
+                </div>
+              ),
+              Chat: (
+                <div className="h-auto overflow-scroll p-2 px-4">
+                  <ChatTab
+                    trainingSetId={trainingSetData.id}
+                    session={session}
+                    selectedChat={firstConversation}
+                  />
+                </div>
+              ),
+            }}
           />
         </div>
-      </Modal>
-      <Modal
-        title="Refining Your Prompt"
-        show={showRefinePromptModal}
-        onCancel={() => setShowRefinePromptModal(false)}
-        confirmText="Continue"
-        onConfirm={handleRefinePromptConfirmed}
-        closeText="Cancel"
-      >
-        <p>A note on refining your prompt:</p>
-        <ul className="ml-4 list-disc">
-          <li>The prompt used dramatically influences your results.</li>
-          <li>
-            This functionality is experimental and may not work as expected. As
-            such, you should copy and save your current prompt somewhere in case
-            you want to come back to it.
-          </li>
-        </ul>
-      </Modal>
-    </div>
+
+        {error && <ErrorBox message={error} title="An error has occurred" />}
+        <Modal title="" show={isTraining} icon={<SaveIcon />}>
+          <div className="w-full">
+            <TrainingProgressDisplay
+              onMessage={socketRef.onMessage}
+              socket={socketRef.socket}
+              isTraining={isTraining}
+            />
+          </div>
+        </Modal>
+        <Modal
+          title="Refining Your Prompt"
+          show={showRefinePromptModal}
+          onCancel={() => setShowRefinePromptModal(false)}
+          confirmText="Continue"
+          onConfirm={handleRefinePromptConfirmed}
+          closeText="Cancel"
+        >
+          <p>A note on refining your prompt:</p>
+          <ul className="ml-4 list-disc">
+            <li>The prompt used dramatically influences your results.</li>
+            <li>
+              This functionality is experimental and may not work as expected.
+              As such, you should copy and save your current prompt somewhere in
+              case you want to come back to it.
+            </li>
+          </ul>
+        </Modal>
+      </div>
+    </>
   );
 }

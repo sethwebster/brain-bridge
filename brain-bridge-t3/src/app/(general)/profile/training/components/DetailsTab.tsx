@@ -1,5 +1,5 @@
 "use client";
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 import Input from "~/app/components/Input";
 import { type TrainingSetShares } from "@prisma/client";
 import { type TrainingSetWithRelations } from "~/data/interfaces/types";
@@ -8,7 +8,7 @@ import { ShareIcon } from "~/app/components/SvgIcons";
 import Dashboard from "./Dashboard";
 import { calculateCost } from "../../../../../lib/calculate-costs";
 
-export const DetailsTab = ({
+const DetailsTab = ({
   isShared,
   trainingSet,
   pendingData,
@@ -79,3 +79,5 @@ export const DetailsTab = ({
     </div>
   );
 };
+
+export default React.memo(DetailsTab);

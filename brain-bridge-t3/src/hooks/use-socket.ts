@@ -5,6 +5,7 @@ import invariant from "tiny-invariant";
 import { type Socket } from "socket.io-client";
 import socket from "~/lib/socket";
 import Logger from "~/lib/logger";
+import { type RoomType } from "~/app/(general)/profile/components/RoomJoiner";
 
 function logger<T>(message: string, data: T, sendOrReceived: "send" | "received") {
   Logger.info(`[${sendOrReceived}] Socket Message: `, message, data);
@@ -12,7 +13,7 @@ function logger<T>(message: string, data: T, sendOrReceived: "send" | "received"
 
 type JoinPayload = {
   room: string;
-  type: "public" | "private";
+  type: RoomType;
 }
 
 class RoomManager {
@@ -42,7 +43,7 @@ class RoomManager {
     this.rooms = this.rooms.filter((r) => r.room !== payload.room && r.type !== payload.type);
   }
 
-  hasJoined(room: string, type: "public" | "private") {
+  hasJoined(room: string, type: RoomType) {
     return this.rooms.find((r) => r.room === room && r.type === type);
   }
 }
@@ -63,16 +64,14 @@ export default function useSocket() {
     }
   }
 
-  function join(room: string, type: PublicPrivate) {
+  function join(room: string, type: RoomType) {
     roomManager.joinRoom({ room, type });
     return () => {
       roomManager.leaveRoom({ room, type });
     }
   }
 
-  type PublicPrivate = "public" | "private";
-
-  function leave(room: string, type: PublicPrivate) {
+  function leave(room: string, type: RoomType) {
     roomManager.leaveRoom({ room, type });
   }
 

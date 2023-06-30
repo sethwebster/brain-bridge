@@ -10,7 +10,7 @@ import { type TabsList } from "../../components/TrainingSetForm";
 export default async function TrainingPage({
   params: { id, tab },
 }: {
-  params: { id: string; tab: string };
+  params: { id: string; tab: TabsList };
 }) {
   const session = await getServerSession();
   invariant(session, "Session must exist");
@@ -20,6 +20,19 @@ export default async function TrainingPage({
   if (!set) {
     notFound();
   }
+
+  const firstConversation = set.conversations[0];
+  if (!firstConversation) {
+    const conversation = await ServerData.newChat(set.id);
+    set.conversations.push(conversation);
+  } else {
+    const conversation = await ServerData.fetchChat(
+      firstConversation.id
+    );
+    set.conversations[0] = conversation;    
+  }
+
+  console.log("set", set)
 
   const activeTabTitleCase = (tab.charAt(0).toUpperCase() +
     tab.toLowerCase().slice(1)) as TabsList;
