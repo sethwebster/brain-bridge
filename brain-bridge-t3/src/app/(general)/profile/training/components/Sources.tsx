@@ -151,7 +151,6 @@ function Sources({
 
             updated.push({
               name: name,
-              content: file.url,
               type: "URL",
               createdAt: new Date(),
               updatedAt: new Date(),
@@ -200,7 +199,7 @@ function Sources({
     setNewUrlText("");
     onSourcesChanged([
       ...sources,
-      { type: "URL", name: newUrlText, content: "" } as TrainingSource,
+      { type: "URL", name: newUrlText } as TrainingSource,
     ]);
   }, [newUrlText, onSourcesChanged, sources]);
 
@@ -257,7 +256,7 @@ function Sources({
         const item =
           source.name.length > 0 && source.name.startsWith("http")
             ? `web?url=${source.name}`
-            : source.content;
+            : source.name;
         const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/files/${item}`;
         return fetch(url).then((res) => {
           return {
@@ -437,7 +436,7 @@ function Sources({
                       <a
                         href={`${
                           process.env.NEXT_PUBLIC_BASE_URL || ""
-                        }/api/files/${source.content}`}
+                        }/api/files/${trainingSetId}/${source.name}`}
                         className="text-blue-500"
                         target="_blank"
                         referrerPolicy="no-referrer"
