@@ -15,8 +15,8 @@ import {
   type TrainingOptions,
   type QuestionAndAnswerPartial,
   type TrainingSetWithRelations,
+  type ConversationWithRelations,
   defaultTrainingOptions,
-  ConversationWithRelations,
 } from "~/data/interfaces/types";
 import replaceTokens from "~/utils/replace-tokens";
 import MissedQuestionsList from "./MissedQuestionsList";

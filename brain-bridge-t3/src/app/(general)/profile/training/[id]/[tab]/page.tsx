@@ -17,10 +17,13 @@ export default async function TrainingPage({
   invariant(session, "Session must exist");
   invariant(session.user, "User must exist");
   const set = await ServerData.fetchUserTrainingSet(id);
-  Logger.logWhen(!set, "error", "Training set not found", id)
+  
   if (!set) {
+    Logger.error("Training set not found", id);
     notFound();
   }
+
+  Logger.info("Training set in /profile/training", set.id)
 
   const firstConversation = set.conversations[0];
   if (!firstConversation) {
