@@ -16,6 +16,7 @@ import {
   type QuestionAndAnswerPartial,
   type TrainingSetWithRelations,
   defaultTrainingOptions,
+  ConversationWithRelations,
 } from "~/data/interfaces/types";
 import replaceTokens from "~/utils/replace-tokens";
 import MissedQuestionsList from "./MissedQuestionsList";
@@ -384,11 +385,11 @@ export function TrainingSetForm({
     trainingSetData.version,
   ]);
 
-  const firstConversation = useMemo(() => {
+  const firstConversation = useMemo<ConversationWithRelations | undefined>(() => {
     const first = trainingSetData.conversations.find(
       (c) => c.userId === session.user.id
     );
-    return first;
+    return first as ConversationWithRelations;
   }, [session.user.id, trainingSetData. conversations]);
   invariant(firstConversation, "First conversation should exist");
 
