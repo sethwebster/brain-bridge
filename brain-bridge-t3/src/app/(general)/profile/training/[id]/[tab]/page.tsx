@@ -25,8 +25,8 @@ export default async function TrainingPage({
 
   Logger.info("Training set in /profile/training", set.id)
 
-  const firstConversation = set.conversations[0];
-  if (!firstConversation || firstConversation.userId !== session.user.id) {
+  const firstConversation = set.conversations.find(c => c.userId === session.user.id)
+  if (!firstConversation) {
     const conversation = await ServerData.newChat(set.id);
     set.conversations.push(conversation);
   } else {
