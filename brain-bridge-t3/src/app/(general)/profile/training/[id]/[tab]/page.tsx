@@ -6,6 +6,7 @@ import ServerData from "~/server/server-data";
 import TrainingSetPage from "../../components/TrainingSetPage";
 import promptTemplate from "../../DEPRECATED_PromptTemplate";
 import { type TabsList } from "../../components/TrainingSetForm";
+import Logger from "~/lib/logger";
 
 export default async function TrainingPage({
   params: { id, tab },
@@ -16,7 +17,7 @@ export default async function TrainingPage({
   invariant(session, "Session must exist");
   invariant(session.user, "User must exist");
   const set = await ServerData.fetchUserTrainingSet(id);
-
+  Logger.logWhen(!set, "error", "Training set not found", id)
   if (!set) {
     notFound();
   }

@@ -43,6 +43,22 @@ const Logger = {
   group: (...args: unknown[]) => {
     if (LOG_LEVEL === "none") return;
     console.group(...args)
+  },
+  logWhen: (condition: boolean, level: LogLevel, ...args: unknown[]) => {
+    if (LOG_LEVEL === "none") return;
+    if (condition) {
+      const c = console as {
+        log: (...args: unknown[]) => void;
+        info: (...args: unknown[]) => void;
+        debug: (...args: unknown[]) => void;
+        warn: (...args: unknown[]) => void;
+      } as { [key: string]: (...args: unknown[]) => void; }
+
+
+
+      const fn = c[level] as (...args: unknown[]) => void;
+      if (shouldLog(level)) fn(...args);
+    }
   }
 }
 
