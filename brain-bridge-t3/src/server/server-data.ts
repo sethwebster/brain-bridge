@@ -68,7 +68,8 @@ async function fetchUserTrainingSet(trainingSetId: string): Promise<TrainingSetW
       where: { id: trainingSetId, trainingSetShares: { some: { acceptedUserId: user.user.id } } },
       ...trainingSetWithRelations
     });
-    Logger.info("Shared training set loaded", share, set)
+    if (!set) Logger.error("SET NOT FOUND", trainingSetId)
+    Logger.info("Shared training set loaded", share, set?.id)
     
     return set;
   }
