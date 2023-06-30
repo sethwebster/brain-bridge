@@ -176,7 +176,7 @@ export default function Chat({
   if (!session.user?.email) throw new Error("No user email");
   return (
     <SideBarPaddedContainer>
-      <RoomJoiner room={selectedChat.id} />
+      <RoomJoiner room={selectedChat.id} type="private" />
       <ChatDisplay
         chatType="private"
         answerPending={answerPending}

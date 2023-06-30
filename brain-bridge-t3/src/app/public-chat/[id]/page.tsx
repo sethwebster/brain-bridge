@@ -87,7 +87,7 @@ export default async function PublicChatPage({ params: { id } }: PageProps) {
     invariant(conversation, "Conversation must exist");
     return (
       <div className="h-full">
-        <RoomJoiner room={chat.id} />
+        <RoomJoiner room={chat.id} type="private" />
         <PublicChat
           publicChat={chat}
           publicChatInstance={conversation}
