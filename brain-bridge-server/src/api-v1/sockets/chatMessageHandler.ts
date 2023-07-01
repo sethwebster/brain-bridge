@@ -46,7 +46,12 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
       conversation.trainingSetId,
       message.text,
       fullPrompt,
-      conversation.messages.map(m => `${m.sender.name}: ${m.text}`),
+      conversation.messages.sort((a, b) => {
+        if (a.createdAt === b.createdAt) {
+          return 0;
+        }
+        return a.createdAt > b.createdAt ? 1 : -1;
+      }).map(m => `${m.sender.name}: ${m.text}`),
       chatResponseMode
     );
 
@@ -101,7 +106,12 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
       conversation.publicChat.trainingSetId,
       message.text,
       fullPrompt,
-      conversation.messages.map(m => `${m.sender.name}: ${m.text}`),
+      conversation.messages.sort((a, b) => {
+        if (a.createdAt === b.createdAt) {
+          return 0;
+        }
+        return a.createdAt > b.createdAt ? 1 : -1;
+      }).map(m => `${m.sender.name}: ${m.text}`),
       chatResponseMode
     );
 
