@@ -87,7 +87,7 @@ async function fetchMessages(chatId: string): Promise<MessageWithRelations[]> {
 }
 
 async function clearPublicChatMessages(publicChatId: string): Promise<PublicChatWithRelations> {
-  const response = await fetch(makeApiUrl(`/api/public-chat/${publicChatId}/messages`), {
+  const response = await fetch(makeApiUrl(`/api/public-chats/${publicChatId}/messages`), {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
