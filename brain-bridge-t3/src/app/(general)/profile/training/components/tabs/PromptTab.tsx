@@ -1,7 +1,7 @@
 "use client";
-import AutoSizingTextArea from "./AutoSizingTextArea";
+import AutoSizingTextArea from "../../../../../../base-components/AutoSizingTextArea";
 import { type TrainingSetWithRelations } from "~/data/interfaces/types";
-import { AutoTraining } from "./AutoTraining";
+import { AutoTraining } from "../AutoTraining";
 import React from "react";
 
 function PromptTab({

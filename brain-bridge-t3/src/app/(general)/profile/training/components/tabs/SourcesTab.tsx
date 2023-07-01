@@ -1,5 +1,5 @@
 import { useFilePicker } from "use-file-picker";
-import { memo, useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { isValidURL } from "~/utils/validation";
 import { type TrainingSource } from "@prisma/client";
 import Modal from "~/app/components/ModalDialog";
@@ -28,7 +28,7 @@ import { extension } from "mime-types";
 import { toast } from "react-toastify";
 import DeleteButton from "~/base-components/DeleteButton";
 import Logger from "~/lib/logger";
-import AutoSizingTextArea from "./AutoSizingTextArea";
+import AutoSizingTextArea from "../../../../../../base-components/AutoSizingTextArea";
 import { MdCheck } from "react-icons/md";
 
 function Sources({
@@ -346,16 +346,18 @@ function Sources({
   }, [newUrlText]);
 
   const maxDisplayed = showMore ? sources.length : 20;
-  const filteredSources = useMemo(()=>{
-    return sources.filter((source) => {
-      if (searchText.length > 0) {
-        return source.name.toLowerCase().includes(searchText.toLowerCase());
-      }
-      return true;
-    }).sort((a, b) => {
-      return a.name.localeCompare(b.name);
-    })
-  },[searchText, sources]);
+  const filteredSources = useMemo(() => {
+    return sources
+      .filter((source) => {
+        if (searchText.length > 0) {
+          return source.name.toLowerCase().includes(searchText.toLowerCase());
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        return a.name.localeCompare(b.name);
+      });
+  }, [searchText, sources]);
   return (
     <div className="rounded-lg">
       <h1 className="text-lg">Training Data Sources</h1>
@@ -374,36 +376,36 @@ function Sources({
           </button>
         </div>
       </div>
-      <div className="p-2 border rounded-lg">
-        <header className="flex flex-row justify-between pb-2 border-b border-dotted">
-          <div className="flex-grow mr-2">
+      <div className="rounded-lg border p-2">
+        <header className="flex flex-row justify-between border-b border-dotted pb-2">
+          <div className="mr-2 flex-grow">
             <Input
               value={searchText}
               placeholder="Filter sources"
               onChange={handleSearchTextChange}
-              className="w-full p-1 rounded-md shadow outline-none drop-shadow"
+              className="w-full rounded-md p-1 shadow outline-none drop-shadow"
             />
           </div>
-          <div className="px-2 mr-2 bg-blue-200 rounded shadow">
+          <div className="mr-2 rounded bg-blue-200 px-2 shadow">
             <div className="pt-1">{filteredSources.length} Sources</div>
             {inProcessFiles.length > 0 && (
-              <span className="inline-block ml-2 text-green-500">
+              <span className="ml-2 inline-block text-green-500">
                 {inProcessFiles.filter((f) => f.status === "pending").length}{" "}
                 Uploading
               </span>
             )}
           </div>
-          <div className="flex flex-row justify-between w-auto" role="toolbar">
+          <div className="flex w-auto flex-row justify-between" role="toolbar">
             <button
               disabled={disabled}
-              className="p-2 mr-2 bg-blue-400 rounded shadow-md"
+              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
               onClick={openFileSelector}
             >
               <PlusAddIcon />
             </button>
             <button
               disabled={disabled}
-              className="p-2 mr-2 bg-blue-400 rounded shadow-md"
+              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onClick={handleFolderOpenClick}
             >
@@ -411,7 +413,7 @@ function Sources({
             </button>
             <button
               disabled={disabled}
-              className="p-2 mr-2 bg-blue-400 rounded shadow-md"
+              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
               onClick={handleAddUrlClick}
             >
               <UrlIcon />
@@ -419,7 +421,7 @@ function Sources({
             <button
               title="Download Sources (only files)"
               disabled={disabled}
-              className="p-2 bg-blue-400 rounded shadow-md"
+              className="rounded bg-blue-400 p-2 shadow-md"
               onClick={handleDownloadClick}
             >
               <DownloadIcon />
@@ -427,7 +429,7 @@ function Sources({
           </div>
         </header>
 
-        <ul className="w-full overflow-y-scroll max-h-72">
+        <ul className="max-h-72 w-full overflow-y-scroll">
           {inProcessFiles
             .sort((a, b) => {
               return a.file.name.localeCompare(b.file.name);
@@ -443,9 +445,7 @@ function Sources({
                       : "text-red-400"
                   }`}
                 >
-                  {file.status === "pending" && (
-                    <Spinner />
-                  )}
+                  {file.status === "pending" && <Spinner />}
                   {file.status === "complete" && (
                     <MdCheck color="green" className="mr-2" />
                   )}
@@ -453,56 +453,54 @@ function Sources({
                 </div>
               </li>
             ))}
-          {filteredSources
-            .slice(0, maxDisplayed)
-            .map((source, index) => (
-              <li
-                key={index}
-                className={`mt-1 flex flex-row justify-between ${
-                  !source.id || source.id.length === 0 ? "text-gray-500" : ""
-                }`}
-              >
-                <div className="flex flex-row mt-1">
-                  {source.type === "URL" && (
-                    <>
-                      <div className="p-1 mr-2 border rounded border-slate-200 bg-slate-400">
-                        <div className="w-4 h-4">
-                          <UrlIcon />
-                        </div>
+          {filteredSources.slice(0, maxDisplayed).map((source, index) => (
+            <li
+              key={index}
+              className={`mt-1 flex flex-row justify-between ${
+                !source.id || source.id.length === 0 ? "text-gray-500" : ""
+              }`}
+            >
+              <div className="mt-1 flex flex-row">
+                {source.type === "URL" && (
+                  <>
+                    <div className="mr-2 rounded border border-slate-200 bg-slate-400 p-1">
+                      <div className="h-4 w-4">
+                        <UrlIcon />
                       </div>
-                      <a
-                        href={`${
-                          source.name.startsWith("http")
-                            ? source.name
-                            : process.env.NEXT_PUBLIC_BASE_URL || ""
-                        }/api/files/${trainingSetId}/${source.name}`}
-                        className="text-blue-500"
-                        target="_blank"
-                        referrerPolicy="no-referrer"
-                      >
-                        {source.name}
-                      </a>
+                    </div>
+                    <a
+                      href={`${
+                        source.name.startsWith("http")
+                          ? source.name
+                          : process.env.NEXT_PUBLIC_BASE_URL || ""
+                      }/api/files/${trainingSetId}/${source.name}`}
+                      className="text-blue-500"
+                      target="_blank"
+                      referrerPolicy="no-referrer"
+                    >
+                      {source.name}
+                    </a>
+                  </>
+                )}
+                {source.type === "FILE" && (
+                  <a href={source.name}>{source.name}</a>
+                )}
+                {!source.id ||
+                  (source.id.length === 0 && (
+                    <>
+                      <small> (pending)</small>
                     </>
-                  )}
-                  {source.type === "FILE" && (
-                    <a href={source.name}>{source.name}</a>
-                  )}
-                  {!source.id ||
-                    (source.id.length === 0 && (
-                      <>
-                        <small> (pending)</small>
-                      </>
-                    ))}
-                </div>
-                <DeleteButton
-                  disabled={disabled}
-                  onConfirmed={() => handleDelete(source)}
-                  className="flex flex-row items-center justify-center w-8 h-8 p-0 m-0 opacity-90"
-                  confirmingClassName="w-8 h-8 bg-red-400 items-center flex flex-row p-0 m-0 justify-center opacity-90"
-                />
-              </li>
-            ))}
-          {filteredSources.length > 25 &&  (
+                  ))}
+              </div>
+              <DeleteButton
+                disabled={disabled}
+                onConfirmed={() => handleDelete(source)}
+                className="m-0 flex h-8 w-8 flex-row items-center justify-center p-0 opacity-90"
+                confirmingClassName="w-8 h-8 bg-red-400 items-center flex flex-row p-0 m-0 justify-center opacity-90"
+              />
+            </li>
+          ))}
+          {filteredSources.length > 25 && (
             <li className="text-center">
               <button onClick={() => setShowMore(!showMore)}>
                 Show {showMore ? "Less" : "More"}
@@ -558,4 +556,4 @@ function Sources({
   );
 }
 
-export default memo(Sources);
+export default React.memo(Sources);

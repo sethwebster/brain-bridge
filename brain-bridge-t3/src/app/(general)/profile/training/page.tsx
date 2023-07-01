@@ -1,13 +1,12 @@
 import invariant from "tiny-invariant";
 import { NewTrainingSetButton } from "./NewTrainingSetButton";
-import Link from "next/link";
-import { DeleteTrainingSet } from "./DeleteTrainingSet";
 import { DismissableInfoBox } from "~/app/components/InfoBox";
 import ServerData from "~/server/server-data";
 import { Suspense } from "react";
 import { getServerSession } from "~/server/auth";
 import ContentBoxWithHeading from "../components/ContentBoxWithHeading";
-import { MdShare } from "react-icons/md";
+import TrainingSetList from "./components/TrainingSetList";
+import { Spinner } from "~/app/components/SvgIcons";
 
 async function TrainingPage() {
   const session = await getServerSession();
@@ -40,70 +39,11 @@ async function TrainingPage() {
         {shared.length > 0 && (
           <h2 className="mt-2 text-slate-600">Your Sets</h2>
         )}
-
-        <ul>
-          {owned
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((set, index) => (
-              <li
-                key={set.id}
-                className="flex justify-between p-2 border-b border-b-slate-300 dark:border-b-slate-500"
-              >
-                <Link
-                  href={`/profile/training/${set.id}`}
-                  className="flex flex-row text-blue-400"
-                >
-                  {set.userId !== session.user.id && (
-                    <div
-                      className="flex flex-col justify-center mr-2"
-                      title="This training set is shared with you"
-                    >
-                      <div className="p-1">
-                        <MdShare />
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex flex-col justify-center">
-                    {set.name || `Set ${index + 1}`}
-                  </div>
-                </Link>
-                <DeleteTrainingSet id={set.id} user={session.user} />
-              </li>
-            ))}
-        </ul>
+        <TrainingSetList sets={owned} session={session} />
         {shared.length > 0 && (
           <h2 className="mt-4 text-slate-600">Shared With You</h2>
         )}
-        <ul>
-          {shared
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((set, index) => (
-              <li
-                key={set.id}
-                className="flex justify-between p-2 border-b border-b-slate-300 dark:border-b-slate-500"
-              >
-                <Link
-                  href={`/profile/training/${set.id}`}
-                  className="flex flex-row text-blue-400"
-                >
-                  {set.userId !== session.user.id && (
-                    <div
-                      className="flex flex-col justify-center mr-2"
-                      title="This training set is shared with you"
-                    >
-                      <div className="p-1">
-                        <MdShare />
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex flex-col justify-center">
-                    {set.name || `Set ${index + 1}`}
-                  </div>
-                </Link>
-                <DeleteTrainingSet id={set.id} user={session.user} />
-              </li>
-            ))}
-        </ul>
+        <TrainingSetList sets={shared} session={session} />
       </ContentBoxWithHeading>
     </>
   );
@@ -111,8 +51,13 @@ async function TrainingPage() {
 
 export default function TrainingPageWrapper() {
   return (
-    <Suspense fallback={<></>}>
-      {/* @ts-expect-error RSC */}
+    <Suspense
+      fallback={
+        <div className="animate-spin">
+          <Spinner />
+        </div>
+      }
+    >
       <TrainingPage />
     </Suspense>
   );

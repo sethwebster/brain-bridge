@@ -20,6 +20,7 @@ export default async function TrainingPage({
   if (!set) { 
     Logger.error("Training set not found", id);
     notFound();
+    return;
   }
   
   const firstConversation = set.conversations.find(c => c.userId === session.user.id)

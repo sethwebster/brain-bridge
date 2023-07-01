@@ -1,5 +1,5 @@
 import React, {  } from "react";
-import Chat from "../../chat/components/Chat";
+import Chat from "../../../chat/components/Chat";
 import invariant from "tiny-invariant";
 import { type Session } from "next-auth";
 import { type ConversationWithRelations } from "~/data/interfaces/types";

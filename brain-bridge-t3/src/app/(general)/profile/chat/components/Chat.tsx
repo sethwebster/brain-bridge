@@ -18,9 +18,9 @@ import generateChatErrorMessage from "~/utils/error-chat-message-generator";
 import { useAuthToken } from "~/hooks/useAuthToken";
 import useSocket from "~/hooks/use-socket";
 import { toast } from "react-toastify";
-import { RoomJoiner } from "../../components/RoomJoiner";
 import SideBarPaddedContainer from "../../components/SidebarPaddedContainer";
 import Logger from "~/lib/logger";
+import RoomJoiner from "../../components/RoomJoiner";
 
 export default function Chat({
   selectedChat,

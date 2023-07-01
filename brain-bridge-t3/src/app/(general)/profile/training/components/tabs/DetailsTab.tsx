@@ -3,11 +3,21 @@ import React, { Suspense } from "react";
 import Input from "~/app/components/Input";
 import { type TrainingSetShares } from "@prisma/client";
 import { type TrainingSetWithRelations } from "~/data/interfaces/types";
-import Shares from "./Shares";
+import Shares from "../Shares";
 import { ShareIcon } from "~/app/components/SvgIcons";
-import Dashboard from "./Dashboard";
-import { calculateCost } from "../../../../../lib/calculate-costs";
+import Dashboard from "../Dashboard";
+import { calculateCost } from "../../../../../../lib/calculate-costs";
 import { MdShare } from "react-icons/md";
+
+function SharedWithYouTag({shared}:{shared: boolean}) {
+  if (!shared) return <></>
+  return (<div>
+    <div className="flex flex-row">
+      <MdShare color="gray" size={12} className="mt-[3.5px] mr-1" />
+      <small>Shared with you</small>
+    </div>
+  </div>)
+}
 
 const DetailsTab = ({
   isShared,
@@ -45,16 +55,7 @@ const DetailsTab = ({
               {month} - {pendingCosts} {currTokens}
             </small>
           </div>
-          {isShared ? (
-            <div>
-              <div className="flex flex-row">
-                <MdShare color="gray" size={12} className="mt-[3.5px] mr-1" />
-                <small>Shared with you</small>
-              </div>
-            </div>
-          ) : (
-            <></>
-          )}
+          <SharedWithYouTag shared={isShared} />
         </div>
         <Shares
           trainingSet={pendingData}
@@ -72,7 +73,7 @@ const DetailsTab = ({
         onChange={handleNameChange}
       />
       <small>The name of the set</small>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<></>}>
         <Dashboard trainingSet={trainingSet} />
       </Suspense>
     </div>

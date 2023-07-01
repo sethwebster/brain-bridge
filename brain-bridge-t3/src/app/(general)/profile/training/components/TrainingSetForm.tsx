@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Sources from "./Sources";
+import Sources from "./tabs/SourcesTab";
 import Data from "~/utils/data-client";
 import { useRouter } from "next/navigation";
 import ErrorBox from "~/app/components/ErrorBox";
@@ -27,17 +27,17 @@ import useSocket from "~/hooks/use-socket";
 import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
 import Tabs from "~/app/components/Tabs";
 import { toast } from "react-toastify";
-import DetailsTab from "./DetailsTab";
-import PromptTab from "./PromptTab";
-import { OptionsTab } from "./OptionsTab";
+import DetailsTab from "./tabs/DetailsTab";
+import PromptTab from "./tabs/PromptTab";
 import Button from "~/base-components/Button";
 import ThreeStateButton from "~/base-components/ThreeStateButton";
 import Logger from "~/lib/logger";
-import ChatTab from "./ChatTab";
+import ChatTab from "./tabs/ChatTab";
 import { type Session } from "next-auth";
-import { RoomJoiner } from "../../components/RoomJoiner";
 import invariant from "tiny-invariant";
 import { MdShare } from "react-icons/md";
+import RoomJoiner from "../../components/RoomJoiner";
+import OptionsTab from "./tabs/OptionsTab";
 
 export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {
@@ -386,25 +386,32 @@ export function TrainingSetForm({
     trainingSetData.version,
   ]);
 
-  const firstConversation = useMemo<ConversationWithRelations | undefined>(() => {
+  const firstConversation = useMemo<
+    ConversationWithRelations | undefined
+  >(() => {
     const first = trainingSetData.conversations.find(
       (c) => c.userId === session.user.id
     );
     return first as ConversationWithRelations;
-  }, [session.user.id, trainingSetData. conversations]);
+  }, [session.user.id, trainingSetData.conversations]);
   invariant(firstConversation, "First conversation should exist");
 
   return (
     <>
       <RoomJoiner room={trainingSetData.id} type="training" />
       <div className="h-full bg-slate-50">
-        <div className="w-full h-full bg-slate-100 ">
+        <div className="h-full w-full bg-slate-100 ">
           <Tabs
-            header={<div className="flex flex-row"><MdShare title="Shared with you" className="mt-[3px] mr-2" /><h1 className="text-sm">{trainingSet.name}</h1></div>}
+            header={
+              <div className="flex flex-row">
+                <MdShare title="Shared with you" className="mr-2 mt-[3px]" />
+                <h1 className="text-sm">{trainingSet.name}</h1>
+              </div>
+            }
             initialSelectedTab={activeTab}
             onSelectNewTab={handleTabChange}
             additionalItems={[
-              <div className="flex flex-col justify-center h-full" key="Save">
+              <div className="flex h-full flex-col justify-center" key="Save">
                 <Button
                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
                   onClick={handleSave}
@@ -414,7 +421,7 @@ export function TrainingSetForm({
                   {isSaving ? "Saving..." : "Save"}
                 </Button>
               </div>,
-              <div className="flex flex-col justify-center h-full" key="Train">
+              <div className="flex h-full flex-col justify-center" key="Train">
                 <ThreeStateButton
                   classNamesForStates={{
                     enabled: "bg-green-400 dark:bg-green-500",
@@ -480,7 +487,7 @@ export function TrainingSetForm({
                 </div>
               ),
               Chat: (
-                <div className="h-auto p-2 px-4 overflow-scroll">
+                <div className="h-auto overflow-scroll p-2 px-4">
                   <ChatTab
                     trainingSetId={trainingSetData.id}
                     session={session}

@@ -12,6 +12,8 @@ export default function ContentBoxWithHeading({
     <header className="flex justify-between pb-2">
       {headingComponent}
     </header>
+    <div className="h-[calc(100%-120px)] overflow-scroll">
     {children}
+    </div>
   </div>;
 }

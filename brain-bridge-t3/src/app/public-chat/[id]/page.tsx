@@ -9,8 +9,8 @@ import { safeGetJSONCookieServer } from "~/utils/safe-get-json-cookie-server";
 import { type PublicChatInstanceWithRelations } from "~/data/interfaces/types";
 import PublicChat from "./components/PublicChat";
 import { type PublicChat as PublicChatType } from "@prisma/client";
-import { RoomJoiner } from "~/app/(general)/profile/components/RoomJoiner";
 import Logger from "~/lib/logger";
+import RoomJoiner from "~/app/(general)/profile/components/RoomJoiner";
 
 interface PageProps {
   params: {

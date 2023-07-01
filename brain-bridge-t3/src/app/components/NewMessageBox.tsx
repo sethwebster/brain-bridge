@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import AutoSizingTextArea from "../(general)/profile/training/components/AutoSizingTextArea";
+import AutoSizingTextArea from "../../base-components/AutoSizingTextArea";
 
 interface NewMessageBoxProps {
   onMessageSend: (text: string) => void;
