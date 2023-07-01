@@ -346,7 +346,16 @@ function Sources({
   }, [newUrlText]);
 
   const maxDisplayed = showMore ? sources.length : 20;
-
+  const filteredSources = useMemo(()=>{
+    return sources.filter((source) => {
+      if (searchText.length > 0) {
+        return source.name.toLowerCase().includes(searchText.toLowerCase());
+      }
+      return true;
+    }).sort((a, b) => {
+      return a.name.localeCompare(b.name);
+    })
+  },[searchText, sources]);
   return (
     <div className="rounded-lg">
       <h1 className="text-lg">Training Data Sources</h1>
@@ -367,21 +376,22 @@ function Sources({
       </div>
       <div className="p-2 border rounded-lg">
         <header className="flex flex-row justify-between pb-2 border-b border-dotted">
-          <div>
-            <div className="pt-1">{sources.length} Sources</div>
+          <div className="flex-grow mr-2">
+            <Input
+              value={searchText}
+              placeholder="Filter sources"
+              onChange={handleSearchTextChange}
+              className="w-full p-1 rounded-md shadow outline-none drop-shadow"
+            />
+          </div>
+          <div className="px-2 mr-2 bg-blue-200 rounded shadow">
+            <div className="pt-1">{filteredSources.length} Sources</div>
             {inProcessFiles.length > 0 && (
               <span className="inline-block ml-2 text-green-500">
                 {inProcessFiles.filter((f) => f.status === "pending").length}{" "}
                 Uploading
               </span>
             )}
-          </div>
-          <div className="flex-grow mx-2">
-            <Input
-              value={searchText}
-              onChange={handleSearchTextChange}
-              className="w-full p-1 shadow outline-none drop-shadow"
-            />
           </div>
           <div className="flex flex-row justify-between w-auto" role="toolbar">
             <button
@@ -443,13 +453,7 @@ function Sources({
                 </div>
               </li>
             ))}
-          {sources
-            .filter((s) =>
-              s.name.toLowerCase().includes(searchText.toLowerCase())
-            )
-            .sort((a, b) => {
-              return a.name.localeCompare(b.name);
-            })
+          {filteredSources
             .slice(0, maxDisplayed)
             .map((source, index) => (
               <li
@@ -498,7 +502,7 @@ function Sources({
                 />
               </li>
             ))}
-          {sources.length > 25 && (
+          {filteredSources.length > 25 &&  (
             <li className="text-center">
               <button onClick={() => setShowMore(!showMore)}>
                 Show {showMore ? "Less" : "More"}
