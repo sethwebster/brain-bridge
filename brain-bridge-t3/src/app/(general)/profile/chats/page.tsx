@@ -10,6 +10,5 @@ export default async function Page() {
   const trainingSets = await ServerData.fetchUserTrainingSets();
   const chats = await ServerData.fetchChats();
 
-  {/* @ts-expect-error RSC */}
   return <ChatListing conversations={chats} trainingSets={trainingSets} />;
 }

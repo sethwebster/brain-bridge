@@ -11,6 +11,7 @@ import { defaultTrainingOptions } from "~/data/interfaces/types";
 interface NewTrainingSetButtonProps {
   empty?: boolean;
 }
+
 export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [inputValue, setInputValue] = useState<string>("");

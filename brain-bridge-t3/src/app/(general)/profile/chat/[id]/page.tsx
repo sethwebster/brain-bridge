@@ -20,7 +20,6 @@ async function PageContent({ id }: { id: string }) {
 export default function Page({ params }: { params: { id: string } }) {
   return (
     <Suspense fallback={<div></div>}>
-      {/* @ts-expect-error RSC */}
       <PageContent id={params.id} />
     </Suspense>
   );

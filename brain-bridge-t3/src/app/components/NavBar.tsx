@@ -15,7 +15,6 @@ function NavBar() {
       <div className="flex-grow ">
         <ul className="flex flex-row justify-end">
           <Suspense fallback={null}>
-            {/* @ts-expect-error RSC */}
             <SignInOutButton />
           </Suspense>
         </ul>

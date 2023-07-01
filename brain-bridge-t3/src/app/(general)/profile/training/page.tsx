@@ -22,8 +22,7 @@ async function TrainingPage() {
         heading={
           <>
             <h1 className="text-xl">Training Sets</h1>
-            {/* @ts-expect-error RSC */}
-            <NewTrainingSetButton user={session.user} />
+            <NewTrainingSetButton  />
           </>
         }
       >

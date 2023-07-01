@@ -9,7 +9,6 @@ export const SignInOutButton = async () => {
     <>
       <li className="px-5">
         {!loggedIn && <LoginButton />}
-        {/* @ts-expect-error RSC */}
         {loggedIn && <AvatarAndDropDown />}
       </li>
     </>
