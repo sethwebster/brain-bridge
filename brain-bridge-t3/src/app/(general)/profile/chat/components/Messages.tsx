@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ScrollOnReRender } from "./ScrollOnReRender";
 import { TypingIndicator } from "./TypingIndicator";
+import invariant from "tiny-invariant";
 
 export function Messages({
   messages,
@@ -32,6 +33,7 @@ export function Messages({
   //   });
   // }, [messages]);
 
+  invariant(messages, "Messages must be defined")
   if (messages.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center flex-grow">

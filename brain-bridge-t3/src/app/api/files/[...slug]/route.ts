@@ -9,6 +9,10 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
   const session = await getServerSession();
   invariant(session, "User must be logged in to retrieve a file")
   const { slug } = params;
+  console.log(
+    "fetching file",
+    slug
+  )
   if (slug.join() === "web") {
     const url = req.nextUrl.searchParams.get("url")
     Logger.info("fetching", url)

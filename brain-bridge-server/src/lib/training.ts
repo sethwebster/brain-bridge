@@ -372,6 +372,7 @@ export class TrainingSetBuilder {
 
     // Download the file and write to tempFilePath
     const response = await fetch(url);
+    console.log("Response", response.ok, response.status, response.statusText)
     if (response.ok) {
       // write to temp file
       const blob = await response.blob();
@@ -380,6 +381,7 @@ export class TrainingSetBuilder {
       fs.writeFileSync(tempFilePath, Buffer.from(buffer));
       return tempFilePath;
     } else {
+      console.log("Failed to download file", url, response.status, response.statusText, source, key)
       throw new Error(`Failed to download file: ${url}`);
     }
   }

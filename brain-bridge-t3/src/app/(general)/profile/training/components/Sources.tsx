@@ -13,7 +13,13 @@ import {
 } from "browser-fs-access";
 import path from "path";
 import delay from "~/utils/delay";
-import { DownloadIcon, FolderIcon, PlusAddIcon, TrashCan, UrlIcon } from "~/app/components/SvgIcons";
+import {
+  DownloadIcon,
+  FolderIcon,
+  PlusAddIcon,
+  TrashCan,
+  UrlIcon,
+} from "~/app/components/SvgIcons";
 import * as R from "ramda";
 import { saveAs } from "file-saver";
 import JsZip from "jszip";
@@ -110,8 +116,9 @@ function Sources({
                 .then((files) => {
                   resolve(files);
                 })
-                .catch((err) => {
+                .catch((err: { message: string }) => {
                   Logger.error("err", err);
+                  toast.error(`Error uploading file: ${err.message}`);
                 });
             }, index * 100);
           });
@@ -332,28 +339,28 @@ function Sources({
           </button>
         </div>
       </div>
-      <div className="rounded-lg border p-2">
+      <div className="p-2 border rounded-lg">
         <header className="flex flex-row justify-between border-b border-dotted">
           <div>
             <span>{sources.length} Sources</span>
             {inProcessFiles.length > 0 && (
-              <span className="ml-2 inline-block text-green-500">
+              <span className="inline-block ml-2 text-green-500">
                 {inProcessFiles.filter((f) => f.status === "pending").length}{" "}
                 Uploading
               </span>
             )}
           </div>
-          <div className="flex w-auto flex-row justify-between" role="toolbar">
+          <div className="flex flex-row justify-between w-auto" role="toolbar">
             <button
               disabled={disabled}
-              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
+              className="p-2 mr-2 bg-blue-400 rounded shadow-md"
               onClick={openFileSelector}
             >
               <PlusAddIcon />
             </button>
             <button
               disabled={disabled}
-              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
+              className="p-2 mr-2 bg-blue-400 rounded shadow-md"
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onClick={handleFolderOpenClick}
             >
@@ -361,7 +368,7 @@ function Sources({
             </button>
             <button
               disabled={disabled}
-              className="mr-2 rounded bg-blue-400 p-2 shadow-md"
+              className="p-2 mr-2 bg-blue-400 rounded shadow-md"
               onClick={handleAddUrlClick}
             >
               <UrlIcon />
@@ -369,7 +376,7 @@ function Sources({
             <button
               title="Download Sources (only files)"
               disabled={disabled}
-              className="rounded bg-blue-400 p-2 shadow-md"
+              className="p-2 bg-blue-400 rounded shadow-md"
               onClick={handleDownloadClick}
             >
               <DownloadIcon />
@@ -377,7 +384,7 @@ function Sources({
           </div>
         </header>
 
-        <ul className="max-h-72 w-full overflow-y-scroll">
+        <ul className="w-full overflow-y-scroll max-h-72">
           {inProcessFiles
             .sort((a, b) => {
               return a.file.name.localeCompare(b.file.name);
@@ -395,7 +402,7 @@ function Sources({
                 >
                   <svg
                     aria-hidden="true"
-                    className="mr-2 h-4 w-4 animate-spin fill-blue-600 text-gray-200 dark:text-gray-600"
+                    className="w-4 h-4 mr-2 text-gray-200 animate-spin fill-blue-600 dark:text-gray-600"
                     viewBox="0 0 100 101"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -425,17 +432,19 @@ function Sources({
                   !source.id || source.id.length === 0 ? "text-gray-500" : ""
                 }`}
               >
-                <div className="mt-1 flex flex-row">
+                <div className="flex flex-row mt-1">
                   {source.type === "URL" && (
                     <>
-                      <div className="mr-2 rounded border border-slate-200 bg-slate-400 p-1">
-                        <div className="h-4 w-4">
+                      <div className="p-1 mr-2 border rounded border-slate-200 bg-slate-400">
+                        <div className="w-4 h-4">
                           <UrlIcon />
                         </div>
                       </div>
                       <a
                         href={`${
-                          process.env.NEXT_PUBLIC_BASE_URL || ""
+                          source.name.startsWith("http")
+                            ? source.name
+                            : process.env.NEXT_PUBLIC_BASE_URL || ""
                         }/api/files/${trainingSetId}/${source.name}`}
                         className="text-blue-500"
                         target="_blank"
@@ -458,7 +467,7 @@ function Sources({
                 <DeleteButton
                   disabled={disabled}
                   onConfirmed={() => handleDelete(index)}
-                  className="m-0 flex h-8 w-8 flex-row items-center justify-center p-0 opacity-90"
+                  className="flex flex-row items-center justify-center w-8 h-8 p-0 m-0 opacity-90"
                   confirmingClassName="w-8 h-8 bg-red-400 items-center flex flex-row p-0 m-0 justify-center opacity-90"
                 />
               </li>
