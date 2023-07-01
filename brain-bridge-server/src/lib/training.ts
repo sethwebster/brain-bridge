@@ -153,7 +153,7 @@ export class TrainingSetBuilder {
         const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
           collection_name: this.trainingSet.id,
         });
-        console.log("Collection statistics", stats);
+        console.log("Batch Collection statistics: ", stats.data.row_count, "rows");
       }
 
       /**
@@ -172,7 +172,7 @@ export class TrainingSetBuilder {
         collection_name: this.trainingSet.id,
       });
       client.flush({ collection_names: [this.trainingSet.id] });
-      console.log("Collection statistics", stats);
+      console.log("Final Collection statistics", stats.data.row_count, "rows");
       console.log("Vectorization complete");
       return buildResult;
     } catch (e) {
@@ -196,7 +196,6 @@ export class TrainingSetBuilder {
       }
       const lastBatchSize = lastBatch.reduce((acc, doc) => acc + getDocumentsSize(doc.loadedContent), 0);
       console.log("Last batch size", lastBatchSize, getDocumentsSize(doc.loadedContent), maxBatchSize)
-      console.log("loaded content", doc.loadedContent)
       if (lastBatchSize + getDocumentsSize(doc.loadedContent) > maxBatchSize) {
         acc.push([doc]);
       } else {

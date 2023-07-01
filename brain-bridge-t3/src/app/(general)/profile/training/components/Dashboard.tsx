@@ -84,13 +84,8 @@ export default function Dashboard({
             />
             <DashboardCard
               title="Active Public"
-              amount={(trainingSet.publicChats).reduce(
-                (acc, curr) =>
-                  (
-                    curr as unknown as {
-                      publicChatInstance: PublicChatInstance[];
-                    }
-                  ).publicChatInstance.length + acc,
+              amount={trainingSet.publicChats.reduce(
+                (acc, curr) => curr.publicChatInstance.length + acc,
                 0
               )}
               icon={<MdPublic color="lightgreen" />}

@@ -178,13 +178,13 @@ async function deletePublicChat(publicChatId: string): Promise<void> {
   })
 }
 
-async function getSignedUrl(fileName: string): Promise<{ url: string }> {
+async function getSignedUrl(fileName: string, trainingSetId: string): Promise<{ url: string }> {
   const response = await fetch(makeApiUrl(`/api/files/sign`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ fileNameKey: fileName }),
+    body: JSON.stringify({ fileNameKey: fileName, trainingSetId }),
   })
   const data = await response.json() as { url: string };
   return data;

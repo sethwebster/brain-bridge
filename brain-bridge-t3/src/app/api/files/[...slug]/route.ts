@@ -5,6 +5,8 @@ import Logger from "~/lib/logger";
 import { getServerSession } from "~/server/auth";
 import ServerData from "~/server/server-data";
 
+// This file handles requests for training set resources
+
 export async function GET(req: NextRequest, { params }: { params: { slug: string[] } }) {
   const session = await getServerSession();
   invariant(session, "User must be logged in to retrieve a file")
@@ -20,19 +22,14 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const data = await fetch(url).then(r => r.blob());
     return new Response(data);
   } else {
-    const shared = req.nextUrl.searchParams.get("shared")
+    const [setId] = slug;
+    invariant(setId, "setId is required");
+    const trainingSet = await ServerData.fetchUserTrainingSet(setId);
+    invariant(trainingSet, "trainingSet not found");
+    const shared = trainingSet?.trainingSetShares?.find(s => s.userId === session.user.id);
     let userId = session.user.id;
     if (shared) {
-      const set = req.nextUrl.searchParams.get("set")
-      invariant(set, "set is required");
-      const trainingSet = await ServerData.fetchUserTrainingSet(set);
-      invariant(trainingSet, "trainingSet not found");
-      if (trainingSet.userId !== session.user.id) {
-        invariant(trainingSet.trainingSetShares, "trainingSetShares not found");
-        const share = trainingSet.trainingSetShares.find(s => s.userId === session.user.id);
-        invariant(share, "share not found");
-        userId = trainingSet.userId;
-      }
+      userId = trainingSet.userId;
     }
     const key = [userId, ...slug].join("/")
     console.log("key", key)

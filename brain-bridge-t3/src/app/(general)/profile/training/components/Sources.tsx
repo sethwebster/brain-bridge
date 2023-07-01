@@ -17,6 +17,7 @@ import {
   DownloadIcon,
   FolderIcon,
   PlusAddIcon,
+  Spinner,
   TrashCan,
   UrlIcon,
 } from "~/app/components/SvgIcons";
@@ -27,6 +28,8 @@ import { extension } from "mime-types";
 import { toast } from "react-toastify";
 import DeleteButton from "~/base-components/DeleteButton";
 import Logger from "~/lib/logger";
+import AutoSizingTextArea from "./AutoSizingTextArea";
+import { MdCheck } from "react-icons/md";
 
 function Sources({
   sources,
@@ -59,7 +62,7 @@ function Sources({
       setInProcessFiles((prev) => [...prev, { file, status: "pending" }]);
       const parts = [trainingSetId, fileName].filter((p) => p.length > 0);
       const fileKey = parts.join("/");
-      const { url } = await DataClient.getSignedUrl(fileKey);
+      const { url } = await DataClient.getSignedUrl(fileKey, trainingSetId);
       const final = `${fileKey}`;
       let response = await R2Client.uploadFile(url, file);
       let status: "pending" | "complete" | "error" = "pending";
@@ -187,7 +190,7 @@ function Sources({
     () => void,
     { filesContent: { name: string; content: string }[]; clear: () => void }
   ];
-  const [newUrlText, setNewUrlText] = useState("");
+  const [newUrlText, setNewUrlText] = useState<string[]>([]);
   const [isAddingUrl, setIsAddingUrl] = useState(false);
 
   const handleAddUrlClick = useCallback(() => {
@@ -195,30 +198,43 @@ function Sources({
   }, []);
 
   const handleNewUrlTextChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setNewUrlText(e.target.value);
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const urls = e.target.value
+        .split("\n")
+        .filter((s) => s.trim().length > 0);
+      setNewUrlText(urls);
     },
     []
   );
 
   const handleConfirmNewUrl = useCallback(() => {
     setIsAddingUrl(false);
-    setNewUrlText("");
-    onSourcesChanged([
+    setNewUrlText([]);
+    const newSources = [
       ...sources,
-      { type: "URL", name: newUrlText } as TrainingSource,
-    ]);
+      ...newUrlText.map(
+        (url) => ({ type: "URL", name: url } as TrainingSource)
+      ),
+    ]
+      // deduplicate sources
+      .filter((source, index, self) => {
+        return (
+          self.findIndex(
+            (s) => s.name === source.name && s.type === source.type
+          ) === index
+        );
+      });
+    onSourcesChanged(newSources);
   }, [newUrlText, onSourcesChanged, sources]);
 
   const handleCancelNewUrl = useCallback(() => {
     setIsAddingUrl(false);
-    setNewUrlText("");
+    setNewUrlText([]);
   }, []);
 
   const handleDelete = useCallback(
-    (index: number) => {
-      const newSources = [...sources];
-      newSources.splice(index, 1);
+    (source: TrainingSource) => {
+      const newSources = sources.filter((s) => s.name !== source.name);
       onSourcesChanged(newSources);
     },
     [onSourcesChanged, sources]
@@ -256,6 +272,15 @@ function Sources({
     } catch (err) {}
   }, [onFilesSelected]);
 
+  const [searchText, setSearchText] = useState("");
+
+  const handleSearchTextChange = useCallback(
+    (e: React.FormEvent<HTMLInputElement>) => {
+      setSearchText(e.currentTarget.value);
+    },
+    []
+  );
+
   const handleDownloadClick = useCallback(() => {
     const downloadAndZipFiles = async () => {
       const sourcePromises = sources.map((source) => {
@@ -263,7 +288,7 @@ function Sources({
         const item =
           source.name.length > 0 && source.name.startsWith("http")
             ? `web?url=${source.name}`
-            : source.name;
+            : `${trainingSetId}/${source.name}`;
         const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/files/${item}`;
         return fetch(url).then((res) => {
           return {
@@ -313,10 +338,11 @@ function Sources({
     downloadAndZipFiles().catch((err: { message: string }) => {
       toast.error(err.message);
     });
-  }, [sources]);
+  }, [sources, trainingSetId]);
 
   const isNewUrlValid = useMemo(() => {
-    return isValidURL(newUrlText);
+    const allValid = newUrlText.every((url) => isValidURL(url));
+    return allValid;
   }, [newUrlText]);
 
   const maxDisplayed = showMore ? sources.length : 20;
@@ -349,6 +375,13 @@ function Sources({
                 Uploading
               </span>
             )}
+          </div>
+          <div className="flex-grow mx-2">
+            <Input
+              value={searchText}
+              onChange={handleSearchTextChange}
+              className="w-full p-1"
+            />
           </div>
           <div className="flex flex-row justify-between w-auto" role="toolbar">
             <button
@@ -400,27 +433,20 @@ function Sources({
                       : "text-red-400"
                   }`}
                 >
-                  <svg
-                    aria-hidden="true"
-                    className="w-4 h-4 mr-2 text-gray-200 animate-spin fill-blue-600 dark:text-gray-600"
-                    viewBox="0 0 100 101"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                      fill="currentColor"
-                    />
-                    <path
-                      d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                      fill="currentFill"
-                    />
-                  </svg>
+                  {file.status === "pending" && (
+                    <Spinner />
+                  )}
+                  {file.status === "complete" && (
+                    <MdCheck color="green" className="mr-2" />
+                  )}
                   {file.file.directoryHandle?.name}/{file.file.name}
                 </div>
               </li>
             ))}
           {sources
+            .filter((s) =>
+              s.name.toLowerCase().includes(searchText.toLowerCase())
+            )
             .sort((a, b) => {
               return a.name.localeCompare(b.name);
             })
@@ -466,7 +492,7 @@ function Sources({
                 </div>
                 <DeleteButton
                   disabled={disabled}
-                  onConfirmed={() => handleDelete(index)}
+                  onConfirmed={() => handleDelete(source)}
                   className="flex flex-row items-center justify-center w-8 h-8 p-0 m-0 opacity-90"
                   confirmingClassName="w-8 h-8 bg-red-400 items-center flex flex-row p-0 m-0 justify-center opacity-90"
                 />
@@ -510,16 +536,18 @@ function Sources({
         onConfirm={handleConfirmNewUrl}
         onCancel={handleCancelNewUrl}
       >
-        <Input
-          type="url"
+        <AutoSizingTextArea
           className="w-full p-2"
           autoFocus
+          value={newUrlText.join("\n")}
           onChange={handleNewUrlTextChange}
         />
         {isNewUrlValid ? (
           <small className="text-green-500">Looks good!</small>
         ) : (
-          <small className="text-red-500">Enter a valid url</small>
+          <small className="text-red-500">
+            Enter a valid url (one per line)
+          </small>
         )}
       </Modal>
     </div>

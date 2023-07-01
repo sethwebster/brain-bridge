@@ -39,7 +39,7 @@ const DetailsTab = ({
       <header className="flex justify-between border-b border-gray-400">
         <div>
           <h1 className="text-xl">{trainingSet.name}</h1>
-          <div className="text-slate-500 mb-1">
+          <div className="mb-1 text-slate-500">
             <small>
               {month} - {pendingCosts} {currTokens}
             </small>
@@ -47,8 +47,8 @@ const DetailsTab = ({
           {isShared ? (
             <div>
               <div className="flex flex-row">
-                <div className=" mr-1 flex h-4 w-12  flex-row justify-center rounded-sm bg-amber-500 bg-opacity-80">
-                  <ShareIcon fillColor="white" className="h-4 w-4" />
+                <div className="flex flex-row justify-center w-12 h-4 mr-1 rounded-sm  bg-amber-500 bg-opacity-80">
+                  <ShareIcon fillColor="white" className="w-4 h-4" />
                 </div>
                 <small>Shared with you</small>
               </div>
@@ -64,7 +64,7 @@ const DetailsTab = ({
       </header>
       <Input
         disabled={!canEdit}
-        className="mt-2 w-full rounded-md border border-slate-400 border-opacity-30 p-2"
+        className="w-full p-2 mt-2 border rounded-md border-slate-400 border-opacity-30"
         alt="Training Set Name"
         placeholder="Training Set Name"
         type="text"

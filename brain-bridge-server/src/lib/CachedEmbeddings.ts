@@ -47,7 +47,7 @@ export class CachedEmbeddings {
     const cached = await this.fetchCachedDocumentsByHashes(hashed);
     // console.log("Lengths", cached.map(n => n.cached))
     const todo = cached.filter(c => !c.cached || c.cached.embedding === null);
-    console.log("Found " + cached.length + " cached embeddings.")
+    console.log("Found " + cached.filter(n => !!n).length + " cached embeddings.")
     console.log("Will create embeddings for " + todo.length + " of " + documents.length + " documents.");
 
     const remainingDocuments = todo.map(({ document }) => document);
