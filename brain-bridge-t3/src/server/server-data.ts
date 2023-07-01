@@ -40,18 +40,14 @@ async function fetchTrainingSet(trainingSetId: string) {
 }
 
 async function fetchUserTrainingSet(trainingSetId: string): Promise<TrainingSetWithRelations | null> {
-  Logger.info("fetchUserTrainingSet", trainingSetId)
   const user = await getServerSession();
   invariant(user, "User must be logged in to fetch training sets");
   const set = await prisma.trainingSet.findFirst({
     where: { id: trainingSetId, userId: user.user.id },
-    ...trainingSetWithRelations   
+    ...trainingSetWithRelations
   });
-  // User training set found
-  Logger.logWhen(!!set, "info", "User training set found")
 
   if (set) return set;
-  Logger.info("User training set not found, checking if user has been invited to training set")
 
   // Check if user has been invited to training set
   const share = await prisma.trainingSetShares.findFirst({
@@ -60,17 +56,15 @@ async function fetchUserTrainingSet(trainingSetId: string): Promise<TrainingSetW
       acceptedUserId: user.user.id,
     }
   });
-  Logger.logWhen(!!share, "info", "User has been invited to training set")
+
   if (share) {
     // User has been invited to training set
-    Logger.info("User has been invited to training set", share)
+
     const set = await prisma.trainingSet.findFirst({
       where: { id: trainingSetId, trainingSetShares: { some: { acceptedUserId: user.user.id } } },
       ...trainingSetWithRelations
     });
-    if (!set) Logger.error("SET NOT FOUND", trainingSetId)
-    Logger.info("Shared training set loaded", share, set?.id)
-    
+
     return set;
   }
 

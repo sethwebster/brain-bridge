@@ -4,8 +4,8 @@ services:
   etcd:
     restart: always
     container_name: milvus-etcd
-    networks:
-      - captain-overlay-network
+    # networks:
+    #   - captain-overlay-network
     image: quay.io/coreos/etcd:v3.5.5
     environment:
       - ETCD_AUTO_COMPACTION_MODE=revision
@@ -18,8 +18,8 @@ services:
 
   minio:
     container_name: milvus-minio
-    networks:
-      - captain-overlay-network
+    # networks:
+    #   - captain-overlay-network
     image: minio/minio:RELEASE.2023-03-20T20-16-18Z
     environment:
       MINIO_ACCESS_KEY: minioadmin
@@ -37,8 +37,8 @@ services:
   standalone:
     restart: always
     container_name: milvus-standalone
-    networks:
-      - captain-overlay-network
+    # networks:
+    #   - captain-overlay-network
     image: milvusdb/milvus:v2.2.10
     command: ["milvus", "run", "standalone"]
     environment:
@@ -53,8 +53,8 @@ services:
       - "etcd"
       - "minio"
 
-networks:
-  default:
-    name: milvus
-  captain-overlay-network:
-    external: true
+# networks:
+#   default:
+#     name: milvus
+  # captain-overlay-network:
+  #   external: true

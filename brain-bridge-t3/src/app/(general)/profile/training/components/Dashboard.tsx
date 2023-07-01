@@ -84,7 +84,7 @@ export default function Dashboard({
             />
             <DashboardCard
               title="Active Public"
-              amount={trainingSet.publicChats.reduce(
+              amount={(trainingSet.publicChats).reduce(
                 (acc, curr) =>
                   (
                     curr as unknown as {

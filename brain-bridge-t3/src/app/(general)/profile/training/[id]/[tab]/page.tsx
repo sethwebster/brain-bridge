@@ -17,14 +17,11 @@ export default async function TrainingPage({
   invariant(session, "Session must exist");
   invariant(session.user, "User must exist");
   const set = await ServerData.fetchUserTrainingSet(id);
-  
-  if (!set) {
+  if (!set) { 
     Logger.error("Training set not found", id);
     notFound();
   }
-
-  Logger.info("Training set in /profile/training", set.id)
-
+  
   const firstConversation = set.conversations.find(c => c.userId === session.user.id)
   if (!firstConversation) {
     const conversation = await ServerData.newChat(set.id);
@@ -36,7 +33,7 @@ export default async function TrainingPage({
     set.conversations[0] = conversation;    
   }
 
-  console.log("set", set)
+  // console.log("set", set)
 
   const activeTabTitleCase = (tab.charAt(0).toUpperCase() +
     tab.toLowerCase().slice(1)) as TabsList;
