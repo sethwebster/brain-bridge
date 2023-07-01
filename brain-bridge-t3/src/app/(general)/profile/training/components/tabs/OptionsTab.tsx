@@ -56,7 +56,7 @@ function OptionsTab({
       <div className="grid md:grid-cols-3 md:gap-6">
         <OptionCard
           canEdit={canEdit}
-          value={trainingOptions.maxSegmentLength.toString()}
+          value={(trainingOptions.maxSegmentLength ?? "").toString()}
           onChange={(e) => handleTrainingOptionChanged("maxSegmentLength", e)}
           label="Maximum Segment Length"
           placeholder="Enter a maximum segment length. Default is 2000."
@@ -64,7 +64,7 @@ function OptionsTab({
         />
         <OptionCard
           canEdit={canEdit}
-          value={trainingOptions.overlapBetweenSegments.toString()}
+          value={(trainingOptions.overlapBetweenSegments ?? "").toString()}
           onChange={(e) =>
             handleTrainingOptionChanged("overlapBetweenSegments", e)
           }
