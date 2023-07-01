@@ -366,9 +366,9 @@ function Sources({
         </div>
       </div>
       <div className="p-2 border rounded-lg">
-        <header className="flex flex-row justify-between border-b border-dotted">
+        <header className="flex flex-row justify-between pb-2 border-b border-dotted">
           <div>
-            <span>{sources.length} Sources</span>
+            <div className="pt-1">{sources.length} Sources</div>
             {inProcessFiles.length > 0 && (
               <span className="inline-block ml-2 text-green-500">
                 {inProcessFiles.filter((f) => f.status === "pending").length}{" "}
@@ -380,7 +380,7 @@ function Sources({
             <Input
               value={searchText}
               onChange={handleSearchTextChange}
-              className="w-full p-1"
+              className="w-full p-1 shadow outline-none drop-shadow"
             />
           </div>
           <div className="flex flex-row justify-between w-auto" role="toolbar">
