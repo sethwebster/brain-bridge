@@ -8,12 +8,16 @@ import { Suspense } from "react";
 import { ShareIcon } from "~/app/components/SvgIcons";
 import { getServerSession } from "~/server/auth";
 import ContentBoxWithHeading from "../components/ContentBoxWithHeading";
+import { MdShare } from "react-icons/md";
 
 async function TrainingPage() {
   const session = await getServerSession();
   invariant(session, "Session must exist");
   const sets = await ServerData.fetchUserTrainingSets();
-  
+
+  const owned = sets.filter((set) => set.userId === session.user.id);
+  const shared = sets.filter((set) => set.userId !== session.user.id);
+
   return (
     <>
       <ContentBoxWithHeading
@@ -24,7 +28,7 @@ async function TrainingPage() {
             <NewTrainingSetButton user={session.user} />
           </>
         }
-        >
+      >
         {sets.length === 0 && (
           <DismissableInfoBox
             type="info"
@@ -34,8 +38,12 @@ async function TrainingPage() {
             dismissableId={"info-box-training-sets"}
           />
         )}
+        {shared.length > 0 && (
+          <h2 className="mt-2 text-slate-600">Your Sets</h2>
+        )}
+
         <ul>
-          {sets
+          {owned
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((set, index) => (
               <li
@@ -51,11 +59,41 @@ async function TrainingPage() {
                       className="flex flex-col justify-center mr-2"
                       title="This training set is shared with you"
                     >
-                      <div className="flex flex-row justify-center w-12 h-4 rounded-sm bg-amber-500 bg-opacity-80">
-                        <ShareIcon
-                          fillColor="white"
-                          className="w-4 h-4 border-red-800"
-                        />
+                      <div className="p-1">
+                        <MdShare />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex flex-col justify-center">
+                    {set.name || `Set ${index + 1}`}
+                  </div>
+                </Link>
+                <DeleteTrainingSet id={set.id} user={session.user} />
+              </li>
+            ))}
+        </ul>
+        {shared.length > 0 && (
+          <h2 className="mt-4 text-slate-600">Shared With You</h2>
+        )}
+        <ul>
+          {shared
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((set, index) => (
+              <li
+                key={set.id}
+                className="flex justify-between p-2 border-b border-b-slate-300 dark:border-b-slate-500"
+              >
+                <Link
+                  href={`/profile/training/${set.id}`}
+                  className="flex flex-row text-blue-400"
+                >
+                  {set.userId !== session.user.id && (
+                    <div
+                      className="flex flex-col justify-center mr-2"
+                      title="This training set is shared with you"
+                    >
+                      <div className="p-1">
+                        <MdShare />
                       </div>
                     </div>
                   )}

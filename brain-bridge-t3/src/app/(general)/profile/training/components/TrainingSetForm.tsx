@@ -37,6 +37,7 @@ import ChatTab from "./ChatTab";
 import { type Session } from "next-auth";
 import { RoomJoiner } from "../../components/RoomJoiner";
 import invariant from "tiny-invariant";
+import { MdShare } from "react-icons/md";
 
 export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {
@@ -397,13 +398,13 @@ export function TrainingSetForm({
     <>
       <RoomJoiner room={trainingSetData.id} type="training" />
       <div className="h-full bg-slate-50">
-        <div className="h-full w-full bg-slate-100 ">
+        <div className="w-full h-full bg-slate-100 ">
           <Tabs
-            header={<h1 className="text-sm">{trainingSet.name}</h1>}
+            header={<div className="flex flex-row"><MdShare title="Shared with you" className="mt-[3px] mr-2" /><h1 className="text-sm">{trainingSet.name}</h1></div>}
             initialSelectedTab={activeTab}
             onSelectNewTab={handleTabChange}
             additionalItems={[
-              <div className="flex h-full flex-col justify-center" key="Save">
+              <div className="flex flex-col justify-center h-full" key="Save">
                 <Button
                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
                   onClick={handleSave}
@@ -413,7 +414,7 @@ export function TrainingSetForm({
                   {isSaving ? "Saving..." : "Save"}
                 </Button>
               </div>,
-              <div className="flex h-full flex-col justify-center" key="Train">
+              <div className="flex flex-col justify-center h-full" key="Train">
                 <ThreeStateButton
                   classNamesForStates={{
                     enabled: "bg-green-400 dark:bg-green-500",
@@ -479,7 +480,7 @@ export function TrainingSetForm({
                 </div>
               ),
               Chat: (
-                <div className="h-auto overflow-scroll p-2 px-4">
+                <div className="h-auto p-2 px-4 overflow-scroll">
                   <ChatTab
                     trainingSetId={trainingSetData.id}
                     session={session}
