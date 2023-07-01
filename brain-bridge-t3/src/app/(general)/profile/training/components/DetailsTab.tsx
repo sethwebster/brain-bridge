@@ -7,6 +7,7 @@ import Shares from "./Shares";
 import { ShareIcon } from "~/app/components/SvgIcons";
 import Dashboard from "./Dashboard";
 import { calculateCost } from "../../../../../lib/calculate-costs";
+import { MdShare } from "react-icons/md";
 
 const DetailsTab = ({
   isShared,
@@ -47,9 +48,7 @@ const DetailsTab = ({
           {isShared ? (
             <div>
               <div className="flex flex-row">
-                <div className="flex flex-row justify-center w-12 h-4 mr-1 rounded-sm  bg-amber-500 bg-opacity-80">
-                  <ShareIcon fillColor="white" className="w-4 h-4" />
-                </div>
+                <MdShare color="gray" size={12} className="mt-[3.5px] mr-1" />
                 <small>Shared with you</small>
               </div>
             </div>

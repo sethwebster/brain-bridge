@@ -112,8 +112,7 @@ async function TrainingPage() {
 
 export default function TrainingPageWrapper() {
   return (
-    <Suspense fallback={<></>}>
-      {/* @ts-expect-error RSC */}
+    <Suspense fallback={<></>}>      
       <TrainingPage />
     </Suspense>
   );
