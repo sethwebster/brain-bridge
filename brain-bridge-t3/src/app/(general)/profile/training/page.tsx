@@ -5,7 +5,6 @@ import { DeleteTrainingSet } from "./DeleteTrainingSet";
 import { DismissableInfoBox } from "~/app/components/InfoBox";
 import ServerData from "~/server/server-data";
 import { Suspense } from "react";
-import { ShareIcon } from "~/app/components/SvgIcons";
 import { getServerSession } from "~/server/auth";
 import ContentBoxWithHeading from "../components/ContentBoxWithHeading";
 import { MdShare } from "react-icons/md";
@@ -112,7 +111,8 @@ async function TrainingPage() {
 
 export default function TrainingPageWrapper() {
   return (
-    <Suspense fallback={<></>}>      
+    <Suspense fallback={<></>}>
+      {/* @ts-expect-error RSC */}
       <TrainingPage />
     </Suspense>
   );
