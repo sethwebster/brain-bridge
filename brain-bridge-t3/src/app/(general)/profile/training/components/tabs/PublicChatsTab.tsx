@@ -9,20 +9,20 @@ interface PublicChatsTabProps {
   canEdit: boolean;
   publicChats: PublicChatWithRelations[];
   session: Session;
-  trainingSets: TrainingSetWithRelations[];
+  trainingSet: TrainingSetWithRelations;
 }
 
 export default function PublicChatsTab({
   canEdit,
   publicChats,
   session,
-  trainingSets,
+  trainingSet,
 }: PublicChatsTabProps) {
   return (
     <PublicChatsList
       publicChats={publicChats}
       session={session}
-      trainingSets={trainingSets}
+      trainingSet={trainingSet}
     />
   );
 }

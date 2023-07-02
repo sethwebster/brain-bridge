@@ -10,11 +10,11 @@ import { SaveIcon } from "~/app/components/SvgIcons";
 
 export default function EditPublicChat({
   publicChat,
-  trainingSets,
+  trainingSet,
   onSave,
 }: {
   publicChat: PublicChatWithRelations;
-  trainingSets: TrainingSet[];
+  trainingSet: TrainingSet;
   onSave: (publicChat: PublicChatWithRelations) => void;
 }) {
   const [editedPublicChat, setEditedPublicChat] =
@@ -30,48 +30,25 @@ export default function EditPublicChat({
     [editedPublicChat]
   );
 
-  const handleTrainingSetChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
-      const newTrainingSet = trainingSets.find(
-        (set) => set.id === event.target.value
-      );
-      invariant(newTrainingSet, "Training set not found");
-      setEditedPublicChat({
-        ...editedPublicChat,
-        trainingSetId: newTrainingSet.id,
-        trainingSet: newTrainingSet,
-      });
-    },
-    [editedPublicChat, trainingSets]
-  );
-
   const handleSave = useCallback(() => {
-    onSave(editedPublicChat);
+    if (editedPublicChat.name.trim().length > 0) {
+      onSave(editedPublicChat);
+    }
   }, [editedPublicChat, onSave]);
 
   return (
-    <div className="flex flex-row w-full p-2">
-      <div className="flex flex-row flex-grow">
+    <div className="flex w-full flex-row p-2">
+      <div className="flex flex-grow flex-row">
         <Input
           type="text"
+          placeholder="Name your public chat"
           value={editedPublicChat.name}
-          className="flex-1 p-2 mr-2 border rounded-md"
+          className="mr-2 flex-1 rounded-md border p-2"
           onChange={handleNameChange}
         />
-        <Select
-          className="mr-2 border rounded-md flex-3"
-          onChange={handleTrainingSetChange}
-          value={editedPublicChat.trainingSet.id}
-        >
-          {trainingSets.map((set) => (
-            <option key={set.id} value={set.id}>
-              {set.name}
-            </option>
-          ))}
-        </Select>
       </div>
       <button
-        className="p-1 px-3 bg-green-200 rounded-md shadow hover:bg-green-400"
+        className="rounded-md bg-green-200 p-1 px-3 shadow hover:bg-green-400"
         onClick={handleSave}
       >
         <SaveIcon />

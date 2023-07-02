@@ -503,7 +503,7 @@ export function TrainingSetForm({
                     canEdit={canEdit}
                     publicChats={trainingSetData.publicChats}
                     session={session}
-                    trainingSets={[trainingSet]}
+                    trainingSet={trainingSet}
                   />
                 </div>
               ),

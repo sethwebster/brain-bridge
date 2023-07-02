@@ -75,7 +75,7 @@ export default function SideBar({
                 </span>
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 href="/profile/public-chats"
                 className="flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
@@ -88,7 +88,7 @@ export default function SideBar({
                   {publicChatCount}
                 </span>
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link
                 href="/profile/billing"
