@@ -80,16 +80,6 @@ export default function Tabs({
               >
                 {tab}
               </Link>
-              {/* <button
-                onClick={() => handleTabSelect(tab)}
-                className={` w-full border-transparent p-4 text-center text-sm hover:bg-gray-300 hover:text-gray-600 dark:hover:text-gray-300 ${
-                  activeTab === tab
-                    ? "-mb-px border-b border-gray-600 bg-blue-100 text-gray-600 dark:border-gray-300 dark:bg-slate-500 dark:text-gray-300"
-                    : ""
-                }`}
-              >
-                {tab}
-              </button> */}
             </li>
           ))}
         </ul>
@@ -116,16 +106,6 @@ export default function Tabs({
                     >
                       {tab}
                     </Link>
-                    {/* <button
-                      onClick={() => handleTabSelect(tab)}
-                      className={`inline-block rounded-t-lg border-b-2 border-transparent p-4 hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300 ${
-                        activeTab === tab
-                          ? "-mb-px border-b border-gray-600 text-gray-600 dark:border-gray-300 dark:text-gray-300"
-                          : ""
-                      }`}
-                    >
-                      {tab}
-                    </button> */}
                   </li>
                 ))}
               </ul>
