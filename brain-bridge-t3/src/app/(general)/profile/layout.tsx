@@ -13,11 +13,9 @@ export default async function Layout({
   const session = await getServerSession();
   invariant(session, "Session must exist");
   const setsRequest = ServerData.fetchUserTrainingSets();
-  const publicChatsRequest = ServerData.fetchPublicChats();
   const costsRequest = ServerData.fetchCurrentCosts();
-  const [sets, publicChats, costs] = await Promise.all([
+  const [sets, costs] = await Promise.all([
     setsRequest,
-    publicChatsRequest,
     costsRequest,
   ]);
   const totalCurrentCosts = Object.keys(costs).reduce((acc, key) => {
@@ -35,7 +33,6 @@ export default async function Layout({
     <NoAnonymous session={session}>
       <SideBarLayout
         setsCount={sets.length}
-        publicChatCount={publicChats.length}
         currentCosts={totalCurrentCosts}
       >{children}</SideBarLayout>
       <Toast />

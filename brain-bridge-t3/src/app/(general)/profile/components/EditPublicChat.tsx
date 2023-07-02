@@ -1,20 +1,15 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import invariant from "tiny-invariant";
 import { type PublicChatWithRelations } from "~/data/interfaces/types";
 import Input from "~/app/components/Input";
-import Select from "~/app/components/Select";
-import { type TrainingSet } from "@prisma/client";
 import { SaveIcon } from "~/app/components/SvgIcons";
 
 export default function EditPublicChat({
   publicChat,
-  trainingSet,
   onSave,
 }: {
   publicChat: PublicChatWithRelations;
-  trainingSet: TrainingSet;
   onSave: (publicChat: PublicChatWithRelations) => void;
 }) {
   const [editedPublicChat, setEditedPublicChat] =

@@ -3,7 +3,7 @@ import { type PublicChat } from "@prisma/client";
 import { type Session } from "next-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import InfoBox, { DismissableInfoBox } from "~/app/components/InfoBox";
+import InfoBox from "~/app/components/InfoBox";
 import { NewButton } from "~/app/components/NewButton";
 import {
   type PublicChatWithRelations,
@@ -12,8 +12,8 @@ import {
 import PublicChatItem from "./PublicChatItem";
 import EditPublicChat from "./EditPublicChat";
 import DataClient from "~/utils/data-client";
-import ContentBoxWithHeading from "../../components/ContentBoxWithHeading";
 import Button from "~/base-components/Button";
+import ContentBoxWithHeading from "./ContentBoxWithHeading";
 
 interface PublicChatsListProps {
   publicChats: PublicChatWithRelations[];
@@ -72,11 +72,7 @@ export default function PublicChatsList({
           <ul>
             {(publicChats || []).map((chat) => (
               <li key={chat.id} className="p-1">
-                <PublicChatItem
-                  publicChat={chat}
-                  session={session}
-                  trainingSet={trainingSet}
-                />
+                <PublicChatItem publicChat={chat} session={session} />
               </li>
             ))}
             {addItem && (
@@ -92,7 +88,6 @@ export default function PublicChatsList({
                     updatedAt: new Date(),
                     trainingSetId: trainingSet.id,
                   }}
-                  trainingSet={trainingSet}
                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
                   onSave={handleSave}
                 />

@@ -7,7 +7,6 @@ import {
 } from "react-icons/md";
 import { type TrainingSetWithRelations } from "~/data/interfaces/types";
 import DashboardCard from "./DashboardCard";
-import Popover from "./Popover";
 
 function Dashboard({ trainingSet }: { trainingSet: TrainingSetWithRelations }) {
   const missedQuestionsCount = useMemo(

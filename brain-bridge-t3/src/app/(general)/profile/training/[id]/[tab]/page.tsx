@@ -36,8 +36,6 @@ export default async function TrainingPage({
 
   // console.log("set", set)
 
-  const activeTabTitleCase = (tab.charAt(0).toUpperCase() +
-    tab.toLowerCase().slice(1)) as TabsList;
   return (
     <div className="w-full h-full">
       <TrainingSetPage

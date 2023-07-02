@@ -4,7 +4,6 @@ import Input from "~/app/components/Input";
 import { type TrainingSetShares } from "@prisma/client";
 import { type TrainingSetWithRelations } from "~/data/interfaces/types";
 import Shares from "../Shares";
-import { ShareIcon } from "~/app/components/SvgIcons";
 import Dashboard from "../Dashboard";
 import { calculateCost } from "../../../../../../lib/calculate-costs";
 import { MdShare } from "react-icons/md";

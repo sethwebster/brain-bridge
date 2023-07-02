@@ -7,22 +7,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   type PublicChatWithRelations,
-  type TrainingSetWithRelations,
 } from "~/data/interfaces/types";
 import DataClient from "~/utils/data-client";
-import ConfirmButton from "../../../../../base-components/ConfirmButton";
 import { PencilIcon, TrashCan } from "~/app/components/SvgIcons";
 import Modal from "~/app/components/ModalDialog";
 import { toast } from "react-toastify";
+import ConfirmButton from "~/base-components/ConfirmButton";
 
 export default function PublicChatItem({
   publicChat,
   session: _session,
-  trainingSets,
 }: {
   publicChat: PublicChatWithRelations;
   session: Session;
-  trainingSets: TrainingSetWithRelations[];
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -40,15 +37,19 @@ export default function PublicChatItem({
     [router]
   );
 
-  const handlePublishUnPublish = useCallback(async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault(); e.stopPropagation();
-    if (publicChat.published) {
-      await DataClient.unpublishPublicChat(publicChat);
-    } else {
-      await DataClient.publishPublicChat(publicChat);
-    }
-    router.refresh();
-  }, [publicChat, router]);
+  const handlePublishUnPublish = useCallback(
+    async (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (publicChat.published) {
+        await DataClient.unpublishPublicChat(publicChat);
+      } else {
+        await DataClient.publishPublicChat(publicChat);
+      }
+      router.refresh();
+    },
+    [publicChat, router]
+  );
 
   const url = `/public-chat/${publicChat.id}`;
 
@@ -69,20 +70,20 @@ export default function PublicChatItem({
     setDeleteModalShown(false);
   }, []);
 
-
-
-  const handleItemClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!publicChat.published) {
-      toast.error("Chat is not published.");
-      e.preventDefault();
-    }
-  }, [publicChat.published]);
+  const handleItemClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (!publicChat.published) {
+        toast.error("Chat is not published.");
+        e.preventDefault();
+      }
+    },
+    [publicChat.published]
+  );
 
   if (editing)
     return (
       <EditPublicChat
         publicChat={publicChat}
-        trainingSets={trainingSets}
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onSave={handleSave}
       />
@@ -90,11 +91,8 @@ export default function PublicChatItem({
 
   return (
     <>
-      <Link
-        href={url}
-        onClick={handleItemClick}
-      >
-        <div className="w-full p-2 rounded-md shadow-md bg-slate-300 dark:bg-slate-500">
+      <Link href={url} onClick={handleItemClick}>
+        <div className="w-full rounded-md bg-slate-300 p-2 shadow-md dark:bg-slate-500">
           <div className="flex flex-row justify-between">
             <h1>{publicChat.name}</h1>
             <button
@@ -112,7 +110,7 @@ export default function PublicChatItem({
           </small>
           <div className="flex justify-end">
             <ConfirmButton
-              className="p-2 bg-blue-400 rounded-md"
+              className="rounded-md bg-blue-400 p-2"
               confirmingClassName="rounded-md bg-red-400 p-2"
               onConfirmed={handleDeleteChat}
             >
@@ -142,46 +140,6 @@ export default function PublicChatItem({
           all user conversations and messages will be lost.
         </p>
       </Modal>
-    </>
-  );
-  return (
-    <>
-      <div className="grid w-full grid-cols-10 gap-4">
-        <div>
-          <button
-            className="rounded-md bg-blue-100 p-1.5 shadow hover:bg-blue-200"
-            onClick={handleEditClicked}
-          >
-            <PencilIcon />
-          </button>
-        </div>
-        <div className="col-span-3 truncate">{publicChat.name}</div>
-        <div className="col-span-2 truncate">{publicChat.trainingSet.name}</div>
-        <div className="col-span-2">
-          <Link href={url} className="text-blue-300">
-            {publicChat.id}
-          </Link>
-        </div>
-        <button
-          // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          onClick={handlePublishUnPublish}
-          className={`text-sm ${
-            publicChat.published ? "text-green-500" : "text-red-500"
-          }`}
-        >
-          {publicChat.published ? "⬤" : "⬤"}
-        </button>
-        <div className="flex justify-end">
-          <ConfirmButton
-            className="p-2 bg-blue-400 rounded-md"
-            confirmingClassName="rounded-md bg-red-400 p-2"
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
-            onConfirmed={handleDeleteChat}
-          >
-            <TrashCan />
-          </ConfirmButton>
-        </div>
-      </div>
     </>
   );
 }
