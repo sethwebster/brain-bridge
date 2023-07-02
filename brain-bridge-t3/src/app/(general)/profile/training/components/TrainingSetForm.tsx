@@ -417,9 +417,10 @@ export function TrainingSetForm({
                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
                   onClick={handleSave}
                   disabled={!isDirty || isSaving || !canSave}
+                  className={isSaving ? "animate-pulse" : ""}
                   // className="w-24 p-2 mr-2 text-white bg-blue-400 border rounded-md disabled:bg-slate-700 disabled:text-opacity-50 dark:border-slate-600 dark:bg-blue-300"
                 >
-                  {isSaving ? "Saving..." : "Save"}
+                  Save
                 </Button>
               </div>,
               <div className="flex h-full flex-col justify-center" key="Train">

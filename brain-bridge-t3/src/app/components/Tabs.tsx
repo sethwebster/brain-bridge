@@ -1,16 +1,8 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import React, {
-  type ReactNode,
-  useState,
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useEffect,
-} from "react";
+import { usePathname } from "next/navigation";
+import React, { type ReactNode, useState, useMemo } from "react";
 import { MdMenu } from "react-icons/md";
-import Logger from "~/lib/logger";
 
 interface TabsProps {
   header?: string | ReactNode;
@@ -41,6 +33,7 @@ export default function Tabs({
   initialSelectedTab,
   additionalItems,
   rightEnd,
+  onSelectNewTab,
 }: TabsProps) {
   // Map user-friendly tab names to their url-friendly counterparts
   const tabsFriendly = useMemo(
@@ -76,6 +69,7 @@ export default function Tabs({
           {Object.keys(tabContent).map((tab) => (
             <li className={`w-full`} key={tab}>
               <Link
+                onClick={() => tab !== selectedTab && onSelectNewTab?.(tab)}
                 href={`${resolvedUrl}/${makeUrlFriendly(tab)}`}
                 suppressHydrationWarning
                 className={`block w-full border-transparent p-4 text-center text-sm hover:bg-gray-300 hover:text-gray-600 dark:hover:text-gray-300 ${
@@ -111,6 +105,7 @@ export default function Tabs({
                 {Object.keys(tabContent).map((tab) => (
                   <li className={`mr-2`} key={tab}>
                     <Link
+                      onClick={() => onSelectNewTab?.(tab)}
                       href={`${resolvedUrl}/${makeUrlFriendly(tab)}`}
                       suppressHydrationWarning
                       className={`inline-block rounded-t-lg border-b-2 border-transparent p-4 hover:border-gray-300 hover:text-gray-600 dark:hover:text-gray-300 ${
