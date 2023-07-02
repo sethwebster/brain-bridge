@@ -30,6 +30,7 @@ import DeleteButton from "~/base-components/DeleteButton";
 import Logger from "~/lib/logger";
 import AutoSizingTextArea from "../../../../../../base-components/AutoSizingTextArea";
 import { MdCheck } from "react-icons/md";
+import { twMerge } from "tailwind-merge";
 
 function Sources({
   sources,
@@ -281,8 +282,12 @@ function Sources({
     []
   );
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
   const handleDownloadClick = useCallback(() => {
     const downloadAndZipFiles = async () => {
+      try {
+      setIsDownloading(true);
       const sourcePromises = sources.map((source) => {
         invariant(process.env.NEXT_PUBLIC_BASE_URL, "Base URL is required");
         const item =
@@ -334,6 +339,13 @@ function Sources({
         const fileName = `training-set-data-${currentDate}.zip`;
         saveAs(zipFile, fileName);
       });
+    } catch(e: unknown) {
+      if (e instanceof Error) {
+        Logger.error('Download Error: ', e.message)
+      }
+    } finally {
+      setIsDownloading(false);
+    }
     };
     downloadAndZipFiles().catch((err: { message: string }) => {
       toast.error(err.message);
@@ -421,7 +433,7 @@ function Sources({
             <button
               title="Download Sources (only files)"
               disabled={disabled}
-              className="rounded bg-blue-400 p-2 shadow-md"
+              className={twMerge(`rounded bg-blue-400 p-2 shadow-md`,isDownloading ? 'animate-pulse bg-amber-400' :'')}
               onClick={handleDownloadClick}
             >
               <DownloadIcon />
