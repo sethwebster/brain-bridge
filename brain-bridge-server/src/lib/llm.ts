@@ -11,15 +11,8 @@ import { initializeAgentExecutorWithOptions } from "langchain/agents";
 import { Embeddings } from "langchain/dist/embeddings/base";
 import { getTokensForStringWithRetry } from "./get-tokens-for-string.ts";
 import getTotalLengthOfStrings from "./get-total-length-strings.ts";
+import promptTemplate, { CRITIQUE_PROMPT, REFINE_PROMPT } from "./prompt-templates.ts";
 
-
-interface LangChainStorage<T> {
-  getIndex<T>(id: string): Promise<T>;
-}
-
-export interface LangChainStore {
-  getLangChainResponse: (indexId: string, userPrompt: string, basePrompt: string, history: string[]) => Promise<string>;
-}
 
 const model = new OpenAIChat({
   temperature: 0,
@@ -27,6 +20,65 @@ const model = new OpenAIChat({
   modelName: 'gpt-3.5-turbo-0613',
   maxTokens: -1,
 });
+
+interface LangChainStorage<T> {
+  getIndex<T>(id: string): Promise<T>;
+}
+
+interface PipelineStep {
+  name: string;
+  prompt: PromptTemplate;
+  execute: (previousResult: string, context?: Record<string, string>) => Promise<LLMResponse>;
+}
+
+interface Pipeline {
+  steps: PipelineStep[];
+  run: (initialPrompt: string) => Promise<LLMResponse>;
+}
+
+class LLMPipeline implements Pipeline {
+  steps: PipelineStep[];
+  constructor(steps: PipelineStep[]) {
+    this.steps = steps;
+  }
+  async run(initialPrompt: string): Promise<LLMResponse> {
+    let previousResult = initialPrompt;
+    for (const step of this.steps) {
+      const result = await step.execute(previousResult);
+      previousResult = result.text;
+    }
+    return {
+      text: previousResult,
+      tokens: 0
+    };
+  }
+}
+
+abstract class PipelineStepBase implements PipelineStep {
+  name: string;
+  prompt: PromptTemplate;
+  constructor(name: string, prompt: PromptTemplate) {
+    this.name = name;
+    this.prompt = prompt;
+  }
+  abstract execute(previousResult: string): Promise<LLMResponse>;
+}
+
+// class OneShotPipelineStep extends PipelineStepBase {
+//   execute(previousResult: string): Promise<LLMResponse> {
+//     const llm = new LLMChain({
+//       llm: model,
+//       prompt: this.prompt,
+//     });
+
+
+//   }
+// }
+
+export interface LangChainStore {
+  getLangChainResponse: (indexId: string, userPrompt: string, basePrompt: string, history: string[]) => Promise<string>;
+}
+
 
 export class BrainBridgeStorage<Milvus> implements LangChainStorage<Milvus> {
   /**
@@ -305,48 +357,22 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
   }
 
   private async critique(firstResponse: string, userPrompt: string, history: string[]) {
-    const promptTemplate = new PromptTemplate({
-      template: `
-        Your Previous Response:
-        {RESPONSE}
-
-        Their question was:
-        {QUESTION}
-
-        The history is:
-        {HISTORY}
-
-        ---
-        Above is your previous response. Critique your response to their question. Think step by step, why you said what you said, and how you could have said it better. Remember to think step-by-step.
-      `, inputVariables: ["RESPONSE", "QUESTION", "HISTORY"]
-    });
+    const promptTemplate = CRITIQUE_PROMPT;
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 
-    const result = await this.langChainCall(llmChain, { RESPONSE: firstResponse, QUESTION: userPrompt, HISTORY: history }) as LLMResponse;
+    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, history }) as LLMResponse;
     console.log("critique", result.text);
 
     return result;
   }
 
   private async refine(critique: string, firstResponse: string, userPrompt: string, history: string[]) {
-    const promptTemplate = new PromptTemplate({
-      template: `
-        Your Previous Response: {RESPONSE}
-
-        Your Critique: {CRITIQUE}
-
-        Their question is: {QUESTION}
-
-        The history is: {HISTORY}
-        ---
-        Above is your previous response and your critique of it. Use your critique to refine your response to their question.
-      `, inputVariables: ["RESPONSE", "QUESTION", "CRITIQUE", "HISTORY"]
-    });
+    const promptTemplate = REFINE_PROMPT;
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 
-    const result = await this.langChainCall(llmChain, { RESPONSE: firstResponse, QUESTION: userPrompt, CRITIQUE: critique, HISTORY: history }) as LLMResponse;
+    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, critique: critique, history: history }) as LLMResponse;
 
     console.log("refine", result.text);
     return result;

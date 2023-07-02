@@ -1,3 +1,5 @@
+import { PromptTemplate } from "langchain";
+
 export const promptGeneratorPrompt = `
 You are gen-bot, the world's leading chat prompt generator expert. Have a chat with the user to create an amazing prompt.
 
@@ -85,3 +87,27 @@ Human: {prompt}
 The JSON Response:`;
 
 export default promptTemplate;
+
+export const CRITIQUE_PROMPT: PromptTemplate = new PromptTemplate({
+  template: `-- context --
+  Human Question:{question}
+  Your Response: {response}
+  History: {history}
+  -- instructions --
+  Critique your response to their question above. Consider why you said it and whether it meets the requirements of the original request. Remember to think step-by-step and always include references.`,
+  inputVariables: ["question", "response", "history"]
+})
+
+export const REFINE_PROMPT: PromptTemplate = new PromptTemplate({
+  template: ` -- context --
+    Your Previous Response: {response}
+
+    Your Critique: {critique}
+
+    Their question is: {question}
+
+    The history is: {history}
+    --- instructions --
+    Above is your previous response and your critique of it. Use your critique to refine your response to their question.
+  `, inputVariables: ["response", "question", "critique", "history"]
+});
