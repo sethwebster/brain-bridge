@@ -38,6 +38,7 @@ import invariant from "tiny-invariant";
 import { MdShare } from "react-icons/md";
 import RoomJoiner from "../../components/RoomJoiner";
 import OptionsTab from "./tabs/OptionsTab";
+import PublicChatsTab from "./tabs/PublicChatsTab";
 
 export type TabsList = "Details" | "Prompt" | "Options" | "Sources";
 export interface TrainingSetFormProps {
@@ -492,6 +493,16 @@ export function TrainingSetForm({
                     trainingSetId={trainingSetData.id}
                     session={session}
                     selectedChat={firstConversation}
+                  />
+                </div>
+              ),
+              "Public Chats": (
+                <div className="h-auto overflow-scroll p-2 px-4">
+                  <PublicChatsTab
+                    canEdit={canEdit}
+                    publicChats={trainingSetData.publicChats}
+                    session={session}
+                    trainingSets={[trainingSet]}
                   />
                 </div>
               ),

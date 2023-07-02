@@ -39,6 +39,7 @@ export default function PublicChatsList({
     },
     [router]
   );
+
   const firstTrainingSet = trainingSets[0] || null;
   return (
     <>

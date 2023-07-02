@@ -10,6 +10,8 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
     publicChats: {
       include: {
         publicChatInstance: true,
+        trainingSet: true,
+        user: true,
       }
     },
     usage: true,

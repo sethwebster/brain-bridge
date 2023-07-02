@@ -20,13 +20,11 @@ function DashboardCard({
   const timeoutRef = React.useRef<NodeJS.Timeout>();
   const [popoverVisible, setPopoverVisible] = React.useState(false);
   const handleMouseEnter = () => {
-    console.log("handleMouseEnter");
     timeoutRef.current = setTimeout(() => {
       setPopoverVisible(true);
     }, 200);
   };
   const handleMouseLeave = () => {
-    console.log("handleMouseLeave");
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }

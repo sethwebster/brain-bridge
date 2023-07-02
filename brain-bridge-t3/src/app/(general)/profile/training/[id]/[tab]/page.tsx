@@ -42,7 +42,7 @@ export default async function TrainingPage({
     <div className="w-full h-full">
       <TrainingSetPage
         session={session}
-        activeTab={activeTabTitleCase}
+        activeTab={tab}
         trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
         user={session.user}
         promptTemplate={promptTemplate}
