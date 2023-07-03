@@ -6,7 +6,13 @@ import {
   type MessageWithRelations,
 } from "~/data/interfaces/types";
 import { type Session } from "next-auth";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import ChatDisplay, {
   type Viewer,
   type NewMessage,
@@ -21,6 +27,8 @@ import { toast } from "react-toastify";
 import SideBarPaddedContainer from "../../components/SidebarPaddedContainer";
 import Logger from "~/lib/logger";
 import RoomJoiner from "../../components/RoomJoiner";
+import invariant from "tiny-invariant";
+import debounce from "lodash.debounce";
 
 export default function Chat({
   selectedChat,
@@ -37,10 +45,10 @@ export default function Chat({
     selectedChat.messages
   );
   const [callback, setCallback] = useState<(() => void) | null>(null);
-
   const bottomRef = useRef<HTMLDivElement>(null);
   const socket = useSocket();
   const { token } = useAuthToken();
+  const [provisionalText, setProvisionalText] = useState<null | string>(null);
 
   useEffect(() => {
     if (!selectedChat) return;
@@ -51,10 +59,22 @@ export default function Chat({
       //   socket.leave(selectedChat.id, "private");
       // };
 
+      const removeTokenListener = socket.onMessage(
+        "message-token",
+        (payload: { token: string; conversationId: string }) => {
+          const { token } = payload;
+          if (cleanUpText(provisionalText ?? "").length > 0) setAnswerPending(false);
+          setProvisionalText((prev) => {
+            return (prev ?? "") + token;
+          });
+        }
+      );
+
       const removeMessageListener = socket.onMessage(
         "message",
         (payload: { message: MessageWithRelations; room: string }) => {
           Logger.warn("message", payload.message, payload.room);
+          setProvisionalText(null);
           if (payload.room.includes(selectedChat.id)) {
             if (payload.message.sender.name !== session.user.name) {
               setAnswerPending(false);
@@ -103,6 +123,7 @@ export default function Chat({
       );
 
       return () => {
+        removeTokenListener();
         removeMessageListener();
         removeTypingIndicatorListener();
         removeTypingIndicatorListenerEnded();
@@ -112,6 +133,7 @@ export default function Chat({
     }
   }, [
     callback,
+    provisionalText,
     selectedChat,
     selectedChat.id,
     session.user.id,
@@ -173,6 +195,38 @@ export default function Chat({
     setCallback(callback);
   }, []);
 
+  const provisionalConversation = useMemo(() => {
+    if (!provisionalText)
+      return { ...selectedChat, messages: selectedChatMessages };
+    const text = cleanUpText(provisionalText);
+    if (text.trim().length === 0) return { ...selectedChat, messages: selectedChatMessages };
+    return {
+      ...selectedChat,
+      messages: [
+        ...selectedChatMessages,
+        {
+          id: generateId(),
+          text: text ?? "",
+          sender: {
+            id: "bot",
+            name: "Bot",
+            conversationId: selectedChat.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            publicChatInstanceId: null,
+            type: "BOT",
+          },
+          createdAt: new Date(),
+          conversation: selectedChat,
+          conversationId: selectedChat.id,
+          participantId: "provisional",
+          publicChatInstance: null,
+          publicChatInstanceId: null,
+        } as MessageWithRelations,
+      ],
+    };
+  }, [provisionalText, selectedChat, selectedChatMessages]);
+
   if (!session.user?.email) throw new Error("No user email");
   return (
     <SideBarPaddedContainer>
@@ -182,7 +236,7 @@ export default function Chat({
         answerPending={answerPending}
         soundPending={false}
         // soundPending={soundPending}
-        conversation={{ ...selectedChat, messages: selectedChatMessages }}
+        conversation={provisionalConversation}
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         onNewMessage={handleSend}
         soundEnabled={soundEnabled}
@@ -195,3 +249,13 @@ export default function Chat({
     </SideBarPaddedContainer>
   );
 }
+function cleanUpText(provisionalText: string) {
+  const [, responseHead] = (provisionalText ?? "").split('answer": "');
+  const [response] = (responseHead ?? "").split('"confidence": "');
+  const lastQuote = (response ?? "").lastIndexOf('confidence');
+  let text = (response ?? "").substring(0, lastQuote >= 0 ? lastQuote : (response ?? "").length);
+  text = text.replace(/\\n/g, "\n");
+  text = text.endsWith("\\") ? text.substring(0, text.length - 1) : text;
+  return text;
+}
+
