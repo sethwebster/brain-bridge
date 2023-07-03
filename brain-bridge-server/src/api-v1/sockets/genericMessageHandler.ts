@@ -176,7 +176,8 @@ export abstract class GenericMessageHandler<O> {
 }
 
 
-export abstract class GenericMessageHandlerWithCosts<O> extends GenericMessageHandler<O> {
+export abstract class
+GenericMessageHandlerWithCosts<O> extends GenericMessageHandler<O> {
   async generateResponse(conversation: ConversationWithRelations | PublicChatInstance, data: MessageWithRelations, chatResponseMode: ChatResponseMode): Promise<MessageWithRelations> {
     const costs = {
       tokens: 0,

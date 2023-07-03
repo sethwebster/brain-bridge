@@ -40,6 +40,7 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
         options
       }
     );
+
     invariant(message.conversationId, "Conversation id must be defined");
     let response = "";
     response = await llm.getLangChainResponse(
@@ -52,7 +53,10 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
         }
         return a.createdAt > b.createdAt ? 1 : -1;
       }).map(m => `${m.sender.name}: ${m.text}`),
-      chatResponseMode
+      chatResponseMode,
+      (token: string) => {
+        this.io.in(this.room).emit("message-token", { token, conversationId: conversation.id })
+      },
     );
 
     const newMessage: MessageWithRelations = {

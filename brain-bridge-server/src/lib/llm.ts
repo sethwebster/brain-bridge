@@ -19,6 +19,7 @@ const model = new OpenAIChat({
   openAIApiKey: process.env.OPENAI_API_KEY,
   modelName: 'gpt-3.5-turbo-0613',
   maxTokens: -1,
+  streaming: true
 });
 
 interface LangChainStorage<T> {
@@ -76,9 +77,8 @@ abstract class PipelineStepBase implements PipelineStep {
 // }
 
 export interface LangChainStore {
-  getLangChainResponse: (indexId: string, userPrompt: string, basePrompt: string, history: string[]) => Promise<string>;
+  getLangChainResponse: (indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine", onTokenReceived: (token: string) => void) => Promise<string>;
 }
-
 
 export class BrainBridgeStorage<Milvus> implements LangChainStorage<Milvus> {
   /**
@@ -181,7 +181,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
       llm: model,
       prompt: promptTemplate,
     });
-    const result = await this.langChainCall(chain, { text });
+    const result = await this.langChainCall(chain, { text }, () => { });
     return result.text;
   }
 
@@ -193,7 +193,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
    * @param store the HNSWLib instance (the index)
    * @returns
    */
-  async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine" = "one-shot") {
+  async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine" = "one-shot", onTokenReceived: (token: string) => void = () => { }) {
     let attempts = 0;
     // console.log("base-prompt", basePrompt)
 
@@ -224,8 +224,9 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
 
     const store = await this.storage.getIndex<Milvus>(indexId);
 
-
+    console.time("similarity-search")
     const data = await store.similaritySearch(userPrompt, this._additionalOptions.numberOfNearestNeighbors ?? 2);
+    console.timeEnd("similarity-search")
     const context: string[] = [];
 
     data.filter(d => d.pageContent.trim().length > 0).forEach((item) => {
@@ -234,7 +235,9 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
 
 
     console.log("[llm-request]", userPrompt, context, history, mode);
-    let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history: historyString });
+    console.time("llm-request")
+    let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history: historyString }, onTokenReceived);
+    console.timeEnd("llm-request")
     let response = this.tryParseResponse(userPrompt, rawResponse);
     let usedMode = mode;
 
@@ -287,11 +290,17 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
     return refined.text.replace("New Response:", "").trim();
   }
 
-  private async langChainCall(llmChain: LLMChain<string>, fields: Record<string, string | string[]>) {
+  private async langChainCall(llmChain: LLMChain<string>, fields: Record<string, string | string[]>, onTokenResult: (token: string) => void) {
 
     const tokenCountsForAllFields = this.countTokensForLangChainCall(fields);
-
-    const result = await llmChain.call(fields) as Promise<LLMResponse>;
+    const result = await llmChain.call(fields, [
+      {
+        handleLLMNewToken(token: string) {
+          console.log("[llm-token]", token);
+          onTokenResult(token);
+        },
+      },
+    ]) as Promise<LLMResponse>;
     this._onTokensUsed(tokenCountsForAllFields)
     return result;
   }
@@ -361,7 +370,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 
-    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, history }) as LLMResponse;
+    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, history }, () => { }) as LLMResponse;
     console.log("critique", result.text);
 
     return result;
@@ -372,7 +381,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 
-    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, critique: critique, history: history }) as LLMResponse;
+    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, critique: critique, history: history }, () => { }) as LLMResponse;
 
     console.log("refine", result.text);
     return result;
