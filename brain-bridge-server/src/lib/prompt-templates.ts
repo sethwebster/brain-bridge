@@ -84,30 +84,61 @@ ConversationHistory: {history}
 MemoryContext: {context}
 Human: {prompt}
 {name}:
-The JSON Response:`;
+{{
+  "type": "one-shot",
+  "question": "{{prompt}}",
+  "answer": "{{response}}",
+  "confidence": {{confidence}},
+}}
+`
+;
 
 export default promptTemplate;
 
 export const CRITIQUE_PROMPT: PromptTemplate = new PromptTemplate({
-  template: `-- context --
+  template: `
+  -- system --
+  No content outside of a RFC8259 compliant JSON response with the keys "question" (always the most recent prompt from the human), "answer" (your original answer formatted as markdown), "critique" (your critique of your response), and "confidence" (as a decimal) should be sent.
+  -- context --
   Human Question:{question}
   Your Response: {response}
   History: {history}
   -- instructions --
-  Critique your response to their question above. Consider why you said it and whether it meets the requirements of the original request. Remember to think step-by-step and always include references.`,
+  Critique your response to their question above. Consider why you said it and whether it meets the requirements of the original request. Remember to think step-by-step and always include references.
+  -- output format --
+  {{
+    "type":"critique",
+    "question": "{{question}}",
+    "answer": "{{response}}",
+    "critique": "{{critique}}",
+    "confidence": {{confidence}},
+  }}
+  `,
   inputVariables: ["question", "response", "history"]
 })
 
 export const REFINE_PROMPT: PromptTemplate = new PromptTemplate({
-  template: ` -- context --
-    Your Previous Response: {response}
+  template: `
+  -- system --
+  No content outside of a RFC8259 compliant JSON response with the keys "question" (always the most recent prompt from the human), "answer" (your original answer formatted as markdown), "critique" (your critique of your response), "refined" (your new answer), and "confidence" (as a decimal) should be sent.
+  -- context --
+  Your Previous Response: {response}
 
-    Your Critique: {critique}
+  Your Critique: {critique}
 
-    Their question is: {question}
+  Their question is: {question}
 
-    The history is: {history}
-    --- instructions --
-    Above is your previous response and your critique of it. Use your critique to refine your response to their question.
+  The history is: {history}
+  --- instructions --
+  Above is the human question, your previous response and your critique of it. Use your critique to refine your response to their question.
+  -- output format --
+  {{
+    "type":"refine",
+    "question": "{{question}}",
+    "answer": "{{response}}",
+    "critique": "{{critique}}",
+    "refined": "{{refined}}",
+    "confidence": {{confidence}},
+  }}
   `, inputVariables: ["response", "question", "critique", "history"]
 });

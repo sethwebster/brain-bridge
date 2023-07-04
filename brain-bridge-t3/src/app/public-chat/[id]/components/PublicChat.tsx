@@ -28,11 +28,17 @@ export default function PublicChat({
   publicChatInstance,
 }: PublicChatProps) {
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [answerPending, setAnswerPending] = useState(false);
   const [soundPending] = useState(false);
   const [loadedMessages, setLoadedMessages] = useState<MessageWithRelations[]>(
     publicChatInstance.messages
   );
+  const [answerPending, setAnswerPending] = useState<{
+    pending: boolean;
+    phase: ChatResponseMode;
+  }>({ pending: false, phase: "one-shot" });
+  const [chatResponseMode, setChatResponseMode] =
+    useState<ChatResponseMode>("one-shot");
+
   const [callback, setCallback] = useState<(() => void) | null>(null);
   const session = useSession();
   // const player = useAudioPlayer();
@@ -60,7 +66,7 @@ export default function PublicChat({
       const removeMessageListener = socket.onMessage(
         "message",
         (payload: { message: MessageWithRelations }) => {
-          setAnswerPending(false);
+          setAnswerPending({ pending: false, phase: "one-shot" });
           setLoadedMessages((messages) => [...messages, payload.message]);
           callback?.();
         }
@@ -69,14 +75,14 @@ export default function PublicChat({
       const removeTypingIndicatorListener = socket.onMessage(
         "llm-response-started",
         () => {
-          setAnswerPending(true);
+          setAnswerPending({ pending: false, phase: "one-shot" });
         }
       );
 
       const removeErrorListener = socket.onMessage(
         "message-error",
         (payload: { error?: string }) => {
-          setAnswerPending(false);
+          setAnswerPending({ pending: false, phase: "one-shot" });
           if (payload.error) {
             setLoadedMessages((messages) => [
               ...messages,
@@ -139,9 +145,10 @@ export default function PublicChat({
         (session.status != "authenticated" && (
           <CheckLogin provider="anonymous" />
         ))}
-      <div className="w-full h-auto min-h-full overflow-scroll bg-slate-100 dark:bg-slate-700">
+      <div className="h-auto min-h-full w-full overflow-scroll bg-slate-100 dark:bg-slate-700">
         <ChatDisplay
           chatType="public"
+          chatResponseMode={chatResponseMode}
           isConnected={socket.status === "authenticated" ?? false}
           viewer={viewer}
           conversation={{ ...publicChatInstance, messages: loadedMessages }}
@@ -154,6 +161,7 @@ export default function PublicChat({
           // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-misused-promises
           onClearChatClicked={handleClearChatClicked}
           notifyNewMessage={handleNotifyCallbackSet}
+          onChatResponseModeChanged={setChatResponseMode}
         />
       </div>
     </>

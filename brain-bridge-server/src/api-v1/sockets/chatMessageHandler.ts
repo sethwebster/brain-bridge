@@ -1,12 +1,13 @@
 import invariant from "tiny-invariant";
 import { Conversation, Message, Participant, Prisma, PublicChatInstance } from '@prisma/client';
 import { prisma } from "../../lib/db.ts";
-import { BrainBridgeAdditionalOptions, BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm.ts";
 import replaceTokens from "../../lib/replace-tokens.ts";
 import { ChatResponseMode, ConversationWithRelations, MessageWithRelations, PublicChatInstanceWithRelations } from "./types.ts";
 import { promptFooter, promptHeader } from "../../lib/prompt-templates.ts";
 import { runWithIndicator } from "./runWithIndicator.ts";
 import { GenericMessageHandlerWithCosts, TokenUsageFn } from "./genericMessageHandler.ts";
+import WeviateSimilaritySearcher from "../../lib/WeviateSimilaritySearcher.ts";
+import { BrainBridgeAdditionalOptions, BrainBridgeLangChain, LLMBrainBridgeResponse } from "../../lib/llm.ts";
 
 // interface RecursionPayload {
 //   message: Omit<MessageWithRelations, "publicChatInstanceId" | "publicChatInstance"> | undefined | null;
@@ -30,14 +31,21 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
     const handleMissedQuestion = this.handleMissedQuestion.bind(this, conversation);
     const options = conversation.trainingSet.trainingOptions as BrainBridgeAdditionalOptions;
 
+    const handleTokenReceived = (token: string, responsePhase: ChatResponseMode) => {
+      console.log("Received token", token, "for response phase", responsePhase)
+      this.io.in(this.room).emit("message-token", { token, conversationId: conversation.id, responsePhase: responsePhase })
+    }
+
+    const searcher = new WeviateSimilaritySearcher(`Training_Set_${conversation.trainingSet.id}`);
+
     const llm = new BrainBridgeLangChain(
       {
-        store: new BrainBridgeStorage(),
+        similaritySearcher: searcher,
         handlers: {
           onLowConfidenceAnswer: (missed) => handleMissedQuestion(missed).catch(err => console.error(err)),
           onTokensUsed,
-        },
-        options
+          onTokenReceived: handleTokenReceived,
+        }
       }
     );
 
@@ -54,9 +62,6 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
         return a.createdAt > b.createdAt ? 1 : -1;
       }).map(m => `${m.sender.name}: ${m.text}`),
       chatResponseMode,
-      (token: string) => {
-        this.io.in(this.room).emit("message-token", { token, conversationId: conversation.id })
-      },
     );
 
     const newMessage: MessageWithRelations = {
@@ -94,14 +99,22 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
     const handleMissedQuestion = async (missed: LLMBrainBridgeResponse) => { };
     // this.handleMissedQuestion.bind(this, conversation.publicChat);
     const options = conversation.publicChat.trainingSet.trainingOptions as BrainBridgeAdditionalOptions;
+
+    const handleTokenReceived = (token: string, responsePhase: ChatResponseMode) => {
+      console.log("Received token", token, "for response phase", responsePhase)
+      this.io.in(this.room).emit("message-token", { token, conversationId: conversation.id, responsePhase: responsePhase })
+    }
+
+    const searcher = new WeviateSimilaritySearcher(conversation.publicChat.trainingSet.id);
+
     const llm = new BrainBridgeLangChain(
       {
-        store: new BrainBridgeStorage(),
+        similaritySearcher: searcher,
         handlers: {
           onLowConfidenceAnswer: (missed) => handleMissedQuestion(missed).catch(err => console.error(err)),
           onTokensUsed,
-        },
-        options
+          onTokenReceived: () => { },
+        }
       }
     );
     invariant(message.publicChatInstanceId, "publicChatInstanceId must be defined");

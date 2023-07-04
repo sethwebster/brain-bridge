@@ -61,13 +61,6 @@ export default function SocketProvider({
         globalSocket.auth = { token: null };
         return;
       } else {
-        // Logger.info("Setting the socket token", token);
-        // Token changed, but socket may be already connected
-        // Disconnect and reconnect to update the token
-        if (globalSocket.connected) {
-          globalSocket?.disconnect();
-          setStatus("disconnected");
-        }
         globalSocket.auth = { token: `Bearer ${token}` };
         globalSocket.connect();
       }
@@ -76,23 +69,34 @@ export default function SocketProvider({
   }, []);
 
   useEffect(() => {
+    if (token !== defaultTokenManager.token) {
+      handleTokenChange(defaultTokenManager.token);
+    }
+    if (token) {
+      if (!globalSocket.connected) {
+        setStatus("connecting");
+
+        globalSocket.connect();
+      } else {
+        setStatus(token ? "authenticated" : "connected");
+      }
+    }
+  }, [handleTokenChange, token]);
+
+  useEffect(() => {
     invariant(globalSocket, "SocketProvider: globalSocket is not defined");
     const unsubscribe =
       defaultTokenManager.subscribeToAuthToken(handleTokenChange);
     globalSocket.on("connect", handleConnected);
     globalSocket.on("disconnect", handleDisconnected);
 
-    if (token) {
-      setStatus("connecting");
-      globalSocket.connect();
-    }
     return () => {
       unsubscribe();
       globalSocket.disconnect();
       globalSocket.off("connect", handleConnected);
       globalSocket.off("disconnect", handleDisconnected);
     };
-  }, [handleConnected, handleDisconnected, handleTokenChange, token]);
+  }, [handleConnected, handleDisconnected, handleTokenChange]);
 
   return (
     <SocketContext.Provider value={{ socket, token, status }}>

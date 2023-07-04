@@ -32,7 +32,7 @@ interface ChatProps {
   viewer: Viewer;
   conversation: ConversationLike;
   // currentMessageText: string;
-  answerPending: boolean;
+  answerPending: {pending: boolean; phase: ChatResponseMode};
   soundPending: boolean;
   soundEnabled: boolean;
   onNewMessage: (newMessage: NewMessage, mode: ChatResponseMode) => void;
@@ -41,6 +41,8 @@ interface ChatProps {
   notifyNewMessage: (callback: () => void) => void;
   isConnected: boolean;
   chatType: "private" | "public";
+  chatResponseMode: ChatResponseMode;
+  onChatResponseModeChanged: (mode: ChatResponseMode) => void;
 }
 
 export default function ChatDisplay({
@@ -54,9 +56,10 @@ export default function ChatDisplay({
   onClearChatClicked,
   isConnected,
   chatType,
+  chatResponseMode,
+  onChatResponseModeChanged
 }: ChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [chatMode, setChatMode] = useState<ChatResponseMode>("one-shot");
   const handleSoundEnabledChange = useCallback(() => {
     onSoundEnabledChange(!soundEnabled);
   }, [onSoundEnabledChange, soundEnabled]);
@@ -72,18 +75,18 @@ export default function ChatDisplay({
           text: message,
           sender: viewer,
         },
-        chatMode
+        chatResponseMode
       );
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     },
-    [chatMode, onNewMessage, viewer]
+    [chatResponseMode, onNewMessage, viewer]
   );
 
   const handleChatModeSelectionChanged = useCallback(
     (mode: ChatResponseMode) => {
-      setChatMode(mode);
+      onChatResponseModeChanged(mode);
     },
-    []
+    [onChatResponseModeChanged]
   );
 
   useEffect(() => {
@@ -96,7 +99,7 @@ export default function ChatDisplay({
   return (
     <div className="flex flex-col w-full h-full bg-slate-100 dark:bg-slate-600">
       <ChatToolbar
-        chatMode={chatMode}
+        chatMode={chatResponseMode}
         onModeSelectionChanged={handleChatModeSelectionChanged}
         soundEnabled={soundEnabled}
         soundPending={soundPending}
@@ -111,12 +114,6 @@ export default function ChatDisplay({
             answerPending={answerPending}
           />
         </div>
-        {/* <div className="ml-4">
-          <TypingIndicator
-            show={answerPending}
-            onShown={handleTypingIndicatorShown}
-          />
-        </div> */}
         {soundPending && (
           <div className="ml-4">
             <FakeSpeakerIndicator />

@@ -34,8 +34,6 @@ export default async function TrainingPage({
     set.conversations[0] = conversation;    
   }
 
-  // console.log("set", set)
-
   return (
     <div className="w-full h-full">
       <TrainingSetPage

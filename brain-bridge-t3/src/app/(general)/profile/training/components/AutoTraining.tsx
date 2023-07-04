@@ -52,6 +52,8 @@ export function AutoTraining({
       },
     ],
   });
+  const [chatResponseMode, setChatResponseMode] =
+    useState<ChatResponseMode>("one-shot");
 
   const user = {
     ...session.data?.user,
@@ -60,7 +62,10 @@ export function AutoTraining({
     email: session.data?.user.email,
   } as Viewer;
 
-  const [answerPending, setAnswerPending] = useState(false);
+  const [answerPending, setAnswerPending] = useState<{
+    pending: boolean;
+    phase: ChatResponseMode;
+  }>({ pending: false, phase: "one-shot" });
   const [callback, setCallback] = useState<() => void>(() => () => {
     Logger.warn("callback not set");
   });
@@ -179,7 +184,7 @@ export function AutoTraining({
       const removeMessageListener = socket.onMessage(
         "prompt-generator-message",
         (payload: { message: MessageWithRelations }) => {
-          setAnswerPending(false);
+          setAnswerPending({ pending: false, phase: "one-shot" });
           const promptMatch = getPromptOutput(payload.message.text);
           if (promptMatch && promptMatch?.length > 0) {
             const match = promptMatch[1]?.trim();
@@ -200,21 +205,21 @@ export function AutoTraining({
       const removeTypingIndicatorListener = socket.onMessage(
         "llm-response-started",
         () => {
-          setAnswerPending(true);
+          setAnswerPending({ pending: true, phase: "one-shot" });
         }
       );
 
       const removeResponseCompleteListener = socket.onMessage(
         "llm-response-complete",
         () => {
-          setAnswerPending(false);
+          setAnswerPending({ pending: false, phase: "one-shot" });
         }
       );
 
       const removeErrorListener = socket.onMessage(
         "message-error",
         (payload: { error?: string }) => {
-          setAnswerPending(false);
+          setAnswerPending({ pending: false, phase: "one-shot" });
           if (payload.error) {
             setConversation((conversation) => ({
               ...conversation,
@@ -250,6 +255,7 @@ export function AutoTraining({
   return (
     <ChatDisplay
       chatType="private"
+      chatResponseMode={chatResponseMode}
       isConnected={socket.status === "authenticated"}
       viewer={user}
       answerPending={answerPending}
@@ -258,6 +264,7 @@ export function AutoTraining({
       onClearChatClicked={() => Logger.info}
       onNewMessage={handleSend}
       onSoundEnabledChange={() => Logger.info}
+      onChatResponseModeChanged={setChatResponseMode}
       soundPending={false}
       soundEnabled={false}
     />

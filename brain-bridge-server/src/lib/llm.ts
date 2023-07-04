@@ -1,17 +1,10 @@
 import { LLMChain, PromptTemplate } from "langchain";
 import { OpenAIChat } from "langchain/llms/openai";
-import { OpenAIEmbeddings } from "langchain/embeddings/openai";
-import { Milvus } from "langchain/vectorstores/milvus";
-import path from "path";
-import { getTempFilePath } from "./get-temp-file.ts";
-import { encoding_for_model } from "@dqbd/tiktoken";
-import { SerpAPI, Tool } from "langchain/tools";
-
-import { initializeAgentExecutorWithOptions } from "langchain/agents";
-import { Embeddings } from "langchain/dist/embeddings/base";
 import { getTokensForStringWithRetry } from "./get-tokens-for-string.ts";
 import getTotalLengthOfStrings from "./get-total-length-strings.ts";
-import promptTemplate, { CRITIQUE_PROMPT, REFINE_PROMPT } from "./prompt-templates.ts";
+import { CRITIQUE_PROMPT, REFINE_PROMPT } from "./prompt-templates.ts";
+import { ChatResponseMode } from "~/api-v1/sockets/types.ts";
+import { SimilaritySearchResult, SimilaritySearcher } from "./SimilaritySearchResult.ts";
 
 
 const model = new OpenAIChat({
@@ -22,94 +15,16 @@ const model = new OpenAIChat({
   streaming: true
 });
 
-interface LangChainStorage<T> {
-  getIndex<T>(id: string): Promise<T>;
-}
-
-interface PipelineStep {
-  name: string;
-  prompt: PromptTemplate;
-  execute: (previousResult: string, context?: Record<string, string>) => Promise<LLMResponse>;
-}
-
-interface Pipeline {
-  steps: PipelineStep[];
-  run: (initialPrompt: string) => Promise<LLMResponse>;
-}
-
-class LLMPipeline implements Pipeline {
-  steps: PipelineStep[];
-  constructor(steps: PipelineStep[]) {
-    this.steps = steps;
-  }
-  async run(initialPrompt: string): Promise<LLMResponse> {
-    let previousResult = initialPrompt;
-    for (const step of this.steps) {
-      const result = await step.execute(previousResult);
-      previousResult = result.text;
-    }
-    return {
-      text: previousResult,
-      tokens: 0
-    };
-  }
-}
-
-abstract class PipelineStepBase implements PipelineStep {
-  name: string;
-  prompt: PromptTemplate;
-  constructor(name: string, prompt: PromptTemplate) {
-    this.name = name;
-    this.prompt = prompt;
-  }
-  abstract execute(previousResult: string): Promise<LLMResponse>;
-}
-
-// class OneShotPipelineStep extends PipelineStepBase {
-//   execute(previousResult: string): Promise<LLMResponse> {
-//     const llm = new LLMChain({
-//       llm: model,
-//       prompt: this.prompt,
-//     });
-
-
-//   }
-// }
 
 export interface LangChainStore {
-  getLangChainResponse: (indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine", onTokenReceived: (token: string) => void) => Promise<string>;
+  getLangChainResponse: (indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine") => Promise<string>;
 }
 
-export class BrainBridgeStorage<Milvus> implements LangChainStorage<Milvus> {
-  /**
-   * @param id
-   * @returns
-   */
-  async getIndex<Milvus>(id: string): Promise<Milvus> {
-    // const embedder = new OpenAIEmbeddings()
-    const embedder = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-    });
-    const vectorStore = await Milvus.fromExistingCollection(
-      embedder,
-      {
-        collectionName: id,
-      }
-    ) as Milvus;
-    return vectorStore;
-  }
 
-  private getFilePaths(id: string) {
-    const tempFilePath = getTempFilePath('brainbridge-' + id, { mkdir: true });
-    const indexPath = path.join(tempFilePath, `hnswlib.index`);
-    const docStorePath = path.join(tempFilePath, `docstore.json`);
-    const argsFilePath = path.join(tempFilePath, `args.json`);
-
-    return {
-      tempFilePath,
-      indexPath,
-      docStorePath,
-      argsFilePath,
+export type WeviateSimilaritySearcherResponse = {
+  data: {
+    Get: {
+      [id: string]: SimilaritySearchResult[];
     }
   }
 }
@@ -123,11 +38,14 @@ export interface LLMBrainBridgeResponse {
   question: string;
   answer: string;
   confidence: number;
+  critique?: string;
+  refined?: string;
 }
 
 interface BrainBridgeLangChainHandlers {
   onTokensUsed: (tokens: number) => void;
   onLowConfidenceAnswer: (response: LLMBrainBridgeResponse) => void;
+  onTokenReceived: (token: string, responsePhase: ChatResponseMode) => void;
 }
 
 export interface BrainBridgeAdditionalOptions {
@@ -138,23 +56,24 @@ const DEFAULT_ADDITIONAL_OPTIONS: BrainBridgeAdditionalOptions = {
   numberOfNearestNeighbors: 2,
 }
 
-interface BrainBridgeLangChainOptions<S extends LangChainStorage<E>, E extends Embeddings> {
-  store: S,
+interface BrainBridgeLangChainOptions {
+  similaritySearcher: SimilaritySearcher;
   handlers: BrainBridgeLangChainHandlers,
   options?: BrainBridgeAdditionalOptions
 }
 
-
-export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embeddings> implements LangChainStore {
-  storage: LangChainStorage<Milvus>
-  _store: Milvus | null = null;
+export class BrainBridgeLangChain implements LangChainStore {
   private _lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void;
   private _onTokensUsed: (tokens: number) => void = () => { };
+  private _onTokenReceived: (token: string, responsePhase: ChatResponseMode) => void = () => { };
   private _additionalOptions: BrainBridgeAdditionalOptions = DEFAULT_ADDITIONAL_OPTIONS;
-  constructor({ store, handlers: { onLowConfidenceAnswer, onTokensUsed }, options }: BrainBridgeLangChainOptions<S, E>) {
-    this.storage = store;
+  private _similaritySearcher: SimilaritySearcher;
+
+  constructor({ similaritySearcher, handlers: { onLowConfidenceAnswer, onTokensUsed, onTokenReceived }, options }: BrainBridgeLangChainOptions) {
+    this._similaritySearcher = similaritySearcher;
     this._lowConfidenceAnswerHandler = onLowConfidenceAnswer;
     this._onTokensUsed = onTokensUsed;
+    this._onTokenReceived = onTokenReceived;
     this._additionalOptions = { ...DEFAULT_ADDITIONAL_OPTIONS, ...(options ?? {}) };
   }
 
@@ -181,7 +100,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
       llm: model,
       prompt: promptTemplate,
     });
-    const result = await this.langChainCall(chain, { text }, () => { });
+    const result = await this.langChainCall(chain, { text }, "one-shot");
     return result.text;
   }
 
@@ -193,10 +112,8 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
    * @param store the HNSWLib instance (the index)
    * @returns
    */
-  async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine" = "one-shot", onTokenReceived: (token: string) => void = () => { }) {
+  async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine" = "one-shot") {
     let attempts = 0;
-    // console.log("base-prompt", basePrompt)
-
 
     const historyLength = getTotalLengthOfStrings(history);
     let historyString = history.join("\n");
@@ -205,9 +122,11 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
     }
 
     const encodedLength = this.getTokensForStringWithRetry(userPrompt);
+
     if (encodedLength > 4000) {
       throw new Error("Input too long");
     }
+
     if (this._onTokensUsed) {
       this._onTokensUsed(encodedLength);
     }
@@ -221,22 +140,13 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
       prompt: promptTemplate,
     });
 
-
-    const store = await this.storage.getIndex<Milvus>(indexId);
-
     console.time("similarity-search")
-    const data = await store.similaritySearch(userPrompt, this._additionalOptions.numberOfNearestNeighbors ?? 2);
-    console.timeEnd("similarity-search")
-    const context: string[] = [];
-
-    data.filter(d => d.pageContent.trim().length > 0).forEach((item) => {
-      context.push(`Context:\nDocument: ${item.metadata.source}\nContent:\n${item.pageContent.trim()}`)
-    });
-
+    const set = `Training_Set_${indexId}`
+    const context = await this._similaritySearcher.similaritySearchToContext(userPrompt, this._additionalOptions.numberOfNearestNeighbors ?? 2);
 
     console.log("[llm-request]", userPrompt, context, history, mode);
     console.time("llm-request")
-    let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history: historyString }, onTokenReceived);
+    let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history: historyString }, "one-shot");
     console.timeEnd("llm-request")
     let response = this.tryParseResponse(userPrompt, rawResponse);
     let usedMode = mode;
@@ -253,9 +163,8 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
       // return "I'm sorry, I had some trouble figuring out how to respond.";
     }
 
-    console.log(response.confidence)
+    console.log("Last Answer Confidence", response.confidence)
     if (response.confidence <= 0.85) {
-      console.warn("LOW CONFIDENCE ANSWER", response);
       if (this._lowConfidenceAnswerHandler) {
         this._lowConfidenceAnswerHandler(response);
       }
@@ -267,37 +176,24 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
 
 
     const critiqued = await this.critique(response.answer, userPrompt, history);
+    const critiquedResponse = this.tryParseResponse(userPrompt, critiqued);
     if (usedMode === "critique") {
-      const responseTemplate = `
-        ### Original Request
-        >>>
-        {REQUEST}
-        <<<
-
-        ### Original Response
-        >>>
-        {RESPONSE}
-        <<<
-
-        ### Critique
-        >>>
-        {CRITIQUE}
-        <<<
-      `;
-      return responseTemplate.replace("{REQUEST}", userPrompt).replace("{RESPONSE}", response.answer).replace("{CRITIQUE}", critiqued.text);
+      return critiquedResponse.answer;
     }
     const refined = await this.refine(critiqued.text, response.answer, userPrompt, history);
-    return refined.text.replace("New Response:", "").trim();
+    const refinedResponse = this.tryParseResponse(userPrompt, refined);
+    return refinedResponse.refined ?? "";
   }
 
-  private async langChainCall(llmChain: LLMChain<string>, fields: Record<string, string | string[]>, onTokenResult: (token: string) => void) {
+  private async langChainCall(llmChain: LLMChain<string>, fields: Record<string, string | string[]>, responsePhase: ChatResponseMode) {
 
     const tokenCountsForAllFields = this.countTokensForLangChainCall(fields);
+    const otr = this._onTokenReceived;
     const result = await llmChain.call(fields, [
       {
         handleLLMNewToken(token: string) {
-          console.log("[llm-token]", token);
-          onTokenResult(token);
+          console.log("[llm-token]", token, responsePhase, otr);
+          otr(token, responsePhase);
         },
       },
     ]) as Promise<LLMResponse>;
@@ -370,7 +266,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 
-    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, history }, () => { }) as LLMResponse;
+    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, history }, "critique") as LLMResponse;
     console.log("critique", result.text);
 
     return result;
@@ -381,7 +277,7 @@ export class BrainBridgeLangChain<S extends LangChainStorage<E>, E extends Embed
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 
-    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, critique: critique, history: history }, () => { }) as LLMResponse;
+    const result = await this.langChainCall(llmChain, { response: firstResponse, question: userPrompt, critique: critique, history: history }, 'refine') as LLMResponse;
 
     console.log("refine", result.text);
     return result;

@@ -2,10 +2,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { SignInOutButton } from "./SignInOutButton";
 import { Logo } from "./Logo";
+import EnvironmentMarker from "./EnvironmentMarker";
 
 function NavBar() {
   return (
     <nav className="absolute top-0 z-50 flex flex-row w-full p-5 shadow-lg bg-slate-100 dark:border-b dark:border-gray-800 dark:bg-gray-900">
+        <EnvironmentMarker />
       <div className="absolute flex font-bold">
         <Link href="/" className="flex flex-row"> 
           <Logo />

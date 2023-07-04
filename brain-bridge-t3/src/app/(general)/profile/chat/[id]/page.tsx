@@ -3,6 +3,7 @@ import { getServerSession } from "~/server/auth";
 import Chat from "../components/Chat";
 import { Suspense } from "react";
 import ServerData from "~/server/server-data";
+import RoomJoiner from "../../components/RoomJoiner";
 
 async function PageContent({ id }: { id: string }) {
   const session = await getServerSession();
@@ -19,7 +20,7 @@ async function PageContent({ id }: { id: string }) {
 
 export default function Page({ params }: { params: { id: string } }) {
   return (
-    <Suspense fallback={<div></div>}>
+    <Suspense fallback={<div></div>}>      
       <PageContent id={params.id} />
     </Suspense>
   );

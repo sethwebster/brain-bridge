@@ -11,20 +11,28 @@ interface RoomJoinerProps {
   type: RoomType;
 }
 
+function useChanged<T>(value: T) {
+  const ref = React.useRef<T>();
+  const changed = ref.current !== value;
+  ref.current = value;
+  return changed;
+}
+
 const RoomJoiner = React.memo(({ room, type = "private" }: RoomJoinerProps) => {
   const socket = useSocket();
-  const { token } = useAuthToken();
+  const socketChanged = useChanged(socket);
+  console.log("---  RoomJoiner", { room, type, socketChanged, socket: socket.status })
   useEffect(() => {
     Logger.info("Running Room Joiner ");
     if (socket) {
       Logger.info("Socket is set, joining");
-      if (token) socket.join(room, type);
+      socket.join(room, type);
       return () => {
         Logger.info("Running Room Joiner unmount");
-        if (token) socket.leave(room, type);
+        socket.leave(room, type);
       };
     }
-  }, [room, socket, token, type]);
+  }, [room, socket, type]);
   return <></>;
 });
 RoomJoiner.displayName = "RoomJoiner";

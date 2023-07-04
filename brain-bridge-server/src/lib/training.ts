@@ -11,12 +11,15 @@ import { TextLoader } from "langchain/document_loaders/fs/text"
 import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import R2 from './R2.ts';
 import { getTempFilePath } from './get-temp-file.ts';
-import client from './milvus.ts';
+// import client from './milvus.ts';
 import { CountKeeper } from './count-keeper.ts';
 import cleanUpHtml from './clean-up-html.ts';
 import { TrainingStages } from '../api-v1/sockets/trainingHandler.ts';
 import { CachedEmbeddings } from './CachedEmbeddings.ts';
 import { getTokensForStringWithRetry } from './get-tokens-for-string.ts';
+import weaviate, { WeaviateClient, ObjectsBatcher, ApiKey } from 'weaviate-ts-client';
+import { generateUniqueClientId } from './generate-id.ts';
+import invariant from 'tiny-invariant';
 
 interface TrainingSetBuilderOptions {
   maxSegmentLength?: number;
@@ -40,6 +43,15 @@ export interface BuildResult {
   cost: number;
 }
 
+invariant(process.env.WEAVIATE_HOST, "WEAVIATE_URL must be set in .env");
+const client = weaviate.client({
+  scheme: 'http',
+  host: process.env.WEAVIATE_HOST,
+  headers: {
+    'X-OpenAI-Api-Key': process.env.OPENAI_API_KEY,
+  },
+})
+
 export class TrainingSetBuilder {
   private trainingSet: TrainingSetWithRelations;
   private onProgress: ProgressNotifier;
@@ -47,6 +59,7 @@ export class TrainingSetBuilder {
   private options: TrainingSetBuilderOptions;
 
   constructor({ trainingSet, onProgress, userId, options }: TrainingSetBuilderParams) {
+
     this.trainingSet = trainingSet;
     this.onProgress = onProgress;
     this.userId = userId;
@@ -54,9 +67,11 @@ export class TrainingSetBuilder {
       maxSegmentLength: parseInt(((options?.maxSegmentLength ?? 2000).toString())),
       overlapBetweenSegments: parseInt(((options?.overlapBetweenSegments ?? 200).toString())),
     }
+
   }
 
   async build(onTokensUsed?: (buildResult: BuildResult) => void): Promise<BuildResult> {
+    this.createSchema(this.trainingSet.id);
     const { trainingSources, questionsAndAnswers, conversations, missedQuestions } = this.trainingSet;
     const sources = await this.buildTrainingSources(trainingSources);
     // throw new Error("Not implemented");
@@ -72,6 +87,55 @@ export class TrainingSetBuilder {
     }
     await this.vectorize(sources, onTokensUsedLocal);
     return buildResult;
+  }
+
+  async createSchema(id: string) {
+    const set = `Training_Set_${this.trainingSet.id}`
+
+    const schema = {
+      'class': set,
+      "vectorizer": "text2vec-openai",
+      "moduleConfig": {
+        "qna-openai": {
+          "model": 'text-davinci-003', // For OpenAI
+          "maxTokens": 16, // Applicable to both OpenAI and Azure OpenAI
+          "temperature": 0.0,  // Applicable to both OpenAI and Azure OpenAI
+          "topP": 1,  // Applicable to both OpenAI and Azure OpenAI
+          "frequencyPenalty": 0.0,  // Applicable to both OpenAI and Azure OpenAI
+          "presencePenalty": 0.0  // Applicable to both OpenAI and Azure OpenAI
+        }
+      },
+      "properties": [
+        {
+          "dataType": [
+            "text"
+          ],
+          "description": "Content that will be vectorized",
+          "name": "text"
+        },
+        {
+          "dataType": [
+            "text"
+          ],
+          "description": "The original file name of the document",
+          "name": "source"
+        }
+
+      ]
+    }
+
+    console.log("Creating schema...");
+    try {
+      const existingClass = await client.schema.classGetter().withClassName(set).do();
+      if (existingClass) {
+        const destroy = await client.schema.classDeleter().withClassName(set).do();
+        console.log("Schema deleted.", destroy)
+      }
+    } catch (e) {
+      console.log("Error deleting schema", e)
+    }
+    const res = await client.schema.classCreator().withClass(schema).do();
+    console.log("Created schema.");
   }
 
   ///////////////
@@ -100,14 +164,14 @@ export class TrainingSetBuilder {
     console.log("Batches", batches.length);
     const batchCount = batches.length;
 
-    try {
-      await client.dropCollection({ collection_name: this.trainingSet.id });
-    } catch (e) {
-      console.log("Error dropping collection", e)
-      throw e;
-    }
+    // try {
+    //   await client.dropCollection({ collection_name: this.trainingSet.id });
+    // } catch (e) {
+    //   console.log("Error dropping collection", e)
+    //   throw e;
+    // }
     // const embedder = new OpenAIEmbeddings();
-    const embedder = new CachedEmbeddings() as any;
+    const embedder = new CachedEmbeddings();
 
     let time = 0;
     // takes 10 seconds/batch
@@ -135,44 +199,57 @@ export class TrainingSetBuilder {
         console.log("Vectoring batch", batchCount - batches.length + 1, "of", batchCount)
         const batch = batches.shift();
         if (!batch) break;
+        const batcher = client.batch.objectsBatcher();
         try {
+          const set = `Training_Set_${this.trainingSet.id}`
           const documents = batch.map((b, i) => b.loadedContent).flat();
           // console.log("Documents", documents)
-
           const tokensUsed = this.getTokensForStringWithRetry(documents.map(doc => doc.pageContent).join("\n"));
           buildResult.tokensUsed += tokensUsed;
           buildResult.cost = buildResult.cost * 0.0000004;
           onTokensUsed(buildResult);
-          const res = await Milvus.fromDocuments(documents, embedder, {
-            collectionName: this.trainingSet.id,
+          const embeddings = await embedder.embedDocuments(documents.map(doc => doc.pageContent));
+          documents.forEach((doc, i) => {
+            batcher.withObject({
+              class: set,
+
+              properties: {
+                // id: generateUniqueClientId(),
+                text: doc.pageContent,
+                source: doc.metadata.source,
+              },
+              vector: embeddings[i]
+            });
           });
+          const res = await batcher.do();
+          // console.log("Batch result", res);
         } catch (e) {
           console.log("ERROR BATCH", batch.length);
           throw e;
         }
-        const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
-          collection_name: this.trainingSet.id,
-        });
-        console.log("Batch Collection statistics: ", stats.data.row_count, "rows");
+        // const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
+        //   collection_name: this.trainingSet.id,
+        // });
+        // console.log("Batch Collection statistics: ", stats.data.row_count, "rows");
       }
 
-      /**
-       * This adds our list of documents to the Milvus database.
-       */
-      try {
-        await Milvus.fromDocuments(list, embedder, {
-          collectionName: this.trainingSet.id,
-        });
-      } catch (e) {
-        console.error("ERROR ADDING DOCUMENT LIST", e);
-        throw e;
-      }
+      // /**
+      //  * This adds our list of documents used in training  to the Milvus database (ie. the actual index).
+      //  */
+      // try {
+      //   await Milvus.fromDocuments(list, embedder, {
+      //     collectionName: this.trainingSet.id,
+      //   });
+      // } catch (e) {
+      //   console.error("ERROR ADDING DOCUMENT LIST", e);
+      //   throw e;
+      // }
       clearInterval(vectorProgressInterval);
-      const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
-        collection_name: this.trainingSet.id,
-      });
-      client.flush({ collection_names: [this.trainingSet.id] });
-      console.log("Final Collection statistics", stats.data.row_count, "rows");
+      // const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
+      //   collection_name: this.trainingSet.id,
+      // });
+      // client.flush({ collection_names: [this.trainingSet.id] });
+      // console.log("Final Collection statistics", stats.data.row_count, "rows");
       console.log("Vectorization complete");
       return buildResult;
     } catch (e) {
@@ -335,9 +412,6 @@ export class TrainingSetBuilder {
           return [...acc, ...keys];
         }, [] as string[]);
         const uniqueKeys = [...new Set(aggregateKeys)];
-        console.log("Unique keys", uniqueKeys);
-
-
         this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, progress: 1 });
         return result;
     }

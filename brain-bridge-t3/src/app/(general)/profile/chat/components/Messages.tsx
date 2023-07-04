@@ -1,5 +1,8 @@
 "use client";
-import { type MessageWithRelations } from "~/data/interfaces/types";
+import {
+  ChatResponseMode,
+  type MessageWithRelations,
+} from "~/data/interfaces/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ScrollOnReRender } from "./ScrollOnReRender";
@@ -11,11 +14,10 @@ import { type SpecialComponents } from "react-markdown/lib/ast-to-react";
 const MarkdownComponents: Partial<
   Omit<NormalComponents, keyof SpecialComponents> & SpecialComponents
 > = {
-  p: (props) => (
-    <p {...props} >
-      {props.children}
-    </p>
-  ),
+  h1: (props) => <h1 {...props} className="mb-4 mt-8 text-2xl font-bold" />,
+  h2: (props) => <h2 {...props} className="mb-4 mt-8 text-xl font-bold" />,
+  h3: (props) => <h3 {...props} className="mb-4 mt-8 text-lg font-bold" />,
+  p: (props) => <p {...props} className="[&:not(:first-child)]:pt-4">{props.children}</p>,
   ul: ({ children }) => <ul className="list-disc p-2 px-4">{children}</ul>,
   ol: ({ children }) => <ol className="list-decimal p-2 px-4">{children}</ol>,
   li: ({ children }) => <li className="p-2 px-4">{children}</li>,
@@ -37,7 +39,7 @@ export function Messages({
   /**
    * show the typing indicator
    */
-  answerPending?: boolean;
+  answerPending?: { pending: boolean; phase: ChatResponseMode };
 }) {
   // const lastRef = useRef<HTMLDivElement>(null);
   // useEffect(() => {
@@ -85,7 +87,10 @@ export function Messages({
               <>
                 {/* {message.sender.id}.{message.sender.name}.{userName} */}
                 <div className="text-slate-200 dark:text-slate-300">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={MarkdownComponents}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={MarkdownComponents}
+                  >
                     {message.text}
                   </ReactMarkdown>
                 </div>
@@ -93,7 +98,12 @@ export function Messages({
             </div>
           </li>
         ))}
-        {answerPending && <TypingIndicator show={answerPending} />}
+        {answerPending && (
+          <TypingIndicator
+            show={answerPending.pending}
+            phase={answerPending.phase}
+          />
+        )}
       </ul>
       <div className="">
         <ScrollOnReRender />

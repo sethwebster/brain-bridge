@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
     invariant(shared, "User must own training set or have a share to upload a file")
   }
   const finalKey = `${trainingSet.userId}/${fileNameKey}`;
-  console.log("finalKey", finalKey)
   const url = await R2.getSignedUrlForUpload(finalKey);
   return NextResponse.json({ url });
 }

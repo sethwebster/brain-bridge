@@ -6,10 +6,17 @@ invariant(process.env.NEXT_PUBLIC_SOCKETS_ENDPOINT, 'NEXT_PUBLIC_SOCKETS_ENDPOIN
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKETS_ENDPOINT, {
   autoConnect: false,
-  transports: ['websocket'],  
+  transports: ['websocket'],
 });
 
+if (defaultTokenManager.token) {
+  socket.auth = {
+    token: `Bearer ${defaultTokenManager.token}`
+  }
+}
+
 defaultTokenManager.subscribeToAuthToken((token: string | null) => {
+  console.log("globalSocket: token change: ", token)
   if (token) {
     socket.auth = {
       token: `Bearer ${token}`

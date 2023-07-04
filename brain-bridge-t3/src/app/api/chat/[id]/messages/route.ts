@@ -3,7 +3,7 @@ import ServerData from "~/server/server-data";
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const conversation = await ServerData.clearChat(params.id);
-  return NextResponse.json(conversation, {status:204});
+  return NextResponse.json(conversation, {status:200});
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {

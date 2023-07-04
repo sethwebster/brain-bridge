@@ -1,11 +1,12 @@
 import { Socket } from "socket.io";
 import invariant from "tiny-invariant";
 import { prisma } from "../../lib/db.ts";
-import { BrainBridgeLangChain, BrainBridgeStorage, LLMBrainBridgeResponse } from "../../lib/llm.ts";
 import replaceTokens from "../../lib/replace-tokens.ts";
 import { storeBotMessage } from "./data-helpers.ts";
 import { MessageWithRelations, PublicChatInstanceWithRelations } from "./types.ts";
 import { promptFooter, promptHeader } from "../../lib/prompt-templates.ts";
+import WeviateSimilaritySearcher from "../../lib/WeviateSimilaritySearcher.ts";
+import { BrainBridgeLangChain, LLMBrainBridgeResponse } from "../../lib/llm.ts";
 
 export async function publicMessageHandler(socket: Socket) {
   socket.on("message-public", async (data) => {
@@ -87,12 +88,15 @@ export async function publicMessageHandler(socket: Socket) {
         cost.tokens += tokens;
       }
 
+      const searcher = new WeviateSimilaritySearcher(publicChatInstance.publicChat.trainingSet.id);
+
       const llm = new BrainBridgeLangChain(
         {
-          store: new BrainBridgeStorage(),
+          similaritySearcher: searcher,
           handlers: {
             onLowConfidenceAnswer: (missed) => handleMissedQuestion(missed).catch(err => console.error(err)),
             onTokensUsed,
+            onTokenReceived: () => { },
           }
         }
       );

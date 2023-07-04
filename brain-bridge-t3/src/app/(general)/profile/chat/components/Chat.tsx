@@ -27,8 +27,9 @@ import { toast } from "react-toastify";
 import SideBarPaddedContainer from "../../components/SidebarPaddedContainer";
 import Logger from "~/lib/logger";
 import RoomJoiner from "../../components/RoomJoiner";
-import invariant from "tiny-invariant";
-import debounce from "lodash.debounce";
+import StreamingJsonParser, {
+  type PartialJSONObject,
+} from "~/lib/streaming-json-parser";
 
 export default function Chat({
   selectedChat,
@@ -39,7 +40,10 @@ export default function Chat({
 }) {
   const [soundEnabled, setSoundEnabled] = useState(false);
   // const [soundPending, setSoundPending] = useState(false);
-  const [answerPending, setAnswerPending] = useState(false);
+  const [answerPending, setAnswerPending] = useState<{
+    pending: boolean;
+    phase: ChatResponseMode;
+  }>({ pending: false, phase: "one-shot" });
   // const player = useAudioPlayer();
   const [selectedChatMessages, setSelectedChatMessages] = useState(
     selectedChat.messages
@@ -49,6 +53,16 @@ export default function Chat({
   const socket = useSocket();
   const { token } = useAuthToken();
   const [provisionalText, setProvisionalText] = useState<null | string>(null);
+  const [provisionalResponse, setProvisionalResponse] = useState<
+    PartialJSONObject | PartialJSONObject[] | null
+  >(null);
+  const [chatResponseMode, setChatResponseMode] =
+    useState<ChatResponseMode>("one-shot");
+
+  const streamingJsonParser = useMemo(() => {
+    const [] = [selectedChatMessages.length === 0];
+    return new StreamingJsonParser();
+  }, [selectedChatMessages]);
 
   useEffect(() => {
     if (!selectedChat) return;
@@ -61,12 +75,42 @@ export default function Chat({
 
       const removeTokenListener = socket.onMessage(
         "message-token",
-        (payload: { token: string; conversationId: string }) => {
-          const { token } = payload;
-          if (cleanUpText(provisionalText ?? "").length > 0) setAnswerPending(false);
-          setProvisionalText((prev) => {
-            return (prev ?? "") + token;
-          });
+        (payload: {
+          token: string;
+          conversationId: string;
+          responsePhase: ChatResponseMode;
+        }) => {
+          // console.log("message-token", payload);
+          const { token, responsePhase } = payload;
+          streamingJsonParser.consume(token);
+          const message = streamingJsonParser.getObject();
+          setProvisionalResponse(message);
+          if (responsePhase === chatResponseMode) {
+            let pending = false;
+            if (Array.isArray(message)) {
+              switch (chatResponseMode) {
+                case "one-shot":
+                  pending =
+                    (message.at(0) as { answer: string })?.answer?.length === 0 ??
+                    true;
+                  break;
+                case "critique":
+                  pending =
+                    (message.at(1) as { critique: string })?.critique?.length ===
+                      0 ?? true;
+                  break;
+                case "refine":
+                  pending =
+                    (message.at(2) as { refined: string })?.refined?.length ===
+                      0 ?? true;  
+                  break;
+              }
+            } else {
+              pending = (message as { answer: string })?.answer?.length === 0 ?? true;
+              console.log(message, pending);
+            }
+            setAnswerPending({ pending, phase: responsePhase });
+          }
         }
       );
 
@@ -75,9 +119,10 @@ export default function Chat({
         (payload: { message: MessageWithRelations; room: string }) => {
           Logger.warn("message", payload.message, payload.room);
           setProvisionalText(null);
+          setProvisionalResponse(null);
           if (payload.room.includes(selectedChat.id)) {
             if (payload.message.sender.name !== session.user.name) {
-              setAnswerPending(false);
+              setAnswerPending({ pending: false, phase: "one-shot" });
             }
             setSelectedChatMessages((messages) => [
               ...messages,
@@ -93,7 +138,7 @@ export default function Chat({
         (payload: { room: string }) => {
           if (payload.room.includes(selectedChat.id)) {
             Logger.warn("llm-response-started", payload.room);
-            setAnswerPending(true);
+            setAnswerPending({ pending: true, phase: "one-shot" });
           }
         }
       );
@@ -103,7 +148,7 @@ export default function Chat({
         (payload: { room: string }) => {
           if (payload.room.includes(selectedChat.id)) {
             Logger.warn("llm-response-ended", payload.room);
-            setAnswerPending(false);
+            setAnswerPending({ pending: true, phase: "one-shot" });
           }
         }
       );
@@ -112,7 +157,7 @@ export default function Chat({
         "message-error",
         (payload: { error?: string }) => {
           toast.error(payload.error ?? "Unknown error");
-          setAnswerPending(false);
+          setAnswerPending({ pending: true, phase: "one-shot" });
           if (payload.error) {
             setSelectedChatMessages((messages) => [
               ...messages,
@@ -133,12 +178,14 @@ export default function Chat({
     }
   }, [
     callback,
+    chatResponseMode,
     provisionalText,
     selectedChat,
     selectedChat.id,
     session.user.id,
     session.user.name,
     socket,
+    streamingJsonParser,
     token,
   ]);
   // const playVoice = useCallback(
@@ -196,16 +243,39 @@ export default function Chat({
   }, []);
 
   const provisionalConversation = useMemo(() => {
-    if (!provisionalText)
+    const answer = provisionalResponse;
+    let text = "";
+    if (Array.isArray(answer)) {
+      const oneShot = answer[0];
+      const critique = answer[1];
+      const refined = answer[2];
+      // console.log(streamingJsonParser.id, "ITEM", item)
+      if (oneShot) {
+        text = (oneShot.answer as string) || "";
+      }
+      if (critique) {
+        setAnswerPending({ pending: true, phase: "critique" });
+        text += `\n### --- critique ---\n ${
+          (critique.critique as string) || ""
+        }`;
+      }
+      if (refined) {
+        setAnswerPending({ pending: true, phase: "refine" });
+        text += `\n### --- refined --- \n ${(refined.refined as string) || ""}`;
+      }
+    } else {
+      text = (answer?.answer ?? "") as string;
+    }
+    if (!answer || !text || text.trim().length === 0) {
       return { ...selectedChat, messages: selectedChatMessages };
-    const text = cleanUpText(provisionalText);
-    if (text.trim().length === 0) return { ...selectedChat, messages: selectedChatMessages };
+    }
+
     return {
       ...selectedChat,
       messages: [
         ...selectedChatMessages,
         {
-          id: generateId(),
+          id: "provisional",
           text: text ?? "",
           sender: {
             id: "bot",
@@ -225,13 +295,14 @@ export default function Chat({
         } as MessageWithRelations,
       ],
     };
-  }, [provisionalText, selectedChat, selectedChatMessages]);
+  }, [provisionalResponse, selectedChat, selectedChatMessages]);
 
   if (!session.user?.email) throw new Error("No user email");
   return (
     <SideBarPaddedContainer>
       <RoomJoiner room={selectedChat.id} type="private" />
       <ChatDisplay
+        chatResponseMode={chatResponseMode}
         chatType="private"
         answerPending={answerPending}
         soundPending={false}
@@ -244,18 +315,9 @@ export default function Chat({
         viewer={session.user as Viewer}
         onClearChatClicked={handleClearChatClicked}
         notifyNewMessage={handleNotifyCallbackSet}
+        onChatResponseModeChanged={setChatResponseMode}
         isConnected={socket.status === "authenticated" ?? false}
       />
     </SideBarPaddedContainer>
   );
 }
-function cleanUpText(provisionalText: string) {
-  const [, responseHead] = (provisionalText ?? "").split('answer": "');
-  const [response] = (responseHead ?? "").split('"confidence": "');
-  const lastQuote = (response ?? "").lastIndexOf('confidence');
-  let text = (response ?? "").substring(0, lastQuote >= 0 ? lastQuote : (response ?? "").length);
-  text = text.replace(/\\n/g, "\n");
-  text = text.endsWith("\\") ? text.substring(0, text.length - 1) : text;
-  return text;
-}
-
