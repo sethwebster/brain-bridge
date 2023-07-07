@@ -23,7 +23,6 @@
     "@types/express": "^4.17.17",
     "@types/morgan": "^1.9.4",
     "@types/node": "^20.3.1",
-    "@zilliz/milvus2-sdk-node": "^2.2.18",
     "cheerio": "1.0.0-rc.12",
     "cohere-ai": "^6.2.2",
     "cors": "^2.8.5",

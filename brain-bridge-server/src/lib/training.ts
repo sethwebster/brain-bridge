@@ -1,9 +1,7 @@
 import fs from 'fs'
-import { Milvus } from "langchain/vectorstores/milvus";
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import Cohere from "cohere-ai";
 import { Prisma, type TrainingSource } from '@prisma/client';
-import tiktoken from '@dqbd/tiktoken';
 import path from 'path';
 import fetch from 'node-fetch';
 import { Document } from "langchain/document";
@@ -17,8 +15,7 @@ import cleanUpHtml from './clean-up-html.ts';
 import { TrainingStages } from '../api-v1/sockets/trainingHandler.ts';
 import { CachedEmbeddings } from './CachedEmbeddings.ts';
 import { getTokensForStringWithRetry } from './get-tokens-for-string.ts';
-import weaviate, { WeaviateClient, ObjectsBatcher, ApiKey } from 'weaviate-ts-client';
-import { generateUniqueClientId } from './generate-id.ts';
+import weaviate, {  } from 'weaviate-ts-client';
 import invariant from 'tiny-invariant';
 
 interface TrainingSetBuilderOptions {

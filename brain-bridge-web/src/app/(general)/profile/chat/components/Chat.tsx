@@ -148,7 +148,7 @@ export default function Chat({
         (payload: { room: string }) => {
           if (payload.room.includes(selectedChat.id)) {
             Logger.warn("llm-response-ended", payload.room);
-            setAnswerPending({ pending: true, phase: "one-shot" });
+            setAnswerPending({ pending: false, phase: "one-shot" });
           }
         }
       );
@@ -157,7 +157,7 @@ export default function Chat({
         "message-error",
         (payload: { error?: string }) => {
           toast.error(payload.error ?? "Unknown error");
-          setAnswerPending({ pending: true, phase: "one-shot" });
+          setAnswerPending({ pending: false, phase: "one-shot" });
           if (payload.error) {
             setSelectedChatMessages((messages) => [
               ...messages,

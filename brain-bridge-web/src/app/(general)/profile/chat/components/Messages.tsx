@@ -3,25 +3,11 @@ import {
   type ChatResponseMode,
   type MessageWithRelations,
 } from "~/data/interfaces/types";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { ScrollOnReRender } from "./ScrollOnReRender";
 import { TypingIndicator } from "./TypingIndicator";
 import invariant from "tiny-invariant";
-import { type NormalComponents } from "react-markdown/lib/complex-types";
-import { type SpecialComponents } from "react-markdown/lib/ast-to-react";
+import Markdown from "~/app/components/Markdown";
 
-const MarkdownComponents: Partial<
-  Omit<NormalComponents, keyof SpecialComponents> & SpecialComponents
-> = {
-  h1: (props) => <h1 {...props} className="mb-4 mt-8 text-2xl font-bold" />,
-  h2: (props) => <h2 {...props} className="mb-4 mt-8 text-xl font-bold" />,
-  h3: (props) => <h3 {...props} className="mb-4 mt-8 text-lg font-bold" />,
-  p: (props) => <p {...props} className="[&:not(:first-child)]:pt-4">{props.children}</p>,
-  ul: ({ children }) => <ul className="list-disc p-2 px-4">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal p-2 px-4">{children}</ol>,
-  li: ({ children }) => <li className="p-2 px-4">{children}</li>,
-};
 
 export function Messages({
   messages,
@@ -87,12 +73,7 @@ export function Messages({
               <>
                 {/* {message.sender.id}.{message.sender.name}.{userName} */}
                 <div className="text-slate-200 dark:text-slate-300">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={MarkdownComponents}
-                  >
-                    {message.text}
-                  </ReactMarkdown>
+                  <Markdown markdown={message.text} />
                 </div>
               </>
             </div>

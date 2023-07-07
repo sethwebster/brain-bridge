@@ -150,22 +150,20 @@ export function AutoTraining({
       text = `
         Sounds good. Let's get started. Using the information you now understand, we're going to work to refine the prompt that follows.
 
-        ${oldPrompt}
-
-        Ask the user what seems to be working, and what isn't. Then, generate a new prompt that follows the original format, but incorporates their feedback. Think step-by-step.
-        Do not just generate a new prompt automatically, talk with the human about it first. And make sure to FILL OUT ALL SECTIONS with HUMAN input.
+        Ask me what seems to be working, and what isn't. Then, generate a new prompt that follows the original format, but incorporates my feedback. Think step-by-step.
+        Do not just generate a new prompt automatically, talk with the human about it first. And make sure to FILL OUT ALL SECTIONS with MY input.
 
         Your next response should be THIS, and nothing different:
 
         Let's work on refining your prompt. For reference, here is your current prompt:
-        \`\`\`  
+        \`\`\`yaml
         ${oldPrompt}
         \`\`\`
 
         What's working well? What isn't? You can also ask me to just start over if you want to try a new prompt.
-      `;
-    }
-
+        `;
+      }
+      
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
     debounce(() => {
       socket.sendMessage("prompt-generator-message", {

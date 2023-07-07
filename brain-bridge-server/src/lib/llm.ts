@@ -10,7 +10,7 @@ import { SimilaritySearchResult, SimilaritySearcher } from "./SimilaritySearchRe
 const model = new OpenAIChat({
   temperature: 0,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: 'gpt-3.5-turbo-0613',
+  modelName: 'gpt-3.5-turbo-16k',
   maxTokens: -1,
   streaming: true
 });

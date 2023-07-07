@@ -8,11 +8,11 @@ import { promptGeneratorPrompt } from "../../lib/prompt-templates.ts";
 const model = new OpenAIChat({
   temperature: 0,
   openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: 'gpt-3.5-turbo-0613',
+  modelName: 'gpt-4',
   maxTokens: -1
 });
 
-const additionalHistory = [
+const additionalHistory2 = [
   "gen-bot: How can I help you?",
   "{username}: I need you to help be generate a great prompt for another bot I am creating.",
   "gen-bot: I can do that. How would you like me to help?",
@@ -55,16 +55,17 @@ const additionalHistory = [
 
 ]
 
+const additionalHistory: string[] = [];
 
 export function promptGeneratorHandler(socket: Socket, io: Server) {
 
   socket.on("prompt-generator-message", async (data) => {
     try {
       const { data: { message, history, mode, userName } } = data as { data: { userName: string, history: string, message: MessageWithRelations; mode: "one-shot" | "critique" | "refine"; }; };
-
+      console.log("prompt-generator-message", data);
       setTimeout(() => socket.emit('llm-response-started', {}), 100);
       const promptTemplate = new PromptTemplate({
-        template: promptGeneratorPrompt,
+        template: promptGeneratorPrompt.replace("{username}", userName),
         inputVariables: ["history", "prompt"]
       });
 

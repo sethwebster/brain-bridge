@@ -170,8 +170,8 @@ function Sources({
               mimeType: mimeType,
             });
           });
-
-          onSourcesChanged(updated);
+          const deduplicated = R.uniqBy(R.prop("name"), updated);
+          onSourcesChanged(deduplicated);
           setInProcessFiles([]);
         })
         .catch((err) => {
