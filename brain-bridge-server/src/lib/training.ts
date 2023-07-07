@@ -145,7 +145,7 @@ export class TrainingSetBuilder {
     const list = await generateDocumentList(trainingSources);
     Cohere.init(process.env.COHERE_API_KEY!)
     // if (trainingSources.length === 0) throw new Error("No documents to vectorize!");
-    console.log("Vectorizing documents...");
+    console.log("Vectorizing documents (weaviate)...");
     const buildResult: BuildResult = {
       tokensUsed: 0,
       cost: 0
