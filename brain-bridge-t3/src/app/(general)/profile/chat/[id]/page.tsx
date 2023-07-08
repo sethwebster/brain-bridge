@@ -3,7 +3,6 @@ import { getServerSession } from "~/server/auth";
 import Chat from "../components/Chat";
 import { Suspense } from "react";
 import ServerData from "~/server/server-data";
-import RoomJoiner from "../../components/RoomJoiner";
 
 async function PageContent({ id }: { id: string }) {
   const session = await getServerSession();

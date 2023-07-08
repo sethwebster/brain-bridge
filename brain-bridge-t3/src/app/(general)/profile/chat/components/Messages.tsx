@@ -1,6 +1,6 @@
 "use client";
 import {
-  ChatResponseMode,
+  type ChatResponseMode,
   type MessageWithRelations,
 } from "~/data/interfaces/types";
 import ReactMarkdown from "react-markdown";

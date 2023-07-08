@@ -2,7 +2,7 @@
 import { useRef } from "react";
 import { twMerge } from "tailwind-merge";
 import { SpeakerIcon } from "~/app/components/SvgIcons";
-import { ChatResponseMode } from "~/data/interfaces/types";
+import { type ChatResponseMode } from "~/data/interfaces/types";
 
 interface TypingIndicatorProps {
   phase: ChatResponseMode;

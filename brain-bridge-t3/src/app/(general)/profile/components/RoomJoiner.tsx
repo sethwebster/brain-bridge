@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect } from "react";
-import { useAuthToken } from "~/hooks/useAuthToken";
 import useSocket from "~/hooks/use-socket";
 import Logger from "~/lib/logger";
 

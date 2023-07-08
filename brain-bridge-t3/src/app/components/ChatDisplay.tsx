@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import NewMessageBox from "./NewMessageBox";
 import { ChatToolbar } from "./ChatToolbar";
 import { type Participant } from "@prisma/client";

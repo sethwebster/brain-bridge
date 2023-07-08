@@ -8,7 +8,7 @@ import Logger from "~/lib/logger";
 import { type RoomType } from "~/app/(general)/profile/components/RoomJoiner";
 
 function logger<T>(message: string, data: T, sendOrReceived: "send" | "received") {
-  // Logger.info(`[${sendOrReceived}] Socket Message: `, message, data);
+  Logger.info(`[${sendOrReceived}] Socket Message: `, message, data);
 }
 
 type JoinPayload = {

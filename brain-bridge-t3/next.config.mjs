@@ -19,9 +19,6 @@ const config = {
   //   defaultLocale: "en",
   // },
   webpack: (config) => {
-    // Added to solve the "please install hnswlib-node" error
-    config.externals = [...config.externals, "hnswlib-node"]
-
     return config
   },
   images: {
