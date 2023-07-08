@@ -77,16 +77,29 @@ export abstract class GenericMessageHandler<O> {
           break;
       }
     } catch (e: any) {
-      if (e.response && e.response.errors) {
-        const first = e.response.errors.at(0);
-        if (first.message.includes("401 error")) {
-          this.socket.emit(`${event}-error`, { error: "Invalid OpenAI Api Key" });
-        } else {
-          this.socket.emit(`${event}-error`, e.response.errors.at(0));
-        }
-        // console.error("**** ERROR **** \n", JSON.stringify(e, null, 2))
-      } else {
-        this.socket.emit(`${event}-error`, e);
+      console.log('genericMessageHandler.ts: handle: error: ', e.message, 'event: ', event, 'data: ', { data: { mode, message } })
+      switch (true) {
+        case !!e.response && !!e.response.errors:
+          const first = e.response.errors.at(0);
+          if (first.message.includes("401 error")) {
+            this.socket.emit(`${event}-error`, { error: "Invalid OpenAI Api Key" });
+          } else {
+            this.socket.emit(`${event}-error`, e.response.errors.at(0));
+          }
+          break;
+        case e.message:
+          this.socket.emit(`${event}-error`, { "message": true, error: e.message });
+          break;
+        case typeof e === "object" && Object.keys(e).length === 0:
+          const message = e.message ? e.message : e.toString();
+
+          this.socket.emit(`${event}-error`, { error: message.replace("Error:", "").replace("Invariant failed:", "").trim() });
+          break;
+        default:
+          console.log(Object.keys(e));
+          console.log("DEFAULT", typeof e, e.toString(), "JSON", JSON.stringify(e, null, 2))
+          this.socket.emit(`${event}-error`, { noMessage: true, error: e });
+
       }
     }
   }

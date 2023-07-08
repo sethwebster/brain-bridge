@@ -1,7 +1,7 @@
 import { type MessageWithRelations } from "~/data/interfaces/types";
 import generateId from "./generate-id";
 
-export default function generateChatErrorMessage(error: string): MessageWithRelations {
+export default function generateChatErrorMessage(error: string, withDefault: boolean = true): MessageWithRelations {
   return {
     id: generateId(),
     conversationId: generateId(),
@@ -20,7 +20,7 @@ export default function generateChatErrorMessage(error: string): MessageWithRela
       publicChatInstanceId: null,
     },
     text: error
-      ? `❌ So sorry! It looks like we failed to get a response to your message. We're working on it! Message: "${error}"`
+      ? `❌ ${withDefault ? "So sorry! It looks like we failed to get a response to your message. We're working on it! Message: ":" "}"${error}"`
       : `❌ So sorry! It looks like we failed to get a response to your message. We're working on it!`,
   }
 } 

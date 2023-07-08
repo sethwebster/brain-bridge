@@ -85,22 +85,23 @@ export default function Chat({
               switch (chatResponseMode) {
                 case "one-shot":
                   pending =
-                    (message.at(0) as { answer: string })?.answer?.length === 0 ??
-                    true;
+                    (message.at(0) as { answer: string })?.answer?.length ===
+                      0 ?? true;
                   break;
                 case "critique":
                   pending =
-                    (message.at(1) as { critique: string })?.critique?.length ===
-                      0 ?? true;
+                    (message.at(1) as { critique: string })?.critique
+                      ?.length === 0 ?? true;
                   break;
                 case "refine":
                   pending =
                     (message.at(2) as { refined: string })?.refined?.length ===
-                      0 ?? true;  
+                      0 ?? true;
                   break;
               }
             } else {
-              pending = (message as { answer: string })?.answer?.length === 0 ?? true;
+              pending =
+                (message as { answer: string })?.answer?.length === 0 ?? true;
               console.log(message, pending);
             }
             setAnswerPending({ pending, phase: responsePhase });
@@ -150,14 +151,21 @@ export default function Chat({
       const removeErrorListener = socket.onMessage(
         "message-error",
         (payload: { error?: string }) => {
-          console.log("ERR", payload)
+          console.log("ERR", payload);
           toast.error(payload.error ?? "Unknown error");
           setAnswerPending({ pending: false, phase: "one-shot" });
           if (payload.error) {
-            setSelectedChatMessages((messages) => [
-              ...messages,
-              generateChatErrorMessage(payload.error ?? "Unknown error"),
-            ]);
+            if (payload.error === "Invalid OpenAI Api Key") {
+              setSelectedChatMessages((messages) => [
+                ...messages,
+                generateChatErrorMessage("No valid OpenAI Api key was found. Check your settings page." ?? "Unknown error", false),
+              ]);
+            } else {
+              setSelectedChatMessages((messages) => [
+                ...messages,
+                generateChatErrorMessage(payload.error ?? "Unknown error"),
+              ]);
+            }
           }
         }
       );
