@@ -13,7 +13,6 @@ const metadata = {
 };
 
 export function generateMetadata(): Metadata {
-  console.log("generateMetadata");
   return {
     ...metadata,
     title: process.env.NEXT_PUBLIC_VERCEL_ENV === "production"
