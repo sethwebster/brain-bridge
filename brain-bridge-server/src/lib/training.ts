@@ -15,8 +15,10 @@ import cleanUpHtml from './clean-up-html.ts';
 import { TrainingStages } from '../api-v1/sockets/trainingHandler.ts';
 import { CachedEmbeddings } from './CachedEmbeddings.ts';
 import { getTokensForStringWithRetry } from './get-tokens-for-string.ts';
-import weaviate, {  } from 'weaviate-ts-client';
+import weaviate, { WeaviateClient } from 'weaviate-ts-client';
 import invariant from 'tiny-invariant';
+import { initializeClient } from './WeviateSimilaritySearcher.ts';
+import ServerData from './server-data.ts';
 
 interface TrainingSetBuilderOptions {
   maxSegmentLength?: number;
@@ -28,6 +30,7 @@ interface TrainingSetBuilderParams {
   onProgress: ProgressNotifier;
   userId: string;
   options?: TrainingSetBuilderOptions;
+  openAIApiKey: string;
 }
 
 
@@ -40,22 +43,16 @@ export interface BuildResult {
   cost: number;
 }
 
-invariant(process.env.WEAVIATE_HOST, "WEAVIATE_URL must be set in .env");
-const client = weaviate.client({
-  scheme: 'http',
-  host: process.env.WEAVIATE_HOST,
-  headers: {
-    'X-OpenAI-Api-Key': process.env.OPENAI_API_KEY,
-  },
-})
+
 
 export class TrainingSetBuilder {
   private trainingSet: TrainingSetWithRelations;
   private onProgress: ProgressNotifier;
   private userId: string;
+  private openAIApiKey: string;
   private options: TrainingSetBuilderOptions;
-
-  constructor({ trainingSet, onProgress, userId, options }: TrainingSetBuilderParams) {
+  private client: WeaviateClient;
+  constructor({ trainingSet, onProgress, userId, options, openAIApiKey }: TrainingSetBuilderParams) {
 
     this.trainingSet = trainingSet;
     this.onProgress = onProgress;
@@ -64,7 +61,10 @@ export class TrainingSetBuilder {
       maxSegmentLength: parseInt(((options?.maxSegmentLength ?? 2000).toString())),
       overlapBetweenSegments: parseInt(((options?.overlapBetweenSegments ?? 200).toString())),
     }
-
+    invariant(process.env.WEAVIATE_HOST, "WEAVIATE_URL must be set in .env");
+    invariant(openAIApiKey, "OpenAI API key not found");
+    this.client = initializeClient(openAIApiKey);
+    this.openAIApiKey = openAIApiKey;
   }
 
   async build(onTokensUsed?: (buildResult: BuildResult) => void): Promise<BuildResult> {
@@ -123,15 +123,15 @@ export class TrainingSetBuilder {
 
     console.log("Creating schema...");
     try {
-      const existingClass = await client.schema.classGetter().withClassName(set).do();
+      const existingClass = await this.client.schema.classGetter().withClassName(set).do();
       if (existingClass) {
-        const destroy = await client.schema.classDeleter().withClassName(set).do();
+        const destroy = await this.client.schema.classDeleter().withClassName(set).do();
         console.log("Schema deleted.", destroy)
       }
     } catch (e) {
       console.log("Error deleting schema", e)
     }
-    const res = await client.schema.classCreator().withClass(schema).do();
+    const res = await this.client.schema.classCreator().withClass(schema).do();
     console.log("Created schema.");
   }
 
@@ -168,7 +168,7 @@ export class TrainingSetBuilder {
     //   throw e;
     // }
     // const embedder = new OpenAIEmbeddings();
-    const embedder = new CachedEmbeddings();
+    const embedder = new CachedEmbeddings(this.openAIApiKey);
 
     let time = 0;
     // takes 10 seconds/batch
@@ -196,7 +196,7 @@ export class TrainingSetBuilder {
         console.log("Vectoring batch", batchCount - batches.length + 1, "of", batchCount)
         const batch = batches.shift();
         if (!batch) break;
-        const batcher = client.batch.objectsBatcher();
+        const batcher = this.client.batch.objectsBatcher();
         try {
           const set = `Training_Set_${this.trainingSet.id}`
           const documents = batch.map((b, i) => b.loadedContent).flat();

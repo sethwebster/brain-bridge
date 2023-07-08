@@ -3,7 +3,7 @@ import { ConversationWithRelations, MessageWithRelations, PublicChatInstanceWith
 import invariant from "tiny-invariant";
 import ServerData from "../../lib/server-data.ts";
 import { prisma } from "../../lib/db.ts";
-import { Participant, PublicChatInstance } from "@prisma/client";
+import { Participant, PublicChatInstance, User, UserSettings } from "@prisma/client";
 import { Optional } from "langchain/dist/types/type-utils";
 
 export type TokenUsageFn = (count: number) => void;
@@ -76,9 +76,18 @@ export abstract class GenericMessageHandler<O> {
           this.sendToRoom({ message: newMessagePublic });
           break;
       }
-    } catch (e) {
-      console.error(e);
-      this.socket.emit(`${event}-error`, e);
+    } catch (e: any) {
+      if (e.response && e.response.errors) {
+        const first = e.response.errors.at(0);
+        if (first.message.includes("401 error")) {
+          this.socket.emit(`${event}-error`, { error: "Invalid OpenAI Api Key" });
+        } else {
+          this.socket.emit(`${event}-error`, e.response.errors.at(0));
+        }
+        // console.error("**** ERROR **** \n", JSON.stringify(e, null, 2))
+      } else {
+        this.socket.emit(`${event}-error`, e);
+      }
     }
   }
 
@@ -177,7 +186,7 @@ export abstract class GenericMessageHandler<O> {
 
 
 export abstract class
-GenericMessageHandlerWithCosts<O> extends GenericMessageHandler<O> {
+  GenericMessageHandlerWithCosts<O> extends GenericMessageHandler<O> {
   async generateResponse(conversation: ConversationWithRelations | PublicChatInstance, data: MessageWithRelations, chatResponseMode: ChatResponseMode): Promise<MessageWithRelations> {
     const costs = {
       tokens: 0,
@@ -195,6 +204,11 @@ GenericMessageHandlerWithCosts<O> extends GenericMessageHandler<O> {
   }
 
   abstract generateResponseWithCost(conversation: ConversationWithRelations | PublicChatInstance, data: MessageWithRelations, chatResponseMode: ChatResponseMode, tokensUsedCallback: TokenUsageFn): Promise<MessageWithRelations>;
+
+  async getCurrentUser(): Promise<User & { userSettings: UserSettings[] } | null> {
+    invariant(this.socket.decodedToken?.sub, "User ID must exist")
+    return ServerData.fetchUserById(this.socket.decodedToken.sub);
+  }
 
   async saveUsage(conversationOrPublicChatInstance: Pick<ConversationWithRelations, "id" | "trainingSet"> | Pick<PublicChatInstanceWithRelations, "id" | "publicChatId">, cost: { tokens: number; stored: boolean; }) {
     if ((conversationOrPublicChatInstance as PublicChatInstanceWithRelations).publicChatId) {

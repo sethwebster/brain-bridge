@@ -26,10 +26,14 @@ type DocumentWithHashAndCache = {
 
 export class CachedEmbeddings {
 
-  embedder = new OpenAIEmbeddings({
-    openAIApiKey: process.env.OPENAI_API_KEY!,
-    modelName: "text-embedding-ada-002"
-  });
+  private embedder: OpenAIEmbeddings;
+
+  constructor(openAIApiKey: string) {
+    this.embedder = new OpenAIEmbeddings({
+      openAIApiKey: openAIApiKey,
+      modelName: "text-embedding-ada-002"
+    });
+  }
 
   async embedDocuments(documents: string[]): Promise<number[][]> {
 
@@ -43,7 +47,7 @@ export class CachedEmbeddings {
     const remainingDocuments = todo.map(({ document }) => document);
     const batches = R.splitEvery(100, remainingDocuments);
     const rawEmbeddingPromises = batches.map(async (batch, i) => {
-      console.log("Embedding batch " + (i+1) + " of " + batches.length + " batches.")
+      console.log("Embedding batch " + (i + 1) + " of " + batches.length + " batches.")
       return await this.embedder.embedDocuments(batch)
     });
 

@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { twMerge as twm } from "tailwind-merge";
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  onClick: () => void;
+  onClick?: () => void;
   className?: string;
 } & (
     | {
@@ -21,7 +21,7 @@ export default function Button(props: ButtonProps) {
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
       e.stopPropagation();
-      onClick();
+      onClick?.();
     },
     [onClick]
   );
@@ -30,9 +30,12 @@ export default function Button(props: ButtonProps) {
     className
   );
   return (
-    <button {...props} onClick={handleClick} className={combinedClassNameWithDarkStyles}>
+    <button
+      {...props}
+      onClick={onClick ? handleClick : undefined}
+      className={combinedClassNameWithDarkStyles}
+    >
       {label || children}
     </button>
   );
 }
-

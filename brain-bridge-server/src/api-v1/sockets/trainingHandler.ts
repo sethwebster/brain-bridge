@@ -4,6 +4,7 @@ import { Server, Socket } from "socket.io";
 import Mutex from "../../lib/mutex.ts";
 import { getRoomId } from "./roomsHandler.ts";
 import { BuildResult, TrainingSetBuilder } from "../../lib/training.ts";
+import ServerData from "../../lib/server-data.ts";
 
 export type TrainingStages = "overall" |
   "sources-load" |
@@ -100,15 +101,23 @@ export function trainingHandler(socket: Socket, io: Server) {
       }
     });
 
+
     if (!set) {
       emit("training-error", { error: "Training set not found" });
       return;
     }
 
+
     if (set.version === set.trainingIndexVersion) {
       emit("training-error", { error: "Training set is already up to date" });
       return;
     }
+
+    const user = await ServerData.fetchUserById(set?.userId);
+    invariant(user, "User not found");
+    const settings = user.userSettings[0];
+    invariant(settings, "User settings not found");
+    invariant(settings.openAIApiKey, "OpenAI API Key not found");
 
     emit("training-started", { id });
 
@@ -150,6 +159,7 @@ export function trainingHandler(socket: Socket, io: Server) {
       const options = { ...{ maxSegmentLength: 2000, overlapBetweenSegments: 200 }, ...((set.trainingOptions as object) ?? {}) }
       const builder = new TrainingSetBuilder(
         {
+          openAIApiKey: settings.openAIApiKey,
           trainingSet: set,
           onProgress: progressNotifiier,
           options,

@@ -86,7 +86,7 @@ export function Messages({
           />
         )}
       </ul>
-      <div className="">
+      <div className="mb-32">
         <ScrollOnReRender />
       </div>
     </>

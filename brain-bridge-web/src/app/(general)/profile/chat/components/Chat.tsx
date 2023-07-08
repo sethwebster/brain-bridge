@@ -150,6 +150,7 @@ export default function Chat({
       const removeErrorListener = socket.onMessage(
         "message-error",
         (payload: { error?: string }) => {
+          console.log("ERR", payload)
           toast.error(payload.error ?? "Unknown error");
           setAnswerPending({ pending: false, phase: "one-shot" });
           if (payload.error) {

@@ -6,16 +6,6 @@ import { CRITIQUE_PROMPT, REFINE_PROMPT } from "./prompt-templates.ts";
 import { ChatResponseMode } from "~/api-v1/sockets/types.ts";
 import { SimilaritySearchResult, SimilaritySearcher } from "./SimilaritySearchResult.ts";
 
-
-const model = new OpenAIChat({
-  temperature: 0,
-  openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: 'gpt-3.5-turbo-16k',
-  maxTokens: -1,
-  streaming: true
-});
-
-
 export interface LangChainStore {
   getLangChainResponse: (indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine") => Promise<string>;
 }
@@ -59,7 +49,14 @@ const DEFAULT_ADDITIONAL_OPTIONS: BrainBridgeAdditionalOptions = {
 interface BrainBridgeLangChainOptions {
   similaritySearcher: SimilaritySearcher;
   handlers: BrainBridgeLangChainHandlers,
-  options?: BrainBridgeAdditionalOptions
+  options?: BrainBridgeAdditionalOptions,
+  openAIApiKey: string;
+  models?: {
+    "one-shot": string;
+    "critique": string;
+    "refine": string;
+    "summarize": string;
+  }
 }
 
 export class BrainBridgeLangChain implements LangChainStore {
@@ -68,20 +65,33 @@ export class BrainBridgeLangChain implements LangChainStore {
   private _onTokenReceived: (token: string, responsePhase: ChatResponseMode) => void = () => { };
   private _additionalOptions: BrainBridgeAdditionalOptions = DEFAULT_ADDITIONAL_OPTIONS;
   private _similaritySearcher: SimilaritySearcher;
-
-  constructor({ similaritySearcher, handlers: { onLowConfidenceAnswer, onTokensUsed, onTokenReceived }, options }: BrainBridgeLangChainOptions) {
+  private _openAIApiKey: string;
+  private _models: {
+    "one-shot": string
+    "critique": string;
+    "refine": string;
+    "summarize": string;
+  } = {
+      "one-shot": 'gpt-3.5-turbo-0613',
+      "critique": 'gpt-3.5-turbo-0613',
+      "refine": 'gpt-3.5-turbo-0613',
+      "summarize": 'gpt-3.5-turbo-0613',
+    }
+  constructor({ openAIApiKey, models, similaritySearcher, handlers: { onLowConfidenceAnswer, onTokensUsed, onTokenReceived }, options }: BrainBridgeLangChainOptions) {
     this._similaritySearcher = similaritySearcher;
     this._lowConfidenceAnswerHandler = onLowConfidenceAnswer;
     this._onTokensUsed = onTokensUsed;
     this._onTokenReceived = onTokenReceived;
     this._additionalOptions = { ...DEFAULT_ADDITIONAL_OPTIONS, ...(options ?? {}) };
+    this._openAIApiKey = openAIApiKey;
+    this._models = { ...this._models, ...(models ?? {}) };
   }
 
   async summarizeConversation(text: string) {
     const model = new OpenAIChat({
       temperature: 0,
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: 'gpt-3.5-turbo-0613',
+      openAIApiKey: this._openAIApiKey,
+      modelName: this._models.summarize,
       maxTokens: -1,
     });
     const promptTemplate = new PromptTemplate({
@@ -135,6 +145,14 @@ export class BrainBridgeLangChain implements LangChainStore {
       inputVariables: ["history", "context", "prompt"]
     });
 
+    const model = new OpenAIChat({
+      temperature: 0,
+      openAIApiKey: this._openAIApiKey,
+      modelName: this._models["one-shot"],
+      maxTokens: -1,
+      streaming: true,
+    });
+
     const llmChain = new LLMChain({
       llm: model,
       prompt: promptTemplate,
@@ -142,8 +160,9 @@ export class BrainBridgeLangChain implements LangChainStore {
 
     console.time("similarity-search")
     const set = `Training_Set_${indexId}`
+    console.log("NEAREST", this._additionalOptions.numberOfNearestNeighbors ?? 2)
     const context = await this._similaritySearcher.similaritySearchToContext(userPrompt, this._additionalOptions.numberOfNearestNeighbors ?? 2);
-
+    console.log(this._additionalOptions);
     console.log("[llm-request]", userPrompt, context, history, mode);
     console.time("llm-request")
     let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history: historyString }, "one-shot");
@@ -192,7 +211,7 @@ export class BrainBridgeLangChain implements LangChainStore {
     const result = await llmChain.call(fields, [
       {
         handleLLMNewToken(token: string) {
-          console.log("[llm-token]", token, responsePhase, otr);
+          // console.log("[llm-token]", token, responsePhase, otr);
           otr(token, responsePhase);
         },
       },
@@ -263,6 +282,13 @@ export class BrainBridgeLangChain implements LangChainStore {
 
   private async critique(firstResponse: string, userPrompt: string, history: string[]) {
     const promptTemplate = CRITIQUE_PROMPT;
+    const model = new OpenAIChat({
+      temperature: 0,
+      openAIApiKey: this._openAIApiKey,
+      modelName: this._models.critique,
+      maxTokens: -1,
+      streaming: true,
+    });
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 
@@ -274,6 +300,13 @@ export class BrainBridgeLangChain implements LangChainStore {
 
   private async refine(critique: string, firstResponse: string, userPrompt: string, history: string[]) {
     const promptTemplate = REFINE_PROMPT;
+    const model = new OpenAIChat({
+      temperature: 0,
+      openAIApiKey: this._openAIApiKey,
+      modelName: this._models.refine,
+      maxTokens: -1,
+      streaming: true,
+    });
 
     const llmChain = new LLMChain({ llm: model, prompt: promptTemplate });
 

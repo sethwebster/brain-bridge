@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  directUrl =  env("DATABASE_DIRECT_URL")
+  directUrl  = env("DATABASE_DIRECT_URL")
   extensions = [pgvector(map: "vector")]
 }
 
@@ -155,11 +155,11 @@ model PublicChatInstance {
 }
 
 model VectorCache {
-  id            String      @id @default(cuid())
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  embedding     Unsupported("vector(1536)")?
-  hash          String      @unique
+  id        String                       @id @default(cuid())
+  createdAt DateTime                     @default(now())
+  updatedAt DateTime                     @updatedAt
+  embedding Unsupported("vector(1536)")?
+  hash      String                       @unique
 }
 
 /// //////////////////////////
@@ -204,6 +204,13 @@ model User {
   trainingSetSharesAccepted TrainingSetShares[] @relation("acceptedUser")
   trainingSetSharesOutgoing TrainingSetShares[] @relation("owner")
   usage                     Usage[]
+  userSettings              UserSettings[]
+}
+
+model UserSettings {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  openAIApiKey String?
 }
 
 model VerificationToken {

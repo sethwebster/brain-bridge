@@ -4,13 +4,8 @@ import { Server, Socket } from "socket.io";
 import { MessageWithRelations } from "./types.ts";
 import { LLMResponse } from "../../lib/llm.ts";
 import { promptGeneratorPrompt } from "../../lib/prompt-templates.ts";
-
-const model = new OpenAIChat({
-  temperature: 0,
-  openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: 'gpt-4',
-  maxTokens: -1
-});
+import ServerData from "../../lib/server-data.ts";
+import invariant from "tiny-invariant";
 
 const additionalHistory2 = [
   "gen-bot: How can I help you?",
@@ -67,6 +62,20 @@ export function promptGeneratorHandler(socket: Socket, io: Server) {
       const promptTemplate = new PromptTemplate({
         template: promptGeneratorPrompt.replace("{username}", userName),
         inputVariables: ["history", "prompt"]
+      });
+
+      const {sub} = socket.decodedToken;
+      const user = await ServerData.fetchUserById(sub);
+      invariant(user, "user not found");
+      const settings = user?.userSettings[0];
+      invariant(settings, "user settings not found");
+      const { openAIApiKey } = settings;
+      invariant(openAIApiKey, "openAIApiKey not found");
+      const model = new OpenAIChat({
+        temperature: 0,
+        openAIApiKey: openAIApiKey,
+        modelName: 'gpt-4',
+        maxTokens: -1
       });
 
       const llmChain = new LLMChain({

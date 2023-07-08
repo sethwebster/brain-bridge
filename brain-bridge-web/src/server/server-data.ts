@@ -14,7 +14,7 @@ import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";
 import { prisma } from "./db";
-import { type Prisma, type Participant } from "@prisma/client";
+import { type Prisma, type Participant, UserSettings } from "@prisma/client";
 import Mail from "~/lib/mail";
 import { calculateCost } from "~/lib/calculate-costs";
 import Logger from "~/lib/logger";
@@ -611,6 +611,30 @@ async function fetchCurrentCosts(dateRange?: DateRange) {
   return byMonth;
 }
 
+async function fetchUserSettings() {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to fetch settings");
+  const settings = await prisma.userSettings.findFirst({
+    where: { userId: session.user.id },
+  });
+  return settings;
+}
+
+async function updateUserSettings(settings: UserSettings) {
+  const session = await getServerSession();
+  invariant(session, "User must be logged in to update settings");
+  const newSettings = await prisma.userSettings.upsert({
+    where: { userId: session.user.id },
+    create: {
+      ...settings,
+    },
+    update: {
+      ...settings,
+    },
+  });
+  return newSettings;
+}
+
 
 
 const ServerData = {
@@ -635,7 +659,9 @@ const ServerData = {
   fetchPublicChatInstance,
   fetchPublicChatInstanceForViewer,
   acceptInvitation,
-  fetchCurrentCosts
+  fetchCurrentCosts,
+  fetchUserSettings,
+  updateUserSettings,
 }
 
 export default ServerData;

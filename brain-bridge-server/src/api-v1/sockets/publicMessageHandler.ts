@@ -5,13 +5,15 @@ import replaceTokens from "../../lib/replace-tokens.ts";
 import { storeBotMessage } from "./data-helpers.ts";
 import { MessageWithRelations, PublicChatInstanceWithRelations } from "./types.ts";
 import { promptFooter, promptHeader } from "../../lib/prompt-templates.ts";
-import WeviateSimilaritySearcher from "../../lib/WeviateSimilaritySearcher.ts";
+import WeviateSimilaritySearcher, { initializeClient } from "../../lib/WeviateSimilaritySearcher.ts";
 import { BrainBridgeLangChain, LLMBrainBridgeResponse } from "../../lib/llm.ts";
+import ServerData from "../../lib/server-data.ts";
 
 export async function publicMessageHandler(socket: Socket) {
   socket.on("message-public", async (data) => {
     try {
       const { data: { message, mode } } = data as { token: string; data: { message: MessageWithRelations; mode: "one-shot" | "critique" | "refine"; }; };
+
       invariant(message.publicChatInstanceId, "Public chat instance id must be defined");
       const publicChatInstance = (await prisma.publicChatInstance.findUnique({
         where: {
@@ -41,6 +43,12 @@ export async function publicMessageHandler(socket: Socket) {
 
 
       invariant(publicChatInstance, "Conversation must exist");
+      const user = await ServerData.fetchUserById(publicChatInstance.publicChat.userId);
+      invariant(user, "User must exist");
+      const settings = user.userSettings;
+      invariant(settings, "User settings must exist");
+      const { openAIApiKey } = settings[0];
+
       const bot = publicChatInstance.participants.find(p => p.type === "BOT");
 
       const userMessage = await prisma.message.create({
@@ -88,10 +96,14 @@ export async function publicMessageHandler(socket: Socket) {
         cost.tokens += tokens;
       }
 
-      const searcher = new WeviateSimilaritySearcher(publicChatInstance.publicChat.trainingSet.id);
+      invariant(openAIApiKey, "OpenAI API key must be defined");
+      const client = initializeClient(openAIApiKey)
+
+      const searcher = new WeviateSimilaritySearcher(publicChatInstance.publicChat.trainingSet.id, client);
 
       const llm = new BrainBridgeLangChain(
         {
+          openAIApiKey,
           similaritySearcher: searcher,
           handlers: {
             onLowConfidenceAnswer: (missed) => handleMissedQuestion(missed).catch(err => console.error(err)),

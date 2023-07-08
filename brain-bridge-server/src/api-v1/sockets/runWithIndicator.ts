@@ -5,7 +5,7 @@ export async function runWithIndicator<T>(io: Server, roomId: string, fn: () => 
     setTimeout(() => io.in(roomId).emit('llm-response-started', { room: roomId }), 300);
     return await fn();
   } catch (err: any) {
-    console.log('runWithIndicator', err);
+    // console.log('runWithIndicator', err);
     throw err;
   } finally {
     try {

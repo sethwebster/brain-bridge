@@ -8,7 +8,7 @@ export default function Input(props: InputProps) {
     <input
       {...props}
       className={twMerge(
-        `rounded-md border-slate-500 bg-slate-100 shadow-inner dark:bg-slate-600`,
+        `rounded-md border-slate-500 bg-slate-100 shadow-inner dark:bg-slate-600 p-2`,
         `${props.className || ""}`
       )}
     />
