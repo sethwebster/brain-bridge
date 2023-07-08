@@ -55,6 +55,6 @@
     "@types/turndown": "^5.0.1",
     "@types/url-parse": "^1.4.8",
     "nodemon": "^2.0.22",
-    "prisma": "^4.16.1"
+    "prisma": "^4.16.2"
   }
 }
