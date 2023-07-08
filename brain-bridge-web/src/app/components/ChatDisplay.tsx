@@ -134,7 +134,7 @@ export default function ChatDisplay({
           </div>
         </div>
         <div ref={bottomRef} className="m-6" />
-        <div className="h-20 opacity-0" />
+        {/* <div className="h-20 opacity-0 border border-red-500" /> */}
       </div>
     </div>
   );

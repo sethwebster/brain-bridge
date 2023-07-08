@@ -105,7 +105,7 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
       this.io.in(this.room).emit("message-token", { token, conversationId: conversation.id, responsePhase: responsePhase })
     }
 
-    const searcher = new WeviateSimilaritySearcher(conversation.publicChat.trainingSet.id);
+    const searcher = new WeviateSimilaritySearcher(`Training_Set_${conversation.publicChat.trainingSet.id}`);
 
     const llm = new BrainBridgeLangChain(
       {
@@ -113,7 +113,7 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
         handlers: {
           onLowConfidenceAnswer: (missed) => handleMissedQuestion(missed).catch(err => console.error(err)),
           onTokensUsed,
-          onTokenReceived: () => { },
+          onTokenReceived: handleTokenReceived,
         }
       }
     );

@@ -67,12 +67,6 @@ export default function Chat({
   useEffect(() => {
     if (!selectedChat) return;
     if (socket) {
-      // if (token) socket.join(selectedChat.id, "private");
-      // const leaveRoom = () => {
-      //   if (!token) return;
-      //   socket.leave(selectedChat.id, "private");
-      // };
-
       const removeTokenListener = socket.onMessage(
         "message-token",
         (payload: {
