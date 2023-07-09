@@ -48,7 +48,7 @@ export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
 
   return (
     <>
-      <NewButton onClick={() => setIsOpen(true)} />
+      <NewButton onClick={() => setIsOpen(true)} ariaLabel="Create a new training set" />
       <Modal
         title="New Training Set"
         show={isOpen}

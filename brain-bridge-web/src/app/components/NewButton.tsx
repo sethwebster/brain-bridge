@@ -2,9 +2,9 @@
 
 import React from "react";
 
-function NewButton({ onClick }: { onClick?: () => void; }) {
+function NewButton({ onClick, ariaLabel }: { onClick?: () => void; ariaLabel?: string  }) {
   return (
-    <button className="p-1 text-white bg-blue-400 rounded-md" onClick={onClick}>
+    <button className="p-1 text-white bg-blue-400 rounded-md" onClick={onClick} aria-label={ariaLabel ?? "Create a new item"}>
       <svg
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"

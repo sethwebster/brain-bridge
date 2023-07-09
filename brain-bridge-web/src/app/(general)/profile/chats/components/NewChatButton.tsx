@@ -41,7 +41,7 @@ export function NewChatButton({
         ))}
       </Select>
       {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
-      <NewButton onClick={handleNewChat} />
+      <NewButton onClick={handleNewChat} ariaLabel="Create a new chat" />
     </div>
   );
 }

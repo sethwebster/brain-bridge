@@ -46,7 +46,7 @@ export default function PublicChatsList({
         heading={
           <div className="flex w-full flex-row justify-between">
             <h1 className="text-xl">Public Chats</h1>
-            <NewButton onClick={() => setAddItem(!addItem)} />
+            <NewButton onClick={() => setAddItem(!addItem)} ariaLabel="Create a new Public Chat" />
           </div>
         }
       >
