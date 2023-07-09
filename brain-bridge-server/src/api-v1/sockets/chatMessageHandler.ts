@@ -36,7 +36,7 @@ export class ChatMessageHandler extends GenericMessageHandlerWithCosts<{ message
       this.io.in(this.room).emit("message-token", { token, conversationId: conversation.id, responsePhase: responsePhase })
     }
 
-    const user = await this.getCurrentUser();
+    const user = await ServerData.fetchUserById(conversation.trainingSet.userId);
     invariant(user, "User must be defined");
     invariant(user?.userSettings[0], "User settings must be defined");
     const { openAIApiKey } = user?.userSettings[0];
