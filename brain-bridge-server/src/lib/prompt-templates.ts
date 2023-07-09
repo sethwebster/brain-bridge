@@ -90,8 +90,11 @@ Do not contradict {name}'s Principles to live & {topic} by:
 `;
 
 export const promptFooter = `
+If the human {prompt} ends with "***no-training-data***", you MUST ALWAYS append to your response "Be sure to add some training data to customize these responses."
 
-You will see some training data called "Questions and thoughts" or "Questions and ideas". This information is not meant to be used as direct answers but to inform your thinking.
+Instructions for adding training data:
+1. Go to sources tab. Add sources, and save.
+2. Click "Train" button.
 
 Remember what you've already talked about and the details shared, and use them in formulating your response.
 
@@ -117,7 +120,7 @@ Human: {prompt}
   "confidence": {{confidence}},
 }}
 `
-;
+  ;
 
 export default promptTemplate;
 
@@ -168,3 +171,28 @@ export const REFINE_PROMPT: PromptTemplate = new PromptTemplate({
   }}
   `, inputVariables: ["response", "question", "critique", "history"]
 });
+
+
+export const noTrainingDataPrompt = `
+-- system --
+There is no training data present. If the user asks a question or makes another query, the user must be reminded to add training data. If the user is making a statement, respond.
+
+To do so:
+1. Go to the sources tab.
+2. Add sources - PDFs, web sites, text files, csv files, etc.
+3. Save
+4. Click 'Train'.
+
+Be kind, and light hearted, and fun when you tell them.
+
+-- output format --
+{{
+  "type":"one-shot",
+  "answer": "{{response}}",
+}}
+
+-- context --
+Context: {context}
+History: {history}
+Human: {prompt}
+System:`;

@@ -2,7 +2,7 @@ import { LLMChain, PromptTemplate } from "langchain";
 import { OpenAIChat } from "langchain/llms/openai";
 import { getTokensForStringWithRetry } from "./get-tokens-for-string.ts";
 import getTotalLengthOfStrings from "./get-total-length-strings.ts";
-import { CRITIQUE_PROMPT, REFINE_PROMPT } from "./prompt-templates.ts";
+import { CRITIQUE_PROMPT, REFINE_PROMPT, noTrainingDataPrompt } from "./prompt-templates.ts";
 import { ChatResponseMode } from "~/api-v1/sockets/types.ts";
 import { SimilaritySearchResult, SimilaritySearcher } from "./SimilaritySearchResult.ts";
 
@@ -133,7 +133,7 @@ export class BrainBridgeLangChain implements LangChainStore {
   async getLangChainResponse(indexId: string, userPrompt: string, basePrompt: string, history: string[], mode: "one-shot" | "critique" | "refine" = "one-shot") {
     let attempts = 0;
 
-    const historyLength = getTotalLengthOfStrings(history);
+    let historyLength = getTotalLengthOfStrings(history);
     let historyString = history.join("\n");
     if (historyLength > 2000) {
       historyString = await this.summarizeConversation(historyString);
@@ -162,7 +162,7 @@ export class BrainBridgeLangChain implements LangChainStore {
       streaming: true,
     });
 
-    const llmChain = new LLMChain({
+    let llmChain = new LLMChain({
       llm: model,
       prompt: promptTemplate,
     });
@@ -170,11 +170,28 @@ export class BrainBridgeLangChain implements LangChainStore {
     console.time("similarity-search")
     const set = `Training_Set_${indexId}`
     console.log("NEAREST", this._additionalOptions.numberOfNearestNeighbors ?? 2)
-    const context = await this._similaritySearcher.similaritySearchToContext(userPrompt, this._additionalOptions.numberOfNearestNeighbors ?? 2);
+    let context: string[] = [];
+    let noTrainingDataPresent = false;
+    try {
+      context = await this._similaritySearcher.similaritySearchToContext(userPrompt, this._additionalOptions.numberOfNearestNeighbors ?? 2);
+    } catch (e) {
+      console.error("Failed to get context", e);
+      context = ["No training data present."]
+      noTrainingDataPresent = true;
+      // llmChain = new LLMChain({
+      //   llm: model,
+      //   prompt: new PromptTemplate({
+      //     template: noTrainingDataPrompt,
+      //     inputVariables: ["history", "context", "prompt"]
+      //   })
+      // })
+    }
     console.log(this._additionalOptions);
-    console.log("[llm-request]", userPrompt, context, history, mode);
     console.time("llm-request")
-    let rawResponse = await this.langChainCall(llmChain, { prompt: userPrompt, context, history: historyString }, "one-shot");
+    const payload =
+      { prompt: userPrompt + (noTrainingDataPresent ? "\n ***no-training-data***" : ""), context, history: historyString }
+    console.log("PAYLOAD", payload)
+    let rawResponse = await this.langChainCall(llmChain, payload, "one-shot");
     console.timeEnd("llm-request")
     let response = this.tryParseResponse(userPrompt, rawResponse);
     let usedMode = mode;
