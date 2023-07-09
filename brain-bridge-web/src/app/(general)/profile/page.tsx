@@ -1,6 +1,5 @@
 import DismissableInfoBox from "~/app/components/DismissableInfoBox";
 import SideBarPaddedContainer from "./components/SidebarPaddedContainer";
-import { getServerSession } from "~/server/auth";
 import ServerData from "~/server/server-data";
 import InfoBox from "~/app/components/InfoBox";
 import Link from "next/link";
