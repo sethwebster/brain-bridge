@@ -235,7 +235,6 @@ enum TrainingSetRoles {
 
 enum UsageType {
   TOKEN
-  COHERE_TOKEN
 }
 
 enum UsagePurpose {

@@ -199,7 +199,7 @@ export function trainingHandler(socket: Socket, io: Server) {
               id: set.id
             }
           },
-          type: "COHERE_TOKEN",
+          type: "TOKEN",
           purpose: "EMBEDDING",
           count: buildResult.tokensUsed,
           createdAt: new Date(),

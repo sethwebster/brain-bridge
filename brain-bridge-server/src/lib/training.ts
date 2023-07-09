@@ -1,6 +1,5 @@
 import fs from 'fs'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import Cohere from "cohere-ai";
 import { Prisma, type TrainingSource } from '@prisma/client';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -140,7 +139,6 @@ export class TrainingSetBuilder {
   ///////////////////////////////////////////////////////////////////////////////////////////
   private async vectorize(trainingSources: TrainingSourceInProgress[], onTokensUsed: (buildResult: BuildResult) => void): Promise<BuildResult> {
     const list = await generateDocumentList(trainingSources);
-    Cohere.init(process.env.COHERE_API_KEY!)
     // if (trainingSources.length === 0) throw new Error("No documents to vectorize!");
     console.log("Vectorizing documents (weaviate)...");
     const buildResult: BuildResult = {
