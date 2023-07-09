@@ -10,6 +10,8 @@ interface ConfirmButtonProps {
   children: React.ReactNode | React.ReactNode[];
   onConfirmed: () => void;
   disabled?: boolean;
+  ariaLabel?: string;
+  ariaLabelConfirming?: string;
 }
 
 export default function ConfirmButton({
@@ -18,6 +20,8 @@ export default function ConfirmButton({
   confirmingClassName,
   onConfirmed,
   disabled,
+  ariaLabel,
+  ariaLabelConfirming
 }: ConfirmButtonProps) {
   const [confirming, setConfirming] = useState(false);
   const [canClick, setCanClick] = useState(false);
@@ -51,6 +55,7 @@ export default function ConfirmButton({
       onClick={handleClick}
       onBlur={handleBlur}
       onMouseOut={handleBlur}
+      aria-label={confirming ? ariaLabelConfirming ?? "Confirm this action" : ariaLabel ?? "Click to confirm this action"}
     >
       {children}
     </Button>

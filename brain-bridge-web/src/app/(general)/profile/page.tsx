@@ -19,6 +19,13 @@ export default async function Profile() {
             </p>
           </InfoBox>
         )}
+        {userSettings && (!userSettings.openAIApiKey || userSettings?.openAIApiKey?.length === 0) && (
+          <InfoBox type="warning" title="Some configuration is required">
+          <p>
+            You have not yet set your OpenAI Api Key. Please go to the <Link href="/profile/settings" className="font-bold text-amber-700">settings page</Link> to configure your profile.
+          </p>
+        </InfoBox>
+      )}
         <DismissableInfoBox type="info" title="Profile" body="This is the profile page." dismissable dismissableId="profile-page" />
       </div>
     </SideBarPaddedContainer>
