@@ -27,7 +27,7 @@ const getBaseUrl = (location: string) => {
   return reversed.join("/");
 };
 
-export default function Tabs({
+function Tabs({
   header,
   tabContent,
   initialSelectedTab,
@@ -143,3 +143,4 @@ export default function Tabs({
     </div>
   );
 }
+export default React.memo(Tabs);

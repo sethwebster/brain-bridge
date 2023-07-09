@@ -16,9 +16,8 @@ import generateChatErrorMessage from "~/utils/error-chat-message-generator";
 import { useSession } from "next-auth/react";
 import { CheckLogin } from "~/app/login/CheckLogin";
 import { useAuthToken } from "~/hooks/useAuthToken";
-import RoomJoiner from "~/app/(general)/profile/components/RoomJoiner";
 import StreamingJsonParser, {
-  PartialJSONObject,
+  type PartialJSONObject,
 } from "~/lib/streaming-json-parser";
 import Logger from "~/lib/logger";
 import { toast } from "react-toastify";
@@ -192,7 +191,7 @@ export default function PublicChat({
   //   [player]
   // );
   const handleNewMessage = useCallback(
-    (newMessage: NewMessage, mode: ChatResponseMode) => {
+    (newMessage: NewMessage, _mode: ChatResponseMode) => {
       const formattedMessage: MessageWithRelations = {
         ...newMessage,
         id: generateId(),

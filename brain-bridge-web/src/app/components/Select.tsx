@@ -1,8 +1,8 @@
-import { type InputHTMLAttributes } from "react";
+import React, { type InputHTMLAttributes } from "react";
 
 type SelectProps = InputHTMLAttributes<HTMLSelectElement>;
 
-export default function Select(props: SelectProps) {
+function Select(props: SelectProps) {
   return (
     <select
       {...props}
@@ -14,3 +14,6 @@ export default function Select(props: SelectProps) {
     </select>
   );
 }
+
+
+export default React.memo(Select);

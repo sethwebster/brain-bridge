@@ -1,6 +1,6 @@
 import invariant from "tiny-invariant";
 import { NewTrainingSetButton } from "./NewTrainingSetButton";
-import { DismissableInfoBox } from "~/app/components/InfoBox";
+import DismissableInfoBox from "~/app/components/DismissableInfoBox";
 import ServerData from "~/server/server-data";
 import { Suspense } from "react";
 import { getServerSession } from "~/server/auth";
@@ -22,7 +22,7 @@ async function TrainingPage() {
         heading={
           <>
             <h1 className="text-xl">Training Sets</h1>
-            <NewTrainingSetButton  />
+            <NewTrainingSetButton />
           </>
         }
       >

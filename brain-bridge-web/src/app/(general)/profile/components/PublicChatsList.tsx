@@ -4,7 +4,6 @@ import { type Session } from "next-auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import InfoBox from "~/app/components/InfoBox";
-import { NewButton } from "~/app/components/NewButton";
 import {
   type PublicChatWithRelations,
   type TrainingSetWithRelations,
@@ -14,6 +13,7 @@ import EditPublicChat from "./EditPublicChat";
 import DataClient from "~/utils/data-client";
 import Button from "~/base-components/Button";
 import ContentBoxWithHeading from "./ContentBoxWithHeading";
+import NewButton from "~/app/components/NewButton";
 
 interface PublicChatsListProps {
   publicChats: PublicChatWithRelations[];

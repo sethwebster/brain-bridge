@@ -3,13 +3,13 @@ import {
   type ChatResponseMode,
   type MessageWithRelations,
 } from "~/data/interfaces/types";
-import { ScrollOnReRender } from "./ScrollOnReRender";
-import { TypingIndicator } from "./TypingIndicator";
+import { ScrollOnReRender } from "../(general)/profile/components/ScrollOnReRender";
+import { TypingIndicator } from "../(general)/profile/components/TypingIndicator";
 import invariant from "tiny-invariant";
 import Markdown from "~/app/components/Markdown";
+import React, { useMemo } from "react";
 
-
-export function Messages({
+function Messages({
   messages,
   userName,
   answerPending,
@@ -37,6 +37,13 @@ export function Messages({
   // }, [messages]);
 
   invariant(messages, "Messages must be defined");
+  const sorted = useMemo(
+    () =>
+      messages.sort((a, b) => {
+        return a.createdAt < b.createdAt ? -1 : 1;
+      }),
+    [messages]
+  );
   if (messages.length === 0) {
     return (
       <div className="flex flex-grow flex-col items-center justify-center">
@@ -46,10 +53,6 @@ export function Messages({
       </div>
     );
   }
-
-  const sorted = messages.sort((a, b) => {
-    return a.createdAt < b.createdAt ? -1 : 1;
-  });
 
   return (
     <>
@@ -92,3 +95,5 @@ export function Messages({
     </>
   );
 }
+
+export default React.memo(Messages);

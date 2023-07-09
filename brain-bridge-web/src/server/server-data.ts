@@ -14,7 +14,7 @@ import { getServerSession } from "./auth";
 import invariant from "tiny-invariant";
 import { notFound } from "next/navigation";
 import { prisma } from "./db";
-import { type Prisma, type Participant, UserSettings } from "@prisma/client";
+import { type Prisma, type Participant, type UserSettings } from "@prisma/client";
 import Mail from "~/lib/mail";
 import { calculateCost } from "~/lib/calculate-costs";
 import Logger from "~/lib/logger";

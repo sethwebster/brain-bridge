@@ -36,7 +36,7 @@ import ChatTab from "./tabs/ChatTab";
 import { type Session } from "next-auth";
 import invariant from "tiny-invariant";
 import { MdShare } from "react-icons/md";
-import RoomJoiner from "../../components/RoomJoiner";
+import RoomJoiner from "../../../../components/RoomJoiner";
 import OptionsTab from "./tabs/OptionsTab";
 import PublicChatsTab from "./tabs/PublicChatsTab";
 

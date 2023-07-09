@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import AutoSizingTextArea from "../../base-components/AutoSizingTextArea";
 
 interface NewMessageBoxProps {
@@ -6,7 +6,7 @@ interface NewMessageBoxProps {
   isConnected: boolean;
 }
 
-export default function NewMessageBox({
+function NewMessageBox({
   onMessageSend,
   isConnected,
 }: NewMessageBoxProps) {
@@ -62,3 +62,5 @@ export default function NewMessageBox({
     />
   );
 }
+
+export default React.memo(NewMessageBox)

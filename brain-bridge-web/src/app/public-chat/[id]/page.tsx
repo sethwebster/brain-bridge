@@ -10,7 +10,7 @@ import { type PublicChatInstanceWithRelations } from "~/data/interfaces/types";
 import PublicChat from "./components/PublicChat";
 import { type PublicChat as PublicChatType } from "@prisma/client";
 import Logger from "~/lib/logger";
-import RoomJoiner from "~/app/(general)/profile/components/RoomJoiner";
+import RoomJoiner from "~/app/components/RoomJoiner";
 
 interface PageProps {
   params: {

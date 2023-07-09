@@ -2,11 +2,11 @@
 import { useCallback, useState } from "react";
 import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
-import { NewButton } from "~/app/components/NewButton";
 import DataClient from "~/utils/data-client";
 import promptTemplate from "./DEPRECATED_PromptTemplate";
 import { useRouter } from "next/navigation";
 import { defaultTrainingOptions } from "~/data/interfaces/types";
+import NewButton from "~/app/components/NewButton";
 
 interface NewTrainingSetButtonProps {
   empty?: boolean;

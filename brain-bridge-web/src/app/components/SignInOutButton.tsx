@@ -1,8 +1,9 @@
-import { LoginButton } from "./AuthButtons";
 import { getServerSession } from "~/server/auth";
 import { AvatarAndDropDown } from "./AvatarAndDropDown";
+import React from "react";
+import { LoginButton } from "./AuthButtons";
 
-export const SignInOutButton = async () => {
+const SignInOutButton = async () => {
   const session = await getServerSession();
   const loggedIn = session && session.user && session.user.email !== "anonymous";
   return (
@@ -14,3 +15,5 @@ export const SignInOutButton = async () => {
     </>
   );
 };
+
+export default React.memo(SignInOutButton);

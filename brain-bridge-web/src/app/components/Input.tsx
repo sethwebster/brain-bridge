@@ -1,9 +1,9 @@
-import { type InputHTMLAttributes } from "react";
+import React, { type InputHTMLAttributes } from "react";
 import { twMerge } from "tailwind-merge";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement>;
 
-export default function Input(props: InputProps) {
+function Input(props: InputProps) {
   return (
     <input
       {...props}
@@ -14,3 +14,5 @@ export default function Input(props: InputProps) {
     />
   );
 }
+
+export default React.memo(Input)

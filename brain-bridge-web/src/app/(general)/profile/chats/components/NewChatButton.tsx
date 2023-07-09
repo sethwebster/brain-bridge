@@ -3,7 +3,7 @@
 import { type TrainingSet } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { NewButton } from "~/app/components/NewButton";
+import NewButton from "~/app/components/NewButton";
 import Select from "~/app/components/Select";
 import DataClient from "~/utils/data-client";
 

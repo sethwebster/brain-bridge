@@ -3,7 +3,6 @@
 import invariant from "tiny-invariant";
 import { getServerSession } from "~/server/auth";
 import ServerData from "~/server/server-data";
-import delay from "~/utils/delay";
 
 export async function handleSettingsSubmit({ openAIApiKey }: { openAIApiKey: string }) {
   "use server";

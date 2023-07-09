@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import { SignInOutButton } from "./SignInOutButton";
+import React, { Suspense } from "react";
 import { Logo } from "./Logo";
 import EnvironmentMarker from "./EnvironmentMarker";
+import SignInOutButton from "./SignInOutButton";
 
 function NavBar() {
   return (
@@ -25,4 +25,4 @@ function NavBar() {
   );
 }
 
-export default NavBar;
+export default React.memo(NavBar);

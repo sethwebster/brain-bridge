@@ -1,3 +1,4 @@
+import React from "react";
 import useKeypress from "react-use-keypress";
 
 interface ModalProps {
@@ -11,7 +12,7 @@ interface ModalProps {
   onConfirm?: () => void;
 }
 
-export default function Modal({
+ function Modal({
   show,
   title,
   icon,
@@ -94,3 +95,4 @@ export default function Modal({
     </div>
   );
 }
+export default React.memo(Modal);

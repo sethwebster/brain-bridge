@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import NewMessageBox from "./NewMessageBox";
-import { ChatToolbar } from "./ChatToolbar";
+import ChatToolbar from "./ChatToolbar";
 import { type Participant } from "@prisma/client";
-import { Messages } from "../(general)/profile/chat/components/Messages";
-import { FakeSpeakerIndicator } from "../(general)/profile/chat/components/TypingIndicator";
 import {
   type ChatResponseMode,
   type MessageWithRelations,
 } from "~/data/interfaces/types";
+import { FakeSpeakerIndicator } from "../(general)/profile/components/TypingIndicator";
+import Messages from "./Messages";
 
 export interface Viewer {
   id: string;

@@ -5,7 +5,7 @@ import invariant from "tiny-invariant";
 import { type Socket } from "socket.io-client";
 import socket from "~/lib/socket";
 import Logger from "~/lib/logger";
-import { type RoomType } from "~/app/(general)/profile/components/RoomJoiner";
+import { type RoomType } from "~/app/components/RoomJoiner";
 
 function logger<T>(message: string, data: T, sendOrReceived: "send" | "received") {
   Logger.info(`[${sendOrReceived}] Socket Message: `, message, data);

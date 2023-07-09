@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LogoutButton } from "./AuthButtons";
 import { getServerSession } from "~/server/auth";
+import { LogoutButton } from "./AuthButtons";
 
 export const AvatarAndDropDown = async () => {
   const session = await getServerSession();

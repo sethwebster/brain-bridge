@@ -10,7 +10,6 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import ChatDisplay, {
@@ -24,9 +23,9 @@ import generateChatErrorMessage from "~/utils/error-chat-message-generator";
 import { useAuthToken } from "~/hooks/useAuthToken";
 import useSocket from "~/hooks/use-socket";
 import { toast } from "react-toastify";
-import SideBarPaddedContainer from "../../components/SidebarPaddedContainer";
+import SideBarPaddedContainer from "./SidebarPaddedContainer";
 import Logger from "~/lib/logger";
-import RoomJoiner from "../../components/RoomJoiner";
+import RoomJoiner from "../../../components/RoomJoiner";
 import StreamingJsonParser, {
   type PartialJSONObject,
 } from "~/lib/streaming-json-parser";
@@ -49,7 +48,6 @@ export default function Chat({
     selectedChat.messages
   );
   const [callback, setCallback] = useState<(() => void) | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const socket = useSocket();
   const { token } = useAuthToken();
   const [provisionalText, setProvisionalText] = useState<null | string>(null);
@@ -228,11 +226,11 @@ export default function Chat({
     [selectedChat, session.user.id, session.user.name, socket]
   );
 
-  useEffect(() => {
-    if (selectedChatMessages.length > 0) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [selectedChatMessages]);
+  // useEffect(() => {
+  //   if (selectedChatMessages.length > 0) {
+  //     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  //   }
+  // }, [selectedChatMessages]);
 
   const handleClearChatClicked = useCallback(() => {
     setSelectedChatMessages([]);

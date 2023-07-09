@@ -1,18 +1,16 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
-import useLocalStorage from "~/hooks/use-local-storage";
 import { twMerge } from "tailwind-merge";
 import {
   MdCheckCircle,
-  MdClose,
   MdError,
   MdInfo,
   MdWarning,
 } from "react-icons/md";
+import React from "react";
 
 type InfoBoxTypes = "info" | "success" | "warning" | "error";
 
-type InfoBoxProps = {
+export type InfoBoxProps = {
   title: string;
   body?: string;
   children?: React.ReactNode;
@@ -49,72 +47,7 @@ const typeToIconMap: TypeToItemMap<React.ReactNode> = {
   error: <MdError size={22} color="rgba(247, 84, 84, .8)" className="drop-shadow-sm"/>,
 };
 
-export function DismissableInfoBox(
-  props: InfoBoxProps & {
-    dismissable?: boolean;
-    dismissableId: string;
-  }
-) {
-  const [dismissed, setDismissed, wasUndefined, isServer] = useLocalStorage<
-    "dismissed" | undefined | null
-  >(props.dismissableId, undefined);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const handleDismiss = useCallback(() => {
-    setDismissed("dismissed");
-  }, [setDismissed]);
-
-  /* Wrap the children in a div so that we can add the dismissable button */
-  const content = props.children ?? <div>{props.body}</div>;
-  const wrappedWithDismissable = (
-    <div className="flex flex-row w-full">
-      <div className="flex-grow">{content}</div>
-      {props.dismissable && (
-        <button
-          className="relative ml-2 text-gray-500 -top-3 hover:text-gray-700"
-          onClick={handleDismiss}
-        >
-          <MdClose size={16} />
-        </button>
-      )}
-    </div>
-  );
-
-  const newProps = {
-    ...props,
-    children: wrappedWithDismissable,
-    body: undefined,
-  };
-
-  console.log(
-    "dismissed",
-    dismissed,
-    "wasUndefined",
-    wasUndefined,
-    "isServer",
-    isServer
-  );
-
-  return (
-    <>
-      {/* {wasUndefined === true ? "wasUndefined" : "wasDefined"} {isServer ? "isServer" : "isClient"} {dismissed ? "dismissed" : "notDismissed"} */}
-      <div
-        suppressHydrationWarning={true}
-        className={`overflow-hidden transition-all ${
-          !isMounted || dismissed === "dismissed" ? "max-h-0" : "max-h-44"
-        }`}
-      >
-        <InfoBox {...newProps}>{wrappedWithDismissable}</InfoBox>
-      </div>
-    </>
-  );
-}
-
-export default function InfoBox({
+function InfoBox({
   title,
   children,
   icon,
@@ -141,18 +74,4 @@ export default function InfoBox({
   );
 }
 
-/*
-<svg
-        aria-hidden="true"
-        className="flex-shrink-0 inline w-5 h-5 mr-3"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          fill-rule="evenodd"
-          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-          clip-rule="evenodd"
-        ></path>
-      </svg>
-*/
+export default React.memo(InfoBox);

@@ -1,5 +1,8 @@
 "use client";
-export function NewButton({ onClick }: { onClick?: () => void; }) {
+
+import React from "react";
+
+function NewButton({ onClick }: { onClick?: () => void; }) {
   return (
     <button className="p-1 text-white bg-blue-400 rounded-md" onClick={onClick}>
       <svg
@@ -40,3 +43,5 @@ export function NewButton({ onClick }: { onClick?: () => void; }) {
     </button>
   );
 }
+
+export default React.memo(NewButton);

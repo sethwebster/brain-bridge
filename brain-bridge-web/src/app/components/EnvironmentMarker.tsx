@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-export default function EnvironmentMarker() {
+function EnvironmentMarker() {
   const [environment, setEnvironment] = useState<
     "unknown" | "development" | "preview" | "production"
   >("unknown");
@@ -32,3 +32,5 @@ export default function EnvironmentMarker() {
     );
   return Component;
 }
+
+export default React.memo(EnvironmentMarker);

@@ -59,6 +59,12 @@ interface BrainBridgeLangChainOptions {
   }
 }
 
+const OPENAI_DEFAULT_CONFIG = {
+  temperature: 0,
+  maxTokens: -1,
+  modelName: 'gpt-3.5-turbo-0613',
+}
+
 export class BrainBridgeLangChain implements LangChainStore {
   private _lowConfidenceAnswerHandler: (response: LLMBrainBridgeResponse) => void;
   private _onTokensUsed: (tokens: number) => void = () => { };
@@ -89,11 +95,13 @@ export class BrainBridgeLangChain implements LangChainStore {
 
   async summarizeConversation(text: string) {
     const model = new OpenAIChat({
+      ...OPENAI_DEFAULT_CONFIG,
       temperature: 0,
       openAIApiKey: this._openAIApiKey,
       modelName: this._models.summarize,
       maxTokens: -1,
     });
+
     const promptTemplate = new PromptTemplate({
       template: `This is a conversation between you and a human. Summarize this conversation keeping any important details, and use ONLY the information provided to you.
 
@@ -146,7 +154,8 @@ export class BrainBridgeLangChain implements LangChainStore {
     });
 
     const model = new OpenAIChat({
-      temperature: 0,
+      ...OPENAI_DEFAULT_CONFIG,
+      temperature: 1,
       openAIApiKey: this._openAIApiKey,
       modelName: this._models["one-shot"],
       maxTokens: -1,

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { type Socket } from "socket.io-client";
 
 type TrainingStages =
@@ -28,13 +28,12 @@ const StatusToLabelMap: Record<TrainingStages, string> = {
 export function TrainingProgressDisplay({
   socket,
   onMessage,
-  isTraining,
+  isTraining: _isTraining,
 }: {
   socket: Socket | undefined | null;
   onMessage: <T>(message: string, callback: (data: T) => void) => () => void;
   isTraining: boolean;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<
     Record<
       TrainingStages,
@@ -88,12 +87,6 @@ export function TrainingProgressDisplay({
     }
   }, [onMessage, socket]);
 
-  useEffect(() => {
-    if (ref.current && isTraining) {
-      ref.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [isTraining, status]);
-
   return (
     <div className={`max-w-sm overflow-hidden transition-all duration-500 `}>
       <h3 className="text-xl">Training Progress</h3>
@@ -117,7 +110,6 @@ export function TrainingProgressDisplay({
           </div>
         </div>
       ))}
-      <div ref={ref} role="scoller"></div>
     </div>
   );
 }
