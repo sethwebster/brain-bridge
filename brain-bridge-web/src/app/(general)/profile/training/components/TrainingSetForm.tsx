@@ -72,7 +72,7 @@ export function TrainingSetForm({
   const handleTrainingStarted = useCallback(() => {
     setIsTraining(true);
   }, []);
-  const [isAutoTraining, setIsAutoTraining] = useState(false);
+  const [isAutoTraining, setIsAutoTraining] = useState((trainingSet.prompt ?? "").trim().length === 0);
 
   const handleTrainingComplete = useCallback(() => {
     setIsTraining(false);

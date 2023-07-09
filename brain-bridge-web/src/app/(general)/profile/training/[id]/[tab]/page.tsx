@@ -21,7 +21,12 @@ const metadata = {
 export async function generateMetadata({
   params: { id, tab },
 }: Props): Promise<Metadata> {
-  const set = await ServerData.fetchUserTrainingSet(id);
+  let resolvedId = id;
+  if (id === "first") {
+    const sets = await ServerData.fetchUserTrainingSets();
+    resolvedId = sets[0]?.id ?? "";
+  }
+  const set = await ServerData.fetchUserTrainingSet(resolvedId);
   return {
     ...metadata,
     title:
@@ -37,7 +42,12 @@ export default async function TrainingPage({ params: { id, tab } }: Props) {
   const session = await getServerSession();
   invariant(session, "Session must exist");
   invariant(session.user, "User must exist");
-  const set = await ServerData.fetchUserTrainingSet(id);
+  let resolvedId = id;
+  if (id === "first") {
+    const sets = await ServerData.fetchUserTrainingSets();
+    resolvedId = sets[0]?.id ?? "";
+  }
+  const set = await ServerData.fetchUserTrainingSet(resolvedId);
   if (!set) {
     Logger.error("Training set not found", id);
     notFound();
