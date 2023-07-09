@@ -1,7 +1,7 @@
 import { type MessageWithRelations } from "~/data/interfaces/types";
 import generateId from "./generate-id";
 
-export default function generateChatErrorMessage(error: string, withDefault: boolean = true): MessageWithRelations {
+export default function generateChatErrorMessage(error: string, withDefault = true): MessageWithRelations {
   return {
     id: generateId(),
     conversationId: generateId(),
