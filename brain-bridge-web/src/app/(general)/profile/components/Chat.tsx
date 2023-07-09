@@ -6,12 +6,7 @@ import {
   type MessageWithRelations,
 } from "~/data/interfaces/types";
 import { type Session } from "next-auth";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ChatDisplay, {
   type Viewer,
   type NewMessage,
@@ -102,6 +97,7 @@ export default function Chat({
                 (message as { answer: string })?.answer?.length === 0 ?? true;
               console.log(message, pending);
             }
+            console.log("HEY");
             setAnswerPending({ pending, phase: responsePhase });
           }
         }
@@ -151,12 +147,25 @@ export default function Chat({
         (payload: { error?: string }) => {
           console.log("ERR", payload);
           toast.error(payload.error ?? "Unknown error");
-          setAnswerPending({ pending: false, phase: "one-shot" });
           if (payload.error) {
             if (payload.error === "Invalid OpenAI Api Key") {
               setSelectedChatMessages((messages) => [
                 ...messages,
-                generateChatErrorMessage("No valid OpenAI Api key was found. Check your settings page." ?? "Unknown error", false),
+                generateChatErrorMessage(
+                  "No valid OpenAI Api key was found. Check your settings page." ??
+                    "Unknown error",
+                  false
+                ),
+              ]);
+            } else if (
+              payload.error === "Training set has not yet been trained."
+            ) {
+              setSelectedChatMessages((messages) => [
+                ...messages,
+                generateChatErrorMessage(
+                  "This training set has not yet been trained. Please ensure you have trained it before using it.",
+                  false
+                ),
               ]);
             } else {
               setSelectedChatMessages((messages) => [
@@ -164,6 +173,9 @@ export default function Chat({
                 generateChatErrorMessage(payload.error ?? "Unknown error"),
               ]);
             }
+            // setTimeout(() => {
+            setAnswerPending(() => ({ pending: false, phase: "one-shot" }));
+            // }, 500);
           }
         }
       );

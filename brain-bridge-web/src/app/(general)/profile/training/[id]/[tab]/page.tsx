@@ -4,7 +4,6 @@ import { getServerSession } from "~/server/auth";
 import { removeFooter } from "~/utils/prompts";
 import ServerData from "~/server/server-data";
 import TrainingSetPage from "../../components/TrainingSetPage";
-import promptTemplate from "../../DEPRECATED_PromptTemplate";
 import { type TabsList } from "../../components/TrainingSetForm";
 import Logger from "~/lib/logger";
 import { type Metadata } from "next";
@@ -63,7 +62,7 @@ export default async function TrainingPage({ params: { id, tab } }: Props) {
         activeTab={tab}
         trainingSet={{ ...set, prompt: removeFooter(set.prompt) }}
         user={session.user}
-        promptTemplate={promptTemplate}
+        promptTemplate={""}
       />
     </div>
   );

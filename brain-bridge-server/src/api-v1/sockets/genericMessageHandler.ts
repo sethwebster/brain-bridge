@@ -83,8 +83,10 @@ export abstract class GenericMessageHandler<O> {
           const first = e.response.errors.at(0);
           if (first.message.includes("401 error")) {
             this.socket.emit(`${event}-error`, { error: "Invalid OpenAI Api Key" });
+          } else if (first.message.includes('Cannot query field "Training_Set_')) {
+            this.socket.emit(`${event}-error`, { error: "Training set has not yet been trained." });
           } else {
-            this.socket.emit(`${event}-error`, e.response.errors.at(0));
+            this.socket.emit(`${event}-error`, { error: first.message });
           }
           break;
         case e.message:

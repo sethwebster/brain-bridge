@@ -144,9 +144,9 @@ export function AutoTraining({
   }, []);
 
   const sendIntroMessage = useCallback(() => {
-    let text = "Sounds good. Let's get started.";
-
-    if (oldPrompt && oldPrompt.trim().length > 0) {
+    let text = "Sounds good. Let's get started. Start with an intro message like 'Hey [[username]], let's get started with generating a prompt. We'll go step by step...";
+    const isRefiningPrompt = oldPrompt && oldPrompt.trim().length > 0;
+    if (isRefiningPrompt) {
       text = `
         Sounds good. Let's get started. Using the information you now understand, we're going to work to refine the prompt that follows.
 

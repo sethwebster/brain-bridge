@@ -13,7 +13,7 @@ export default async function Profile() {
         {!userSettings && (
           <InfoBox type="warning" title="Some configuration is required">
             <p>
-              You have not yet configured your profile. Please go to the <Link href="/profile/settings" className="font-bold text-amber-700">settings page</Link> to configure your profile.
+              You have not yet configured your profile. Training, chat, and other features will be disabled until configured. Please go to the <Link href="/profile/settings" className="font-bold text-amber-700">settings page</Link> to configure your profile.
             </p>
           </InfoBox>
         )}

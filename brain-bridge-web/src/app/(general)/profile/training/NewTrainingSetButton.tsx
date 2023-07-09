@@ -3,7 +3,6 @@ import { useCallback, useState } from "react";
 import Input from "~/app/components/Input";
 import Modal from "~/app/components/ModalDialog";
 import DataClient from "~/utils/data-client";
-import promptTemplate from "./DEPRECATED_PromptTemplate";
 import { useRouter } from "next/navigation";
 import { defaultTrainingOptions } from "~/data/interfaces/types";
 import NewButton from "~/app/components/NewButton";
@@ -30,7 +29,7 @@ export function NewTrainingSetButton({}: NewTrainingSetButtonProps) {
       updatedAt: new Date(),
       name: inputValue,
       conversations: [],
-      prompt: promptTemplate,
+      prompt: "",
       questionsAndAnswers: [],
       trainingSources: [],
       version: 0,

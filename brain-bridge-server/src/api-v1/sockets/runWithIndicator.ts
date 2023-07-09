@@ -2,7 +2,7 @@ import { Server } from "socket.io";
 
 export async function runWithIndicator<T>(io: Server, roomId: string, fn: () => Promise<T>) {
   try {
-    setTimeout(() => io.in(roomId).emit('llm-response-started', { room: roomId }), 300);
+    io.in(roomId).emit('llm-response-started', { room: roomId })
     return await fn();
   } catch (err: any) {
     console.log('runWithIndicator', err);
