@@ -7,7 +7,24 @@ import { getServerSession } from "~/server/auth";
 import ContentBoxWithHeading from "../components/ContentBoxWithHeading";
 import TrainingSetList from "./components/TrainingSetList";
 import { Spinner } from "~/app/components/SvgIcons";
+import { type Metadata } from "next";
 
+const metadata = {
+  title: "Brain Bridge - Training Sets",
+  description: "These are your training sets",
+};
+
+export function generateMetadata(): Metadata {
+  return {
+    ...metadata,
+    title:
+      process.env.NEXT_PUBLIC_VERCEL_ENV === "production"
+        ? metadata.title
+        : `[${
+            process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV ?? ""
+          }] ${metadata.title}`,
+  };
+}
 async function TrainingPage() {
   const session = await getServerSession();
   invariant(session, "Session must exist");

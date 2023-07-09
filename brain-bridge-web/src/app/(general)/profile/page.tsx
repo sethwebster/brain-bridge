@@ -6,7 +6,6 @@ import InfoBox from "~/app/components/InfoBox";
 import Link from "next/link";
 
 export default async function Profile() {
-  const session = await getServerSession();
   const userSettings = await ServerData.fetchUserSettings();
 
   return (

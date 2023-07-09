@@ -15,9 +15,12 @@ const metadata = {
 export function generateMetadata(): Metadata {
   return {
     ...metadata,
-    title: process.env.NEXT_PUBLIC_VERCEL_ENV === "production"
-      ? ""
-      : `[${process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV ?? ""}] ${metadata.title}`,
+    title:
+      process.env.NEXT_PUBLIC_VERCEL_ENV === "production"
+        ? metadata.title
+        : `[${
+            process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV ?? ""
+          }] ${metadata.title}`,
   };
 }
 
