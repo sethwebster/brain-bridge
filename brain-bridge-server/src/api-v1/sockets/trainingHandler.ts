@@ -3,21 +3,17 @@ import invariant from "tiny-invariant";
 import { Server, Socket } from "socket.io";
 import Mutex from "../../lib/mutex.ts";
 import { getRoomId } from "./roomsHandler.ts";
-import { BuildResult, TrainingSetBuilder } from "../../lib/training.ts";
+import { BuildResult, ProgressPayload, TrainingSetBuilder } from "../../lib/training.ts";
 import ServerData from "../../lib/server-data.ts";
+import debounce from "lodash.debounce";
 
 export type TrainingStages = "overall" |
   "sources-load" |
   "source-load" |
+  "source-error" |
   "split-documents" |
   "vectorize";
 
-interface ProgressPayload {
-  stage: TrainingStages;
-  statusText: string;
-  progress: number;
-  additionalInfo?: string;
-}
 
 type ProgressReport = Record<
   TrainingStages, ProgressPayload
@@ -28,7 +24,7 @@ interface TrainingSetPayload {
 }
 
 interface TrainingApiStatus {
-  inProgress: Record<string, boolean>;
+  inProgress: Record<string, ProgressReport>;
 }
 
 const trainingApiStatus: TrainingApiStatus = {
@@ -38,12 +34,59 @@ const trainingApiStatus: TrainingApiStatus = {
 export function trainingSetRoomName(id: string) {
   return getRoomId(`training-${id}`);
 }
+const DEFAULT_PROGRESS_REPORT: Record<
+  TrainingStages, ProgressPayload
+> = {
+  overall: {
+    stage: "overall",
+    statusText: "Waiting for data...",
+    valueType: "percentage",
+    value: 0,
+  },
+  "sources-load": {
+    stage: "sources-load",
+    statusText: "Waiting for data...",
+    valueType: "percentage",
+    value: 0,
+  },
+  "source-load": {
+    stage: "source-load",
+    statusText:
+      "Waiting for data...",
+    valueType: "percentage",
+    value: 0,
+  },
+  "source-error": {
+    stage: "source-error",
+    statusText: "No errors found",
+    valueType: "value",
+    value: 0,
+  },
+  "split-documents": {
+    stage: "split-documents",
+    statusText: "Waiting for data...",
+    valueType: "percentage",
+    value: 0,
+  },
+  vectorize: {
+    stage: "vectorize",
+    statusText: "Waiting for data...",
+    valueType: "percentage",
+    value: 0,
+  },
+}
 
 const mutex = new Mutex();
 
-setInterval(() => {
-  // console.log("trainingApiStatus", trainingApiStatus);
-}, 5000);
+async function updateApiStatus(id: string, progress: ProgressReport | undefined) {
+  await mutex.run(async () => {
+    if (progress) {
+      trainingApiStatus.inProgress[id] = progress;
+    } else {
+      delete trainingApiStatus.inProgress[id];
+    }
+  })
+}
 
 export function trainingHandler(socket: Socket, io: Server) {
 
@@ -73,7 +116,7 @@ export function trainingHandler(socket: Socket, io: Server) {
 
   async function addTraining(id: string) {
     await mutex.run(async () => {
-      trainingApiStatus.inProgress[id] = true;
+      trainingApiStatus.inProgress[id] = { ...DEFAULT_PROGRESS_REPORT };
     })
   }
 
@@ -86,7 +129,7 @@ export function trainingHandler(socket: Socket, io: Server) {
   async function doTraining(id: string, token: string) {
     const roomName = trainingSetRoomName(id);
     console.log("training started", id, roomName)
-    const emit = (message: string, data: any) => io.in(roomName).emit(message, data);
+    const emit = debounce((message: string, data: any) => io.in(roomName).emit(message, data), 20);
     invariant(id, "trainingSetId is required");
 
     const prisma = new PrismaClient();
@@ -121,38 +164,12 @@ export function trainingHandler(socket: Socket, io: Server) {
 
     emit("training-started", { id });
 
-    const progressState: ProgressReport = {
-      overall: {
-        stage: "overall",
-        statusText: "Waiting to start",
-        progress: 0,
-      },
-      "sources-load": {
-        stage: "sources-load",
-        statusText: "Waiting to start",
-        progress: 0,
-      },
-      "source-load": {
-        stage: "source-load",
-        statusText: "Waiting to start",
-        progress: 0,
-      },
-      "split-documents": {
-        stage: "split-documents",
-        statusText: "Waiting to start",
-        progress: 0,
-      },
-      vectorize: {
-        progress: 0,
-        stage: "vectorize",
-        statusText: "Waiting to start",
-      }
-    }
-
-    //(payload: ProgressPayload | ((stage: string, progress: ProgressPayload) => ProgressPayload)): void
     function progressNotifiier(payload: ProgressPayload) {
-      progressState[payload.stage] = payload;
-      emit("training-progress", progressState);
+      const progressState = { ...trainingApiStatus.inProgress[id] };
+      progressState[payload.stage] = { ...progressState[payload.stage], ...payload }
+      updateApiStatus(id, progressState).then(() => {
+        emit("training-progress", progressState);
+      });
     }
 
     try {

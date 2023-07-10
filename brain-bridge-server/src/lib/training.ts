@@ -26,7 +26,7 @@ interface TrainingSetBuilderOptions {
 
 interface TrainingSetBuilderParams {
   trainingSet: TrainingSetWithRelations;
-  onProgress: ProgressNotifier;
+  onProgress: ProgressNotifier,
   userId: string;
   options?: TrainingSetBuilderOptions;
   openAIApiKey: string;
@@ -43,7 +43,6 @@ export interface BuildResult {
 }
 
 
-
 export class TrainingSetBuilder {
   private trainingSet: TrainingSetWithRelations;
   private onProgress: ProgressNotifier;
@@ -51,6 +50,7 @@ export class TrainingSetBuilder {
   private openAIApiKey: string;
   private options: TrainingSetBuilderOptions;
   private client: WeaviateClient;
+
   constructor({ trainingSet, onProgress, userId, options, openAIApiKey }: TrainingSetBuilderParams) {
 
     this.trainingSet = trainingSet;
@@ -170,16 +170,17 @@ export class TrainingSetBuilder {
 
     let time = 0;
     // takes 10 seconds/batch
-    const TIME_PER_BATCH = 7500;
-    const totalTime = TIME_PER_BATCH * batches.length;
+    let TIME_PER_BATCH = 7500;
+    const ORIGINAL_BATCH_LENGTH = batches.length;
     const INTERVAL_LENGTH = 100;
 
     vectorProgressInterval = setInterval(() => {
       time = time + INTERVAL_LENGTH;
+      const totalTime = TIME_PER_BATCH * ORIGINAL_BATCH_LENGTH;
       this.onProgress({
         stage: "overall",
         statusText: "Vectorizing documents...",
-        progress: 0.3 + ((time / totalTime))
+        valueType: "percentage", value: 0.3 + ((time / totalTime))
       })
 
     }, INTERVAL_LENGTH);
@@ -189,11 +190,12 @@ export class TrainingSetBuilder {
         this.onProgress({
           stage: "vectorize",
           statusText: `Vectorizing batch ${batchCount - batches.length + 1} of ${batchCount}`,
-          progress: (batchCount - batches.length) / batchCount
+          valueType: "percentage", value: (batchCount - batches.length) / batchCount
         })
         console.log("Vectoring batch", batchCount - batches.length + 1, "of", batchCount)
         const batch = batches.shift();
         if (!batch) break;
+        const startTime = Date.now();
         const batcher = this.client.batch.objectsBatcher();
         try {
           const set = `Training_Set_${this.trainingSet.id}`
@@ -217,6 +219,8 @@ export class TrainingSetBuilder {
             });
           });
           const res = await batcher.do();
+          const endTime = Date.now();
+          TIME_PER_BATCH = (endTime - startTime) / 1000;
           // console.log("Batch result", res);
         } catch (e) {
           console.log("ERROR BATCH", batch.length);
@@ -228,17 +232,15 @@ export class TrainingSetBuilder {
         // console.log("Batch Collection statistics: ", stats.data.row_count, "rows");
       }
 
-      // /**
-      //  * This adds our list of documents used in training  to the Milvus database (ie. the actual index).
-      //  */
-      // try {
-      //   await Milvus.fromDocuments(list, embedder, {
-      //     collectionName: this.trainingSet.id,
-      //   });
-      // } catch (e) {
-      //   console.error("ERROR ADDING DOCUMENT LIST", e);
-      //   throw e;
-      // }
+      /**
+       * This adds our list of documents used in training  to the Milvus database (ie. the actual index).
+       */
+      try {
+        await embedder.embedDocuments(list.map(doc => doc.pageContent));
+      } catch (e) {
+        console.error("ERROR ADDING DOCUMENT LIST", e);
+        throw e;
+      }
       clearInterval(vectorProgressInterval);
       // const stats = await client.getCollectionStatistics({     // Return the statistics information of the collection.
       //   collection_name: this.trainingSet.id,
@@ -281,24 +283,32 @@ export class TrainingSetBuilder {
   // SOURCES //
   ///////////////////////////////////////////////////////////////////////////////////////////
   private async buildTrainingSources(trainingSources: TrainingSource[]): Promise<TrainingSourceInProgress[]> {
-    this.onProgress({ stage: "sources-load", statusText: `Loading all sources.`, progress: 0 });
+    this.onProgress({ stage: "sources-load", statusText: `Loading all sources.`, valueType: "percentage", value: 0 });
     const completeCounter = new CountKeeper();
 
     const promises = trainingSources.map(async (source) => {
-      console.log("Loading source", source.name)
-      const result = await this.loadTrainingSource(source);
-      completeCounter.increment();
-      this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, progress: completeCounter.completed / trainingSources.length })
-
-      return result;
+      try {
+        console.log("Loading source", source.name)
+        const result = await this.loadTrainingSource(source);
+        completeCounter.increment();
+        this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, valueType: "percentage", value: 1 })
+        this.onProgress({ stage: "sources-load", statusText: `All Sources Loaded.`, valueType: "percentage", value: completeCounter.completed / trainingSources.length });
+        return { error: false, result: result as TrainingSourceInProgress };
+      } catch (e: unknown) {
+        this.onProgress({ stage: "source-error", statusText: `Error loading ${source.name}`, error: true, errorData: source, valueType: "value", value: 1 })
+        this.onProgress({ stage: "sources-load", statusText: `All Sources Loaded.`, valueType: "percentage", value: completeCounter.completed / trainingSources.length });
+        return { error: true }
+      }
     });
     const result = await Promise.all(promises);
-    this.onProgress({ stage: "sources-load", statusText: `All Sources Loaded.`, progress: 1 });
-    return result;
+    console.log("THE RESULT", result.length, "sources loaded")
+    this.onProgress({ stage: "sources-load", statusText: `All Sources Loaded.`, valueType: "percentage", value: 1 });
+
+    return result.filter(r => !r.error).map(r => r.result as TrainingSourceInProgress);
   }
 
   private async loadTrainingSource(source: TrainingSource): Promise<TrainingSourceInProgress> {
-    this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, progress: 0 });
+    this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, valueType: "percentage", value: 0 });
     let documents: Document[];
 
     const splitter = new RecursiveCharacterTextSplitter({
@@ -407,7 +417,7 @@ export class TrainingSetBuilder {
           return [...acc, ...keys];
         }, [] as string[]);
         const uniqueKeys = [...new Set(aggregateKeys)];
-        this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, progress: 1 });
+        this.onProgress({ stage: "source-load", statusText: `Loading ${source.name}`, valueType: "percentage", value: 1 });
         return result;
     }
   }
@@ -460,7 +470,7 @@ export default function arrayBufferToString(buffer: ArrayBuffer): string {
 }
 
 export interface ProgressPayload {
-  stage: TrainingStages; statusText: string, progress: number, additionalInfo?: string
+  stage: TrainingStages; statusText: string, value: number, valueType: "value" | "percentage", additionalInfo?: string; error?: boolean; errorData?: object;
 }
 export interface ProgressNotifier {
   (payload: ProgressPayload): void;
@@ -477,181 +487,6 @@ export const trainingSetWithRelations = Prisma.validator<Prisma.TrainingSetArgs>
 })
 
 export type TrainingSetWithRelations = Prisma.TrainingSetGetPayload<typeof trainingSetWithRelations>
-
-
-// async function loadFile(file: string): Promise<string> {
-//   return new Promise((resolve) => {
-//     console.log(path.extname(file));
-//     const data = fs.readFileSync(file, 'utf-8')
-//     resolve(data);
-//   });
-// }
-
-// async function loadUrl(url: string, knownMimeType: string): Promise<string | Blob> {
-//   console.log("Loading url", url)
-//   const response = await fetch(url);
-//   if (response.status !== 200) throw new Error(`Failed to load url: ${url}`);
-//   let data: string | Blob;
-//   switch (knownMimeType) {
-//     case "text/markdown":
-//       data = await response.text();
-//       return data;
-//     case "text/html":
-//       data = await response.text();
-//       const doc = new jsdom.JSDOM(data).window.document;
-//       const htmlDoc = `<html><head><title>${doc.title}</title></head><body>${doc.body.innerHTML}</body></html>`
-//       /* Parse the HTML into markdown, and remove any bloks of script */
-//       const markdown = cleanUpHtml(htmlDoc);
-//       return markdown;
-//     case "application/json":
-//       data = await response.text();
-//       return data;
-//     case "application/pdf":
-//       data = await response.blob();
-//       return data;
-//     case "text/plain":
-//       data = await response.text();
-//       return data;
-//     default:
-//       data = await response.text();
-//       return data;
-//       throw new Error(`Unsupported content type: ${knownMimeType ?? ""}`);
-//   }
-// }
-
-// async function getSourceText(userId: string, source: TrainingSource, notify: ProgressNotifier): Promise<T> {
-//   notify({ stage: "source-load", statusText: `Loading ${source.name}`, progress: 0 });
-//   switch (source.type) {
-//     case "FILE":
-//       switch (source.mimeType) {
-//         case "application/pdf":
-//           notify({ stage: "source-load", statusText: `Converting ${source.name} to text`, progress: 0 });
-//           const pdfToText = new PDFToText(source.name);
-//           const text = await pdfToText.convert();
-//           notify({ stage: "source-load", statusText: `Converted ${source.name} to text`, progress: 1 });
-//           return text;
-//           break;
-//         default:
-//           if (source.name.length > 0) return source.name;
-//           return await loadFile(source.name);
-//       }
-//     case "URL":
-//       notify({ stage: "source-load", statusText: `Loading ${source.name}...`, progress: 0 });
-
-//       const key = `${userId}/${source.name}`;
-//       let url: string = "";
-//       if (source.name.startsWith("http")) {
-//         url = source.name;
-//       } else {
-//         url = await R2.getSignedUrlForRetrieval(key)
-//       }
-//       switch (source.mimeType) {
-//         // markdown
-//         case "text/markdown":
-//           const markdownContent = await loadUrl(url, source.mimeType);
-//           notify({ stage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
-//           return markdownContent as string;
-//         case "application/pdf":
-//           const content = await loadUrl(url, source.mimeType);
-//           const buffer = await (content as Blob).arrayBuffer();
-//           const tempFilePath = getTempFilePath(source.name);
-
-//           fs.writeFileSync(tempFilePath, Buffer.from(buffer));
-//           const pdfToText = new PDFToText(tempFilePath);
-//           const text = await pdfToText.convert();
-//           notify({ stage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
-//           return text;
-//         default:
-//           const data = await loadUrl(url, source.mimeType ?? "text/plain") as string;
-//           notify({ stage: "source-load", statusText: `Loaded ${source.name}...`, progress: 1 });
-//           return data;
-//       }
-//     default:
-//       throw new Error(`Unsupported source type`);
-//   }
-// }
-
-// function turnQuestionsIntoText(questions: MissedQuestions[]): string {
-//   const template = `
-
-//   ## Things a user might ask about and ideas of how to respond:
-
-//   {questions}
-
-//   `
-//   const mapped = questions.filter(q => !q.ignored).map((q) => `* ${q.question} - ${q.correctAnswer ?? "make something up"}`).join("\n");
-//   return template.replace("{questions}", mapped);
-// }
-
-// export async function createTrainingIndex({ name, trainingSet, onProgress, options }: { name: string, trainingSet: TrainingSetWithRelations, onProgress?: ProgressNotifier, options?: TrainingSetBuilderOptions }): Promise<TrainingSet> {
-//   const usedOptions =
-//     usedOptions.maxSegmentLength = parseInt(usedOptions.maxSegmentLength.toString());
-//   usedOptions.overlapBetweenSegments = parseInt(usedOptions.overlapBetweenSegments.toString());
-//   let notify = onProgress ?? (() => { });
-//   notify({ stage: "overall", statusText: "Training Started", progress: 0 });
-
-//   const { trainingSources } = trainingSet;
-
-//   /**
-//    * Load all the sources, just get the content as text
-//    */
-//   notify({ stage: "overall", statusText: "Loading sources...", progress: 0.1 });
-
-//   const countKeeper = new CountKeeper();
-//   const promises = trainingSources.map(async (source, index) => {
-//     const result = await getSourceText(trainingSet.userId, source, notify)
-//     countKeeper.completed++;
-//     notify({ stage: "sources-load", statusText: ``, progress: countKeeper.completed / trainingSources.length });
-//     return { source, result }
-//   });
-//   // TODO: Figure out how to incorporate the missed questions into the training set
-//   const answeredQuestionText = `\n${turnQuestionsIntoText(trainingSet.missedQuestions)}\n`;
-
-//   /**
-//    * Wait for all the sources to load
-//    */
-//   notify({ stage: "sources-load", statusText: `Loading all sources.`, progress: 0 });
-//   const allContent = await Promise.all(promises);
-//   notify({ stage: "sources-load", statusText: `Loaded all sources.`, progress: 1 });
-
-//   /**
-//    * Split the content into chunks
-//    */
-//   notify({ stage: "overall", statusText: "Splitting documents...", progress: 0.2 });
-//   notify({ stage: "split-documents", statusText: `Splitting documents into chunks`, progress: 0 });
-
-//   const listDoc = {
-//     source: "Document List",
-//     content: generateDocumentList(allContent)
-//   } as {
-//     source: string;
-//     content: string;
-//   }
-
-//   const mapped = allContent.map(({ source, result }) => ({
-//     source: source.name,
-//     content: result
-//   }));
-
-//   let splitContent = await splitFileData([...mapped, listDoc], notify, usedOptions);
-
-//   /**
-//    * Vectorize the content
-//    */
-//   notify({ stage: "overall", statusText: "Vectorizing documents...", progress: 0.3 });
-//   notify({ stage: "vectorize", statusText: `Vectorizing documents`, progress: 0 });
-//   try {
-//     await vectorize(splitContent, trainingSet.id, notify);
-//     notify({ stage: "vectorize", statusText: `Vectorized documents`, progress: 1 });
-//   } catch (e) {
-//     console.error(e);
-//     clearInterval(vectorProgressInterval);
-//     throw e;
-//   }
-//   console.log("index creation complete");
-//   notify({ stage: "overall", statusText: "Index creation complete", progress: 1 });
-//   return null;
-// }
 
 let vectorProgressInterval: any = null;
 

@@ -24,7 +24,11 @@ import { useSession } from "next-auth/react";
 import Modal from "~/app/components/ModalDialog";
 import { SaveIcon } from "~/app/components/SvgIcons";
 import useSocket from "~/hooks/use-socket";
-import { TrainingProgressDisplay } from "./TrainingProgressDisplay";
+import {
+  type ProgressReport,
+  TrainingProgressDisplay,
+  type TrainingStages,
+} from "./TrainingProgressDisplay";
 import Tabs from "~/app/components/Tabs";
 import { toast } from "react-toastify";
 import DetailsTab from "./tabs/DetailsTab";
@@ -69,29 +73,42 @@ export function TrainingSetForm({
   const [error, setError] = useState<string | null>(null);
   const [showRefinePromptModal, setShowRefinePromptModal] = useState(false);
   const socketRef = useSocket();
+
   const handleTrainingStarted = useCallback(() => {
     setIsTraining(true);
-  }, []);
-  const [isAutoTraining, setIsAutoTraining] = useState((trainingSet.prompt ?? "").trim().length === 0);
-
+  }, [setIsTraining]);
+  const [isAutoTraining, setIsAutoTraining] = useState(
+    (trainingSet.prompt ?? "").trim().length === 0
+  );
+  const [setHasErrors, setSetHasErrors] = useState(false);
   const handleTrainingComplete = useCallback(() => {
-    setIsTraining(false);
-    toast("🎉 Training Complete", {
-      type: "success",
-    });
+    if (setHasErrors) {
+      toast("⚠️ Training Completed with Errors", {
+        type: "warning",
+      });
+    } else {
+      toast("🎉 Training Complete", {
+        type: "success",
+      });
+    }
     onUpdate?.({
       ...trainingSet,
       trainingIndexVersion: trainingSetData.trainingIndexVersion + 1,
     });
     // TODO: Figure out why router.refresh() doesn't work.
-  }, [onUpdate, trainingSet, trainingSetData.trainingIndexVersion]);
+  }, [
+    onUpdate,
+    setHasErrors,
+    trainingSet,
+    trainingSetData.trainingIndexVersion,
+  ]);
 
   const handleTrainingError = useCallback((data: { error: string }) => {
     Logger.error("Training Error", data.error);
     toast(`⛔️ ${data.error ?? "Training Failed"}`, {
       type: "error",
     });
-    setIsTraining(false);
+    setIsTraining(true);
     // setError(data.error);
   }, []);
 
@@ -100,9 +117,16 @@ export function TrainingSetForm({
    * This is used to handle when a user navigates away from the page while training is in progress, and returns,
    * or when another user (Shared!) visits the page while training is in progress.
    */
-  const handleTrainingProgress = useCallback(() => {
-    setIsTraining(true);
-  }, []);
+  const handleTrainingProgress = useCallback(
+    (payload: ProgressReport) => {
+      const keys = Object.keys(payload) as TrainingStages[];
+      const hasErrors = keys.filter((key) => payload[key].error).length > 0;
+      console.log("HAS ERRORS", hasErrors)
+      if (setHasErrors === false && hasErrors) setSetHasErrors(true);
+      if (!isTraining) setIsTraining(true);
+    },
+    [isTraining, setHasErrors]
+  );
 
   useEffect(() => {
     if (socketRef.socket?.connected) {
@@ -402,11 +426,12 @@ export function TrainingSetForm({
       <RoomJoiner room={trainingSetData.id} type="training" />
       <div className="h-full bg-slate-50">
         <div className="h-full w-full bg-slate-100 ">
+          
           <Tabs
             header={
               <div className="flex flex-row">
                 <MdShare title="Shared with you" className="mr-2 mt-[3px]" />
-                <h1 className="text-sm">{trainingSet.name}</h1>
+                <h1 className="text-sm">{trainingSet.name} {setHasErrors ? "ERRORS" : ""}</h1>
               </div>
             }
             initialSelectedTab={activeTab}
@@ -512,6 +537,15 @@ export function TrainingSetForm({
         </div>
 
         {error && <ErrorBox message={error} title="An error has occurred" />}
+        {/* <Modal
+          title="Errors while Training"
+          show={!isTraining && setHasErrors}
+          icon={<SaveIcon />}
+        >
+          <div className="w-full">
+            <h1>FUCK!</h1>
+          </div>
+        </Modal> */}
         <Modal title="" show={isTraining} icon={<SaveIcon />}>
           <div className="w-full">
             <TrainingProgressDisplay

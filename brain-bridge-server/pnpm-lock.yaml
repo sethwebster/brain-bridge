@@ -59,6 +59,9 @@ dependencies:
   langchain:
     specifier: ^0.0.96
     version: 0.0.96(@aws-sdk/client-s3@3.341.0)(cheerio@1.0.0-rc.12)(pdf-parse@1.1.1)(weaviate-ts-client@1.3.3)
+  lodash.debounce:
+    specifier: ^4.0.8
+    version: 4.0.8
   morgan:
     specifier: ^1.10.0
     version: 1.10.0
@@ -106,6 +109,9 @@ dependencies:
     version: 1.3.3(graphql@16.7.1)
 
 devDependencies:
+  '@types/lodash.debounce':
+    specifier: ^4.0.7
+    version: 4.0.7
   '@types/ramda':
     specifier: ^0.29.3
     version: 0.29.3
@@ -1264,6 +1270,16 @@ packages:
       '@types/node': 20.3.1
     dev: false
 
+  /@types/lodash.debounce@4.0.7:
+    resolution: {integrity: sha512-X1T4wMZ+gT000M2/91SYj0d/7JfeNZ9PeeOldSNoE/lunLeQXKvkmIumI29IaKMotU/ln/McOIvgzZcQ/3TrSA==}
+    dependencies:
+      '@types/lodash': 4.14.195
+    dev: true
+
+  /@types/lodash@4.14.195:
+    resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
+    dev: true
+
   /@types/mime@1.3.2:
     resolution: {integrity: sha512-YATxVxgRqNH6nHEIsvg6k2Boc1JHI9ZbH5iWFFv/MTkchz3b1ieGDa5T0a9RznNdI0KhVbdbWSN+KWWrQZRxTw==}
     dev: false
@@ -2303,6 +2319,10 @@ packages:
 
   /lodash.clonedeep@4.5.0:
     resolution: {integrity: sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ==}
+    dev: false
+
+  /lodash.debounce@4.0.8:
+    resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
     dev: false
 
   /lodash@4.17.21:
