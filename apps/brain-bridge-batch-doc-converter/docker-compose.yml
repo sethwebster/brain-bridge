@@ -1,0 +1,7 @@
+version: '3'
+services:
+  md_maker:
+    build: .
+    volumes:
+      - ./:/app
+

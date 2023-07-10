@@ -1,0 +1,59 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "**/.env.*local"
+  ],
+  "pipeline": {
+    "build": {
+      "dependsOn": [
+        "^db:migrate",
+        "^db:generate",
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**"
+      ]
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false   
+    },
+    "lint": {},
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": [
+        "^db:generate"
+      ]
+    }
+  },
+  "globalEnv": [
+    "API_ENDPOINT",
+    "AUDIO_STORAGE_PATH",
+    "AUTH0_CLIENT_ID",
+    "AUTH0_CLIENT_SECRET",
+    "AUTH0_ISSUER",
+    "NEXT_PUBLIC_LOG_LEVEL",
+    "DATABASE_URL",
+    "NODE_ENV",
+    "NEXTAUTH_SECRET",
+    "NEXTAUTH_URL",
+    "NEXT_PUBLIC_BASE_URL",
+    "TEMP_FILE_PATH",
+    "ELEVENLABS_API_KEY",
+    "ELEVENLABS_VOICE_ID",
+    "NEXT_PUBLIC_R2_ACCOUNT_ID",
+    "R2_API_KEY",
+    "R2_API_SECRET",
+    "R2_USER_FILES_BUCKET",
+    "POSTMARK_API_KEY",
+    "NEXT_PUBLIC_SOCKETS_ENDPOINT",
+    "NEXT_PUBLIC_VERCEL_ENV"
+  ]
+}
