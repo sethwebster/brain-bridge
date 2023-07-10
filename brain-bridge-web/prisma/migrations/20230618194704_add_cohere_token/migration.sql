@@ -1,2 +1,0 @@
--- AlterEnum
-ALTER TYPE "UsageType" ADD VALUE 'COHERE_TOKEN';

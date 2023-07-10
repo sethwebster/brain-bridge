@@ -1,2 +1,5 @@
 .vscode
 .DS_Store
+.turbo
+node_modules
+.env

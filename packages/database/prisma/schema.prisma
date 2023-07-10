@@ -1,0 +1,253 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["jsonProtocol", "postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DATABASE_DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+model TrainingSet {
+  id                   String                    @id @default(cuid())
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  name                 String
+  userId               String
+  version              Int                       @default(0)
+  prompt               String                    @default("")
+  trainingOptions      Json                      @default("{}")
+  trainingStatus       TrainingSetTrainingStatus @default(IDLE)
+  trainingIndexVersion Int                       @default(0)
+  conversations        Conversation[]
+  missedQuestions      MissedQuestions[]
+  publicChats          PublicChat[]
+  questionsAndAnswers  QuestionAndAnswer[]
+  user                 User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingSetShares    TrainingSetShares[]
+  trainingSources      TrainingSource[]
+  usage                Usage[]
+}
+
+model TrainingSetShares {
+  id               String           @id @default(cuid())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  trainingSetId    String
+  userId           String
+  toUserEmail      String
+  acceptedByUser   Boolean          @default(false)
+  acceptedAt       DateTime?
+  acceptedUserId   String?
+  role             TrainingSetRoles @default(VIEWER)
+  invitationSentAt DateTime?
+  acceptedUser     User?            @relation("acceptedUser", fields: [acceptedUserId], references: [id])
+  trainingSet      TrainingSet      @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  user             User             @relation("owner", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Usage {
+  id            String       @id @default(cuid())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  userId        String
+  type          UsageType
+  count         Int          @default(0)
+  purpose       UsagePurpose
+  trainingSetId String
+  trainingSet   TrainingSet  @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TrainingSource {
+  id            String             @id @default(cuid())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  type          TrainingSourceType
+  name          String
+  trainingSetId String
+  pending       Boolean            @default(true)
+  mimeType      String?
+  trainingSet   TrainingSet        @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+}
+
+model QuestionAndAnswer {
+  id            String      @id @default(cuid())
+  question      String
+  answer        String
+  token         String
+  trainingSetId String
+  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+}
+
+model MissedQuestions {
+  id            String      @id @default(cuid())
+  question      String      @unique
+  llmAnswer     String
+  correctAnswer String?
+  trainingSetId String
+  ignored       Boolean     @default(false)
+  trainingSet   TrainingSet @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  name          String        @default("")
+  trainingSetId String
+  userId        String
+  trainingSet   TrainingSet   @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      Message[]
+  participants  Participant[]
+}
+
+model Participant {
+  id                   String              @id @default(cuid())
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  name                 String              @default("")
+  conversationId       String?
+  type                 ParticipantType
+  publicChatInstanceId String?
+  messages             Message[]
+  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
+}
+
+model Message {
+  id                   String              @id @default(cuid())
+  text                 String              @default("")
+  createdAt            DateTime            @default(now())
+  conversationId       String?
+  participantId        String
+  publicChatInstanceId String?
+  conversation         Conversation?       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender               Participant         @relation(fields: [participantId], references: [id])
+  publicChatInstance   PublicChatInstance? @relation(fields: [publicChatInstanceId], references: [id])
+}
+
+model PublicChat {
+  id                 String               @id @default(cuid())
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  name               String               @default("")
+  userId             String
+  trainingSetId      String
+  published          Boolean              @default(false)
+  trainingSet        TrainingSet          @relation(fields: [trainingSetId], references: [id], onDelete: Cascade)
+  user               User                 @relation(fields: [userId], references: [id])
+  publicChatInstance PublicChatInstance[]
+}
+
+model PublicChatInstance {
+  id           String        @id @default(cuid())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  name         String        @unique @default("")
+  publicChatId String
+  messages     Message[]
+  participants Participant[]
+  publicChat   PublicChat    @relation(fields: [publicChatId], references: [id], onDelete: Cascade)
+}
+
+model VectorCache {
+  id        String                       @id @default(cuid())
+  createdAt DateTime                     @default(now())
+  updatedAt DateTime                     @updatedAt
+  embedding Unsupported("vector(1536)")?
+  hash      String                       @unique
+}
+
+/// //////////////////////////
+/// //////////////////////////
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                        String              @id @default(cuid())
+  name                      String?
+  email                     String?             @unique
+  emailVerified             DateTime?
+  image                     String?
+  accounts                  Account[]
+  conversation              Conversation[]
+  publicChats               PublicChat[]
+  sessions                  Session[]
+  trainingSets              TrainingSet[]
+  trainingSetSharesAccepted TrainingSetShares[] @relation("acceptedUser")
+  trainingSetSharesOutgoing TrainingSetShares[] @relation("owner")
+  usage                     Usage[]
+  userSettings              UserSettings[]
+}
+
+model UserSettings {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  openAIApiKey String?
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum TrainingSetTrainingStatus {
+  IDLE
+  TRAINING
+  ERROR
+}
+
+enum TrainingSetRoles {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+enum UsageType {
+  TOKEN
+}
+
+enum UsagePurpose {
+  EMBEDDING
+  GENERATE
+}
+
+enum TrainingSourceType {
+  FILE
+  URL
+}
+
+enum ParticipantType {
+  BOT
+  HUMAN
+}
